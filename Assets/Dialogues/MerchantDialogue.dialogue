@@ -1,0 +1,134 @@
+~ merchant_start
+
+# 第一次见面的特殊剧情
+if TaskManager.get_npc_dialogue_count("merchant_01") == 0
+    ???: 等等...你是...沃玛！
+    沃玛:你是谁？怎么会知道我的名字？
+    ???: 沃玛！真的是你鸭！
+    沃玛:店员！你怎么会在这里？！
+    店员:事情说来话长...
+    do DialogueSystem.trigger_effect("fade_memory")
+    [wait=2.5]
+    沃玛:原来是这样...你现在在这里干什么？
+    店员:买？
+    do TaskManager.record_npc_dialogue("merchant_01")
+    # 第一次见面后直接进入购物分支
+    => shop_branch
+
+# 根据情绪状态的分支对话
+else
+    if mood == "happy_greeting"
+        店员:哎呀~欢迎光临，亲~
+        - 购物
+            => shop_branch
+        - 闲聊
+            => chat_branch
+        - 离开
+            => leave_branch
+    
+    elseif mood == "angry_greeting"
+        店员:你到底买不买？
+        - 购物
+            => shop_branch
+        - 闲聊
+            => chat_branch
+        - 离开
+            => leave_branch
+    
+    else
+        店员:买？
+        - 购物
+            => shop_branch
+        - 闲聊
+            => chat_branch
+        - 离开
+            => leave_branch
+
+# 购物分支 - 显示商品列表
+~ shop_branch
+店员:请问需要点什么？（目前钱币数量：{{Global.player_coins}}）
+- 加速药水 (50 钱币)
+    if global.player_coins >= 50
+        => buy_speed_confirm
+    else
+        店员:哎呀，您没带够钱呢。（需要 50 钱币）
+        => shop_return
+- 重力药水 (150 钱币)
+    if global.player_coins >= 150
+        => buy_gravity_confirm
+    else
+        店员:哎呀，您没带够钱呢。（需要 150 钱币）
+        => shop_return
+- 离开
+    沃玛:我需要离开
+    => leave_branch
+
+# 确认购买加速药水
+~ buy_speed_confirm
+店员:加速药水，50 钱币。要吗？
+- 购买
+    if global.player_coins >= 50
+        do Global.spend_coins(50)
+        do npc.on_purchase_success("potion_speed")
+        店员:谢谢惠顾！
+    else
+        店员:哎呀，您没带够钱呢。（需要 50 钱币）
+    => shop_return
+- 不买
+    店员:好的，那需要其他的吗？
+    => shop_return
+
+# 确认购买重力药水
+~ buy_gravity_confirm
+店员:重力药水，150 钱币。要吗？
+- 购买
+    if global.player_coins >= 150
+        do Global.spend_coins(150)
+        do npc.on_purchase_success("potion_gravity")
+        店员:谢谢惠顾！
+    else
+        店员:哎呀，您没带够钱呢。（需要 150 钱币）
+    => shop_return
+- 不买
+    店员:好的，那需要其他的吗？
+    => shop_return
+
+# 返回购物分支
+~ shop_return
+- 购物
+    => shop_branch
+- 离开
+    沃玛:没有想要的...
+    => leave_branch
+
+# 闲聊分支
+~ chat_branch
+- 天气
+    沃玛:今天天气不错欸~
+    店员:没错没错...
+    沃玛:阳光明媚！
+    店员:是的是的...
+    店员:...买？
+    => shop_branch
+- 吃饭
+    沃玛:吃了吗？
+    店员:吃了
+    沃玛:吃的什么？
+    店员:...
+    店员:买？
+    => shop_branch
+- 离开
+    沃玛:点错了不好意思
+    => leave_branch
+
+# 离开分支
+~ leave_branch
+if consecutive_no_purchase_count >= 3
+    店员:不买不要捣乱！!
+    do npc.update_mood(2)
+    do TaskManager.record_npc_dialogue("merchant_01")
+    => END
+else
+    do npc.update_mood(0)
+    do TaskManager.record_npc_dialogue("merchant_01")
+    => END

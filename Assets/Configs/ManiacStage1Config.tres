@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ChallengeConfig" load_steps=3 format=3 uid="uid://bxd34rllgoej0"]
+
+[ext_resource type="PackedScene" uid="uid://cs8vmq6prhohn" path="res://Scenes/Instances/ChallengeJumpBoxs/ChallengeJumpBox.tscn" id="1_qc3oj"]
+[ext_resource type="Script" uid="uid://cjrjaqyt0i28c" path="res://Scripts/Resources/ChallengeConfig.gd" id="2_3plj6"]
+
+[resource]
+script = ExtResource("2_3plj6")
+challenge_name = "第一阶段"
+stage_id = 1
+cooldown_time = 2.0
+jumpbox_scene = ExtResource("1_qc3oj")
+spawn_points = [null, null, null]
+metadata/_custom_type_script = "uid://cjrjaqyt0i28c"

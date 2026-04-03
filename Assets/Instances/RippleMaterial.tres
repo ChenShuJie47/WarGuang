@@ -1,0 +1,15 @@
+[gd_resource type="ParticleProcessMaterial" load_steps=2 format=3 uid="uid://v07nbg4v42vi"]
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_1"]
+
+[resource]
+emission_shape = 2
+emission_sphere_radius = 8.0
+direction = Vector3(0, 0, 0)
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+angular_velocity_min = -45.0
+angular_velocity_max = 45.0
+scale_curve = SubResource("GradientTexture1D_1")
+hue_variation_min = -0.1
+hue_variation_max = 0.1

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ChallengeConfig" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/ChallengeConfig.gd" id="1_cfg"]
+[ext_resource type="PackedScene" path="res://Scenes/Instances/ChallengeJumpBoxs/ChallengeMoveJumpBox.tscn" id="2_jumpbox"]
+
+[resource]
+script = ExtResource("1_cfg")
+challenge_name = "第三阶段"
+stage_id = 3
+target_count = 20
+cooldown_time = 3.5
+jumpbox_scene = ExtResource("2_jumpbox")
+spawn_points = [null, null, null, null, null]

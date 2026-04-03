@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://bq5gktnvtvvop"]
+
+[ext_resource type="Script" uid="uid://bmewalhakcwxt" path="res://Scripts/Instances/HurtBoxs/HurtBox.gd" id="1_5nrrw"]
+[ext_resource type="Texture2D" uid="uid://bqh8rnopioeeo" path="res://Assets/Textures/Tiles/new tiles 8×8-01.png" id="2_5nrrw"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1cqcb"]
+
+[node name="HurtBox" type="Area2D"]
+scale = Vector2(2, 2)
+script = ExtResource("1_5nrrw")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+light_mask = 16
+shape = SubResource("RectangleShape2D_1cqcb")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-2.682209e-07, 0)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("2_5nrrw")
+region_enabled = true
+region_rect = Rect2(8, 16, 8, 8)

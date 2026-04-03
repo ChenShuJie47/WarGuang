@@ -1,0 +1,543 @@
+# Warma Shadow Test - 代码质量标准
+
+**适用范围**: 所有项目代码（包括 AI 生成的代码）  
+**质量等级**: 生产级（Production Ready）  
+**最后更新**: 2025 年 3 月 18 日
+
+---
+
+## 一、GDScript 语法规范
+
+### 1.1 Godot 4 API 强制要求 ⭐⭐⭐
+```gdscript
+# ✅ 正确使用 Godot 4 API
+set_process_mode(PROCESS_MODE_ALWAYS)      # ❌ 旧：set_process(true)
+get_tree().root                             # ❌ 旧：get_tree().get_root()
+node.queue_free()                           # ❌ 旧：queue_delete()
+position = Vector2(100, 200)                # ❌ 旧：set_pos(Vector2)
+scale = Vector2(2, 2)                       # ❌ 旧：set_scale(Vector2)
+rotation = deg_to_rad(45)                   # ❌ 旧：set_rotation(deg_to_rad(45))
+%UniqueNodeName                             # ❌ 旧：get_node("UniqueNodeName")
+await get_tree().create_timer(1.0).timeout  # ❌ 旧：yield(...)
+
+# 类型标注必须完整
+var health: int = 100                       # ✅ 必须标注类型
+func take_damage(amount: int) -> void:      # ✅ 必须标注参数和返回类型
+    pass
+```
+
+### 1.2 变量声明规范
+```gdscript
+# 导出变量（配置用）
+@export var speed: float = 200.0            # ✅ Inspector 可见
+@export_range(0, 100) var health: int = 100
+
+# 普通变量（内部使用）
+var _internal_counter: int = 0              # ✅ 私有变量加下划线
+var is_moving: bool = false
+
+# 常量
+const MAX_SPEED: float = 300.0              # ✅ 全大写 + 下划线
+const PLAYER_NAME: String = "Warma"
+
+# 运行时计算的变量（不应设为@export）
+var effective_speed: float                  # ✅ 内部变量，运行时计算
+```
+
+### 1.3 函数定义规范
+```gdscript
+# 生命周期函数
+func _ready() -> void:
+    pass
+
+func _process(delta: float) -> void:
+    pass
+
+func _physics_process(delta: float) -> void:
+    pass
+
+# 自定义函数
+## 对玩家造成伤害
+## @param amount 伤害值
+## @return 是否成功造成伤害
+func take_damage(amount: int) -> bool:
+    if amount < 0:
+        return false
+    
+    health -= amount
+    return true
+
+# 信号处理函数
+func _on_button_pressed() -> void:          # ✅ 下划线前缀
+    pass
+```
+
+---
+
+## 二、代码结构组织规范
+
+### 2.1 脚本文件标准结构 ⭐⭐⭐
+```gdscript
+# 1. @tool 注解（如果需要编辑器运行）
+@tool
+
+# 2. class_name（如果需要全局访问）
+class_name PlayerCharacter
+
+# 3. extends
+extends CharacterBody2D
+
+# 4. 信号定义
+signal health_changed(new_value: int)
+signal died()
+
+# 5. 常量
+const MAX_HEALTH: int = 100
+const GRAVITY: float = 980.0
+
+# 6. 导出变量（Inspector 可见）
+## 玩家移动速度
+@export var move_speed: float = 200.0
+
+## 跳跃高度
+@export var jump_strength: float = 400.0
+
+# 7. 普通变量（内部使用）
+var current_health: int = 100
+var is_invincible: bool = false
+var _internal_timer: float = 0.0  # 私有变量
+
+# 8. @onready 变量（延迟加载）
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D
+
+# 9. 生命周期函数
+func _ready() -> void:
+    pass
+
+func _process(delta: float) -> void:
+    pass
+
+# 10. 自定义函数
+## 更新玩家状态
+func update_state() -> void:
+    pass
+```
+
+### 2.2 变量分组注释
+```gdscript
+# ========== 战斗相关变量 ==========
+var attack_power: int = 10
+var defense: int = 5
+
+# ========== 移动相关变量 ==========
+var move_speed: float = 200.0
+var acceleration: float = 50.0
+
+# ========== 状态标记 ==========
+var is_moving: bool = false
+var is_jumping: bool = false
+```
+
+---
+
+## 三、注释编写规范
+
+### 3.1 注释符号使用规则 ⭐⭐⭐
+```gdscript
+# ✅ 导出变量：使用 ## 写在上方
+## 玩家基础移动速度
+@export var base_move_speed: float = 200.0
+
+# ✅ 普通变量：使用 # 写在右侧
+var current_speed: float = 0.0  # 当前实际移动速度
+
+# ✅ 函数：在签名前添加功能说明
+## 应用重力到玩家速度
+## 考虑环境效果乘数
+func apply_gravity(delta: float) -> void:
+    velocity.y += gravity * delta * env_gravity_multiplier
+
+# ✅ 计算公式：每一步都注释
+# 计算有效水平速度
+# = 全局 Buff × 环境效果 × 基础速度
+var effective_horizontal := global_speed_multiplier * env_speed_multiplier * base_speed
+```
+
+### 3.2 禁止的注释行为
+```gdscript
+# ❌ 废话注释
+velocity.y += gravity  # 增加 Y 轴速度
+
+# ❌ 过时注释
+# set_process(true)  # 启用处理（已废弃）
+
+# ❌ 过度注释
+var x = 10  # x 是 10
+var y = 20  # y 是 20
+
+# ❌ 修改说明注释（应使用版本控制）
+# 2025-03-18 张三 修改了速度计算公式
+```
+
+---
+
+## 四、错误处理与防御性编程
+
+### 4.1 null 检查强制要求 ⭐⭐⭐
+```gdscript
+# ✅ 外部引用使用前必须检查
+@onready var player: Player = $Player
+
+func damage_player(amount: int) -> void:
+    if player == null:  # 必须检查！
+        print("错误：玩家节点不存在")
+        return
+    
+    player.take_damage(amount)
+
+# ✅ 跨场景引用必须检查
+func on_npc_interaction(npc: NPC) -> void:
+    if not is_instance_valid(npc):  # 必须检查！
+        return
+    
+    npc.start_dialogue()
+```
+
+### 4.2 数组和字典安全访问
+```gdscript
+# ✅ 数组访问前检查边界
+if index >= 0 and index < items.size():
+    var item = items[index]
+
+# ✅ 字典访问使用 has() 验证
+if data.has("player_health"):
+    Global.player_health = data["player_health"]
+else:
+    print("警告：存档缺少 player_health 字段")
+```
+
+### 4.3 信号连接验证
+```gdscript
+# ✅ 连接前检查接收方
+func connect_signals() -> void:
+    if is_instance_valid($UI/HealthBar):
+        $UI/HealthBar.health_changed.connect(_on_health_changed)
+    else:
+        print("错误：血条节点不存在")
+```
+
+---
+
+## 五、性能优化规范
+
+### 5.1 高频函数中的禁止行为
+```gdscript
+# ❌ 禁止在 _process/_physics_process 中：
+func _process(delta: float) -> void:
+    print("调试信息")              # ❌ 每帧打印
+    var temp = []                  # ❌ 创建临时数组
+    temp.append(1)                 # ❌ 动态分配内存
+    get_node("Enemy").die()        # ❌ 每帧查找节点
+
+# ✅ 正确做法：
+var _debug_timer: float = 0.0
+var _cached_enemies: Array = []
+
+func _ready() -> void:
+    _cached_enemies = get_tree().get_nodes_in_group("enemies")  # 缓存引用
+
+func _process(delta: float) -> void:
+    _debug_timer += delta
+    if _debug_timer > 1.0:       # 每秒打印一次
+        print("FPS: ", Engine.get_frames_per_second())
+        _debug_timer = 0.0
+```
+
+### 5.2 对象池使用建议
+```gdscript
+# 适用对象池的场景：
+# 1. 频繁创建销毁的对象（残影、粒子、子弹）
+# 2. 实例化开销大的对象（复杂敌人）
+# 3. 需要精确控制生命周期的对象
+
+# 简单对象池示例：
+var _projectile_pool: Array[Projectile] = []
+
+func spawn_projectile(position: Vector2) -> Projectile:
+    if _projectile_pool.is_empty():
+        var proj = preload("res://Scenes/Projectile.tscn").instantiate() as Projectile
+        add_child(proj)
+        return proj
+    else:
+        var proj = _projectile_pool.pop_back()
+        proj.global_position = position
+        proj.visible = true
+        return proj
+```
+
+---
+
+## 六、代码可读性规范
+
+### 6.1 命名一致性原则
+```gdscript
+# ✅ 变量命名：snake_case
+var player_health: int
+var move_speed: float
+
+# ✅ 函数命名：snake_case
+func take_damage(amount: int) -> void:
+    pass
+
+# ✅ 类名/类型名：PascalCase
+class_name PlayerCharacter
+extends CharacterBody2D
+
+# ✅ 常量命名：CONSTANT_CASE
+const MAX_HEALTH: int = 100
+const GRAVITY_ACCELERATION: float = 980.0
+
+# ✅ 私有成员：下划线前缀
+var _internal_counter: int = 0
+func _private_helper() -> void:
+    pass
+```
+
+### 6.2 魔法数字消除原则
+```gdscript
+# ❌ 坏代码：魔法数字
+func jump() -> void:
+    velocity.y = -400.0
+    invincible_time = 0.5
+
+# ✅ 好代码：具名常量
+const JUMP_STRENGTH: float = -400.0
+const INVINCIBLE_DURATION: float = 0.5
+
+func jump() -> void:
+    velocity.y = JUMP_STRENGTH
+    is_invincible = true
+    invincible_timer = INVINCIBLE_DURATION
+```
+
+### 6.3 函数单一职责原则
+```gdscript
+# ❌ 坏代码：臃肿函数
+func update_player() -> void:
+    # 处理输入
+    var input_dir = Input.get_axis("left", "right")
+    # 应用移动
+    velocity.x = input_dir * move_speed
+    # 应用重力
+    velocity.y += gravity * delta
+    # 更新动画
+    if velocity.x != 0:
+        animated_sprite.play("MOVE")
+    # 处理碰撞
+    if is_on_wall():
+        velocity.x = 0
+    # ... 还有 50 行代码
+
+# ✅ 好代码：拆分小函数
+func update_player() -> void:
+    _handle_input()
+    _apply_movement()
+    _apply_gravity()
+    _update_animation()
+    _handle_collisions()
+
+func _handle_input() -> void:
+    var input_dir = Input.get_axis("left", "right")
+    # ...
+
+func _apply_movement() -> void:
+    var input_dir = Input.get_axis("left", "right")
+    velocity.x = input_dir * move_speed
+```
+
+---
+
+## 七、测试友好性规范
+
+### 7.1 可测试性设计原则
+```gdscript
+# ✅ 将核心逻辑提取为独立函数
+# ❌ 坏设计：逻辑耦合在 _physics_process 中
+func _physics_process(delta: float) -> void:
+    velocity.y += gravity * delta
+    if velocity.y > max_fall_speed:
+        velocity.y = max_fall_speed
+    move_and_slide()
+
+# ✅ 好设计：逻辑可独立测试
+func _physics_process(delta: float) -> void:
+    _apply_gravity(delta)
+    _clamp_velocity()
+    move_and_slide()
+
+func apply_gravity(delta: float) -> void:  # 可独立测试
+    velocity.y += gravity * delta
+
+func clamp_velocity() -> void:  # 可独立测试
+    if velocity.y > max_fall_speed:
+        velocity.y = max_fall_speed
+```
+
+### 7.2 调试钩子设计
+```gdscript
+# ✅ 提供调试命令接口
+func _unhandled_input(event: InputEvent) -> void:
+    if OS.is_debug_build():
+        if event.is_action_pressed("debug_god_mode"):
+            is_invincible = true
+        if event.is_action_pressed("debug_unlock_all"):
+            _unlock_all_abilities()
+
+func _unlock_all_abilities() -> void:
+    Global.unlocked_abilities = {
+        "dash": true,
+        "double_jump": true,
+        # ... 所有能力
+    }
+```
+
+---
+
+## 八、版本控制友好规范
+
+### 8.1 Git 提交信息规范
+```bash
+# 格式：<type>(<scope>): <subject>
+
+# type 类型：
+feat:     新功能
+fix:      Bug 修复
+docs:     文档更新
+style:    代码格式（不影响功能）
+refactor: 重构（不修复 Bug）
+test:     测试相关
+chore:    构建/工具/配置
+
+# 示例：
+fix(camera): 修复房间切换后相机跟踪随机失败的问题
+feat(ability): 添加二段跳能力解锁逻辑
+refactor(player): 拆分 update_player 为多个小函数
+```
+
+### 8.2 代码格式化要求
+```gdscript
+# ✅ 空行分隔逻辑块
+func update_player(delta: float) -> void:
+    # 处理输入
+    var input_dir = Input.get_axis("left", "right")
+    
+    # 应用移动
+    velocity.x = input_dir * move_speed
+    
+    # 应用重力
+    velocity.y += gravity * delta
+    
+    # 移动角色
+    move_and_slide()
+
+# ✅ 运算符两侧加空格
+var result = a + b * c  # ✅ 好
+var result=a+b*c        # ❌ 坏
+```
+
+---
+
+## 九、代码审查检查清单
+
+### 9.1 提交前自检（AI 和用户都必须遵守）
+```markdown
+## 语法检查
+[ ] 是否使用了 Godot 4 API（而非 Godot 3）？
+[ ] 所有变量是否都标注了类型？
+[ ] 函数是否都标注了参数和返回类型？
+
+## 规范检查
+[ ] 是否符合变量命名规范（snake_case/PascalCase）？
+[ ] 注释是否符合要求（## 用于@export，# 用于 var）？
+[ ] 是否消除了魔法数字（使用具名常量）？
+
+## 安全检查
+[ ] 外部引用使用前是否检查了 null？
+[ ] 数组/字典访问前是否验证了边界/键存在？
+[ ] 信号连接前是否检查了接收方存在？
+
+## 性能检查
+[ ] 高频函数中是否避免了 print/printerr？
+[ ] 是否避免了每帧创建临时对象？
+[ ] 是否缓存了频繁访问的节点引用？
+
+## 架构检查
+[ ] 是否违反了重力应用单一入口原则？
+[ ] 是否破坏了环境系统三层架构？
+[ ] 是否符合多存档数据隔离规范？
+```
+
+### 9.2 自动化检查工具建议
+```bash
+# 推荐使用以下工具（如果可用）：
+1. GDScript 内置检查器
+   - Godot 编辑器 → 项目 → 工具 → 检查代码
+
+2. 静态分析工具（如 gdlint）
+   pip install gdtoolkit
+   gdlint Scripts/**/*.gd
+
+3. 格式化统一工具
+   # 确保所有文件使用 Tab 缩进
+```
+
+---
+
+## 十、技术债务管理
+
+### 10.1 技术债务标识规范
+```gdscript
+# 使用标准标签标记技术债务
+# TODO: 短期要完成的功能
+# FIXME: 需要修复的 Bug
+# HACK: 临时解决方案（需要后续优化）
+# XXX: 潜在的危险代码
+# OPTIMIZE: 需要性能优化的地方
+
+# 示例：
+# TODO: 实现药水 Buff 系统后再统一处理
+var global_speed_multiplier: float = 1.0
+
+# FIXME: 这里偶尔会除零，需要添加保护
+var ratio = total / count  # count 可能为 0
+
+# HACK: 临时方案，等相机系统重构后删除
+if camera == null:
+    camera = get_viewport().get_camera_2d()
+```
+
+### 10.2 重构优先级评估
+```
+高优先级（立即重构）：
+- 影响稳定性的问题
+- 阻碍新功能开发
+- 导致频繁 Bug
+
+中优先级（计划重构）：
+- 代码可读性差但功能正常
+- 性能可接受但有优化空间
+- 不符合最佳实践但能工作
+
+低优先级（有空再做）：
+- 纯代码风格问题
+- 微小的性能提升
+- 个人偏好差异
+```
+
+---
+
+**文档版本**: v1.0  
+**创建日期**: 2025 年 3 月 18 日  
+**执行级别**: 强制遵守（违反此规范的代码应被拒绝）  
+**维护者**: Warma Shadow Test 项目组

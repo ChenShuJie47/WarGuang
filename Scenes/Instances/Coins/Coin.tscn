@@ -1,0 +1,74 @@
+[gd_scene load_steps=12 format=3 uid="uid://dvyyx1gsopmfx"]
+
+[ext_resource type="Script" uid="uid://d2jvn2sq2nkpk" path="res://Scripts/Instances/Coins/Coin.gd" id="1_58uoq"]
+[ext_resource type="Texture2D" uid="uid://dohto6nf1nd73" path="res://Assets/Textures/UIs/new tiles 16×16-1.png" id="2_6w1vh"]
+[ext_resource type="Texture2D" uid="uid://4jbxxqn058o2" path="res://Assets/Textures/anim16×16_01-Sheet.png" id="3_uwe64"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6w1vh"]
+size = Vector2(14, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gls1n"]
+atlas = ExtResource("3_uwe64")
+region = Rect2(160, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cnjmh"]
+atlas = ExtResource("3_uwe64")
+region = Rect2(176, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qovr2"]
+atlas = ExtResource("3_uwe64")
+region = Rect2(192, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a0u0h"]
+atlas = ExtResource("3_uwe64")
+region = Rect2(208, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nhglk"]
+atlas = ExtResource("3_uwe64")
+region = Rect2(224, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uwe64"]
+atlas = ExtResource("2_6w1vh")
+region = Rect2(0, 143, 15, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_uwe64"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gls1n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cnjmh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qovr2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a0u0h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nhglk")
+}],
+"loop": false,
+"name": &"COLLECT",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uwe64")
+}],
+"loop": true,
+"name": &"IDLE",
+"speed": 5.0
+}]
+
+[node name="Coin" type="Area2D"]
+script = ExtResource("1_58uoq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+light_mask = 32
+shape = SubResource("RectangleShape2D_6w1vh")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_uwe64")
+animation = &"IDLE"

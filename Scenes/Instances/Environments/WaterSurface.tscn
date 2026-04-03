@@ -1,0 +1,60 @@
+[gd_scene load_steps=7 format=3 uid="uid://dmecyxvlsc52o"]
+
+[ext_resource type="Script" uid="uid://drdd4c0liia8h" path="res://Scripts/Instances/Environments/WaterSurface.gd" id="1_kmn52"]
+[ext_resource type="Shader" uid="uid://m6jvbmcbnxuu" path="res://Assets/Shaders/water_wave.gdshader" id="2_pmksv"]
+[ext_resource type="Script" uid="uid://bnu2kwe1y26uk" path="res://Scripts/UI/TextArea.gd" id="2_textarea"]
+[ext_resource type="Texture2D" uid="uid://dbblikr7m100j" path="res://Assets/Textures/LiZi02.png" id="2_uw5p0"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kmn52"]
+size = Vector2(200, 100)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kmn52"]
+lifetime_randomness = 0.5
+emission_shape = 2
+emission_sphere_radius = 8.0
+angle_min = -720.0
+angle_max = 720.0
+angular_velocity_min = -90.000015
+angular_velocity_max = 89.999985
+gravity = Vector3(0, -45, 0)
+linear_accel_min = -0.5000022
+linear_accel_max = 0.24999776
+scale_min = 0.5
+scale_max = 1.5
+scale_over_velocity_min = 25.0
+scale_over_velocity_max = 200.0
+color = Color(1, 1, 1, 0.78431374)
+hue_variation_min = -0.050000023
+hue_variation_max = 0.049999975
+
+[node name="WaterSurface" type="Area2D" node_paths=PackedStringArray("water_area")]
+z_index = 10
+script = ExtResource("1_kmn52")
+water_area = NodePath("WaterArea")
+water_wave_shader = ExtResource("2_pmksv")
+
+[node name="WaterVisuals" type="Node2D" parent="."]
+
+[node name="WaterPolygon" type="Polygon2D" parent="WaterVisuals"]
+color = Color(0.3, 0.6, 1, 0.3)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_kmn52")
+
+[node name="RippleParticles" type="GPUParticles2D" parent="."]
+amount = 10
+texture = ExtResource("2_uw5p0")
+lifetime = 3.0
+randomness = 0.25
+process_material = SubResource("ParticleProcessMaterial_kmn52")
+
+[node name="SplashSound" type="AudioStreamPlayer2D" parent="."]
+
+[node name="WaterArea" type="Node2D" parent="."]
+script = ExtResource("2_textarea")
+size = Vector2(200, 100)
+debug_color = Color(0.3, 0.6, 1, 0.2)
+metadata/_custom_type_script = "uid://bnu2kwe1y26uk"
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_exited" from="." to="." method="_on_body_exited"]

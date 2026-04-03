@@ -1,0 +1,124 @@
+[gd_scene load_steps=12 format=3 uid="uid://cwp2nnedkebnl"]
+
+[ext_resource type="Script" uid="uid://c8ybqtmdpgils" path="res://Scripts/UI/Scenes/SaveSelectScene.gd" id="1_6ahw5"]
+[ext_resource type="Texture2D" uid="uid://dmxv540ejjtkg" path="res://Assets/Textures/UIs/SaveSlotBlue.tres" id="2_1iexe"]
+[ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1f270cfe43cf241afc03da9724ba6479.png" id="2_283jm"]
+[ext_resource type="PackedScene" uid="uid://b81s4uybrdtsf" path="res://Scenes/UI/Scenes/DeleteConfirmDialog.tscn" id="2_axbvp"]
+[ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="3_1ibob"]
+[ext_resource type="Texture2D" uid="uid://c1v56vyheog76" path="res://Assets/Textures/UIs/SaveSlotRed.tres" id="3_283jm"]
+[ext_resource type="Texture2D" uid="uid://clqgpfc2apnc8" path="res://Assets/Textures/UIs/BackButtonWhite.tres" id="4_1iexe"]
+[ext_resource type="Texture2D" uid="uid://br01fc8kaubld" path="res://Assets/Textures/UIs/BackButtonRed.tres" id="5_283jm"]
+[ext_resource type="Texture2D" uid="uid://d2kgcg3c34q3t" path="res://Assets/Textures/UIs/box.tres" id="5_whc8i"]
+[ext_resource type="Texture2D" uid="uid://ch1fg6f6gkdg7" path="res://Assets/Textures/UIs/boxo.tres" id="6_1p21j"]
+[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="6_wcy1u"]
+
+[node name="SaveSelectScene" type="CanvasLayer"]
+script = ExtResource("1_6ahw5")
+delete_confirm_scene = ExtResource("2_axbvp")
+
+[node name="CanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.12773591, 0.12773597, 0.12773588, 1)
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(575.00006, 324)
+scale = Vector2(4.4999995, 2.53125)
+color = Color(0.6317153, 0.63171524, 0.63171524, 1)
+range_layer_min = 1
+range_layer_max = 1
+texture = ExtResource("3_1ibob")
+texture_scale = 2.0
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(576, 324)
+scale = Vector2(3, 3)
+texture = ExtResource("2_283jm")
+region_enabled = true
+region_rect = Rect2(0, 0, 384, 216)
+
+[node name="SaveSlot1" type="TextureButton" parent="."]
+offset_left = 157.0
+offset_top = 223.0
+offset_right = 343.0
+offset_bottom = 427.0
+
+[node name="EmptySlot" type="Sprite2D" parent="SaveSlot1"]
+position = Vector2(93, 102)
+scale = Vector2(6, 6)
+texture = ExtResource("2_1iexe")
+
+[node name="FilledSlot" type="Sprite2D" parent="SaveSlot1"]
+position = Vector2(93, 102)
+scale = Vector2(6, 6)
+texture = ExtResource("3_283jm")
+
+[node name="DeleteButton" type="TextureButton" parent="SaveSlot1"]
+layout_mode = 0
+offset_left = 63.0
+offset_top = 222.0
+offset_right = 80.0
+offset_bottom = 233.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("5_whc8i")
+texture_hover = ExtResource("6_1p21j")
+
+[node name="SaveSlot2" type="TextureButton" parent="."]
+offset_left = 457.0
+offset_top = 223.0
+offset_right = 643.0
+offset_bottom = 427.0
+
+[node name="EmptySlot" type="Sprite2D" parent="SaveSlot2"]
+position = Vector2(93, 102)
+scale = Vector2(6, 6)
+texture = ExtResource("2_1iexe")
+
+[node name="FilledSlot" type="Sprite2D" parent="SaveSlot2"]
+position = Vector2(93, 102)
+scale = Vector2(6, 6)
+texture = ExtResource("3_283jm")
+
+[node name="DeleteButton" type="TextureButton" parent="SaveSlot2"]
+layout_mode = 0
+offset_left = 63.0
+offset_top = 222.0
+offset_right = 80.0
+offset_bottom = 233.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("5_whc8i")
+texture_hover = ExtResource("6_1p21j")
+
+[node name="SaveSlot3" type="TextureButton" parent="."]
+offset_left = 757.0
+offset_top = 223.0
+offset_right = 943.0
+offset_bottom = 427.0
+
+[node name="EmptySlot" type="Sprite2D" parent="SaveSlot3"]
+position = Vector2(93, 102)
+scale = Vector2(6, 6)
+texture = ExtResource("2_1iexe")
+
+[node name="FilledSlot" type="Sprite2D" parent="SaveSlot3"]
+position = Vector2(93, 102)
+scale = Vector2(6, 6)
+texture = ExtResource("3_283jm")
+
+[node name="DeleteButton" type="TextureButton" parent="SaveSlot3"]
+layout_mode = 0
+offset_left = 63.0
+offset_top = 222.0
+offset_right = 80.0
+offset_bottom = 233.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("5_whc8i")
+texture_hover = ExtResource("6_1p21j")
+
+[node name="BackButton" type="TextureButton" parent="."]
+offset_left = 1085.0
+offset_top = 15.0
+offset_right = 1102.0
+offset_bottom = 26.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("4_1iexe")
+texture_pressed = ExtResource("6_wcy1u")
+texture_hover = ExtResource("5_283jm")

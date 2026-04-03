@@ -1,0 +1,472 @@
+[gd_scene load_steps=16 format=3 uid="uid://8vv4frjt0qmt"]
+
+[ext_resource type="Script" uid="uid://b8qfrtedcjp8w" path="res://Scripts/UI/Scenes/SettingsScene.gd" id="1_kwsuw"]
+[ext_resource type="Texture2D" uid="uid://cckjdme671kpv" path="res://Assets/Textures/Backgrounds/636008b4d1c452661483b69762878d2d.png" id="2_8gcs1"]
+[ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="2_tpcns"]
+[ext_resource type="Texture2D" uid="uid://clqgpfc2apnc8" path="res://Assets/Textures/UIs/BackButtonWhite.tres" id="3_mnr88"]
+[ext_resource type="Texture2D" uid="uid://dt0k8iplo1ouj" path="res://Assets/Textures/UIs/MyBalloonBackground.tres" id="4_oi1yp"]
+[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="4_tyww6"]
+[ext_resource type="Texture2D" uid="uid://br01fc8kaubld" path="res://Assets/Textures/UIs/BackButtonRed.tres" id="5_8to8h"]
+[ext_resource type="Texture2D" uid="uid://c3vxbgsr8tfou" path="res://Assets/Textures/UIs/YellowDuck_Idle.tres" id="5_tyww6"]
+[ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="5_wi6u5"]
+[ext_resource type="Texture2D" uid="uid://d2r7mg8undn5t" path="res://Assets/Textures/UIs/YellowDuck_Move.tres" id="6_vv02w"]
+[ext_resource type="Texture2D" uid="uid://qelcabiurba3" path="res://Assets/Textures/UIs/MasterVolumeSlider.tres" id="7_vv02w"]
+[ext_resource type="Script" uid="uid://78cuppapjngy" path="res://Scripts/UI/Scenes/ControlsPage.gd" id="10_oi1yp"]
+[ext_resource type="Texture2D" uid="uid://d2kgcg3c34q3t" path="res://Assets/Textures/UIs/box.tres" id="11_8to8h"]
+[ext_resource type="Texture2D" uid="uid://dig1w10wa3nij" path="res://Assets/Textures/UIs/1.tres" id="11_r0asf"]
+[ext_resource type="Texture2D" uid="uid://dsyolv1vx0smy" path="res://Assets/Textures/UIs/Apple.tres" id="12_8gcs1"]
+
+[node name="SettingsScene" type="CanvasLayer"]
+script = ExtResource("1_kwsuw")
+
+[node name="CanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.29954728, 0.29954752, 0.2995473, 1)
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+position = Vector2(576, 324)
+scale = Vector2(4.4999995, 2.53125)
+range_layer_min = 1
+range_layer_max = 100
+texture = ExtResource("2_tpcns")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(575.9999, 324)
+scale = Vector2(3, 3)
+texture = ExtResource("2_8gcs1")
+region_enabled = true
+region_rect = Rect2(0, 0, 384, 216)
+
+[node name="BackButton" type="TextureButton" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -67.0
+offset_top = 15.0
+offset_right = -50.0
+offset_bottom = 26.0
+grow_horizontal = 0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("3_mnr88")
+texture_pressed = ExtResource("4_tyww6")
+texture_hover = ExtResource("5_8to8h")
+
+[node name="SettingsRoot" type="Node2D" parent="."]
+
+[node name="TitleLabel" type="Label" parent="SettingsRoot"]
+offset_left = 483.0
+offset_top = 16.0
+offset_right = 669.0
+offset_bottom = 49.0
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 30
+text = "设          置"
+horizontal_alignment = 1
+
+[node name="AudioButton" type="TextureButton" parent="SettingsRoot"]
+offset_left = 30.0
+offset_top = 570.0
+offset_right = 98.0
+offset_bottom = 590.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("4_oi1yp")
+
+[node name="AudioLabel" type="Label" parent="SettingsRoot"]
+offset_left = 90.0
+offset_top = 585.0
+offset_right = 222.0
+offset_bottom = 618.0
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme = ExtResource("5_wi6u5")
+theme_override_colors/font_color = Color(0.00033390365, 0.0003339036, 0.00033390356, 1)
+theme_override_font_sizes/font_size = 30
+text = "音量设置"
+horizontal_alignment = 1
+
+[node name="ControlsButton" type="TextureButton" parent="SettingsRoot"]
+offset_left = 270.0
+offset_top = 570.0
+offset_right = 338.0
+offset_bottom = 590.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("4_oi1yp")
+
+[node name="ControlsLabel" type="Label" parent="SettingsRoot"]
+offset_left = 333.0
+offset_top = 585.0
+offset_right = 465.0
+offset_bottom = 618.0
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme = ExtResource("5_wi6u5")
+theme_override_colors/font_color = Color(0.00033390365, 0.0003339036, 0.00033390356, 1)
+theme_override_font_sizes/font_size = 30
+text = "按键设置"
+horizontal_alignment = 1
+
+[node name="ControlsPage" type="Node2D" parent="SettingsRoot"]
+script = ExtResource("10_oi1yp")
+
+[node name="ActionList" type="VBoxContainer" parent="SettingsRoot/ControlsPage"]
+offset_left = 75.0
+offset_top = 150.0
+offset_right = 433.0
+offset_bottom = 508.0
+theme_override_constants/separation = 20
+
+[node name="LeftAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/LeftAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "向左："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/LeftAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "A "
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/LeftAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="RightAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/RightAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "向右："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/RightAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "D "
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/RightAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="UpAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/UpAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "向上："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/UpAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "W  "
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/UpAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="DownAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DownAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "向下："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DownAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "S  "
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/DownAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="JumpAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/JumpAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "跳跃："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/JumpAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "K  "
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/JumpAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="DashAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DashAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "冲刺："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DashAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "L  "
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/DashAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="InteractiveAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/InteractiveAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "交互："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/InteractiveAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "U  "
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/InteractiveAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="DialogueNextAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DialogueNextAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "交互继续："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DialogueNextAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "Space"
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/DialogueNextAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="SuperDashAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/SuperDashAction"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "超级冲刺："
+
+[node name="KeyLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/SuperDashAction"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "O "
+
+[node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/SuperDashAction"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+texture_normal = ExtResource("11_r0asf")
+texture_pressed = ExtResource("12_8gcs1")
+texture_hover = ExtResource("4_tyww6")
+stretch_mode = 1
+
+[node name="ResetPanel" type="HBoxContainer" parent="SettingsRoot/ControlsPage"]
+offset_left = 75.0
+offset_top = 50.0
+offset_right = 375.0
+offset_bottom = 82.0
+scale = Vector2(2, 2)
+
+[node name="ResetButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ResetPanel"]
+layout_mode = 2
+texture_normal = ExtResource("11_8to8h")
+stretch_mode = 3
+
+[node name="ResetHintLabel" type="Label" parent="SettingsRoot/ControlsPage/ResetPanel"]
+layout_mode = 2
+theme = ExtResource("5_wi6u5")
+theme_override_colors/font_color = Color(1, 1, 1, 0.11764706)
+theme_override_font_sizes/font_size = 20
+text = "再按一次以重置按键映射。"
+
+[node name="ControlsHint" type="Label" parent="SettingsRoot/ControlsPage"]
+offset_left = 650.0
+offset_top = 540.0
+offset_right = 1085.0
+offset_bottom = 573.0
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 30
+text = "请按下新的按键... (ESC取消)"
+
+[node name="AudioPage" type="Node2D" parent="SettingsRoot"]
+scale = Vector2(0.75, 0.75)
+
+[node name="VolumeContainer" type="Node2D" parent="SettingsRoot/AudioPage"]
+position = Vector2(20, 50)
+
+[node name="MasterVolumeLabel" type="Label" parent="SettingsRoot/AudioPage/VolumeContainer"]
+offset_left = 75.0
+offset_top = 100.0
+offset_right = 187.0
+offset_bottom = 122.0
+scale = Vector2(2, 2)
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "主  音 量："
+
+[node name="MasterVolumeSlider" type="HSlider" parent="SettingsRoot/AudioPage/VolumeContainer/MasterVolumeLabel"]
+layout_mode = 0
+offset_left = 120.0
+offset_top = -20.0
+offset_right = 270.0
+offset_bottom = 13.0
+scale = Vector2(2, 2)
+theme_override_constants/center_grabber = 1
+theme_override_icons/grabber = ExtResource("5_tyww6")
+theme_override_icons/grabber_highlight = ExtResource("6_vv02w")
+theme_override_icons/grabber_disabled = ExtResource("5_tyww6")
+theme_override_icons/tick = ExtResource("7_vv02w")
+value = 80.0
+
+[node name="BGMVolumeLabel" type="Label" parent="SettingsRoot/AudioPage/VolumeContainer"]
+offset_left = 75.0
+offset_top = 250.0
+offset_right = 187.0
+offset_bottom = 272.0
+scale = Vector2(2, 2)
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "BGM音量："
+
+[node name="BGMVolumeSlider" type="HSlider" parent="SettingsRoot/AudioPage/VolumeContainer/BGMVolumeLabel"]
+layout_mode = 0
+offset_left = 120.0
+offset_top = -20.0
+offset_right = 270.0
+offset_bottom = 13.0
+scale = Vector2(2, 2)
+theme_override_constants/center_grabber = 1
+theme_override_icons/grabber = ExtResource("5_tyww6")
+theme_override_icons/grabber_highlight = ExtResource("6_vv02w")
+theme_override_icons/grabber_disabled = ExtResource("5_tyww6")
+theme_override_icons/tick = ExtResource("7_vv02w")
+value = 40.0
+
+[node name="SFXVolumeLabel" type="Label" parent="SettingsRoot/AudioPage/VolumeContainer"]
+offset_left = 75.0
+offset_top = 400.0
+offset_right = 185.0
+offset_bottom = 422.0
+scale = Vector2(2, 2)
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "音效音量："
+
+[node name="SFXVolumeSlider" type="HSlider" parent="SettingsRoot/AudioPage/VolumeContainer/SFXVolumeLabel"]
+layout_mode = 0
+offset_left = 120.0
+offset_top = -20.0
+offset_right = 270.0
+offset_bottom = 13.0
+scale = Vector2(2, 2)
+theme_override_constants/center_grabber = 1
+theme_override_icons/grabber = ExtResource("5_tyww6")
+theme_override_icons/grabber_highlight = ExtResource("6_vv02w")
+theme_override_icons/grabber_disabled = ExtResource("5_tyww6")
+theme_override_icons/tick = ExtResource("7_vv02w")
+value = 80.0
+
+[node name="VoiceVolumeLabel" type="Label" parent="SettingsRoot/AudioPage/VolumeContainer"]
+offset_left = 75.0
+offset_top = 550.0
+offset_right = 185.0
+offset_bottom = 572.0
+scale = Vector2(2, 2)
+theme = ExtResource("5_wi6u5")
+theme_override_font_sizes/font_size = 20
+text = "角色音量："
+
+[node name="VoiceVolumeSlider" type="HSlider" parent="SettingsRoot/AudioPage/VolumeContainer/VoiceVolumeLabel"]
+layout_mode = 0
+offset_left = 120.0
+offset_top = -20.0
+offset_right = 270.0
+offset_bottom = 13.0
+scale = Vector2(2, 2)
+theme_override_constants/center_grabber = 1
+theme_override_icons/grabber = ExtResource("5_tyww6")
+theme_override_icons/grabber_highlight = ExtResource("6_vv02w")
+theme_override_icons/grabber_disabled = ExtResource("5_tyww6")
+theme_override_icons/tick = ExtResource("7_vv02w")
+value = 80.0

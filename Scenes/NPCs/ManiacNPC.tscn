@@ -1,0 +1,133 @@
+[gd_scene load_steps=20 format=3 uid="uid://bjlvqrcplff4s"]
+
+[ext_resource type="Script" uid="uid://dusdsdd6jnj1s" path="res://Scripts/NPCs/ManiacNPC.gd" id="1_canhq"]
+[ext_resource type="Resource" uid="uid://bxd34rllgoej0" path="res://Assets/Configs/ManiacStage1Config.tres" id="2_s6wss"]
+[ext_resource type="Resource" uid="uid://dy6aoo3vv8biq" path="res://Assets/Configs/ManiacStage2Config.tres" id="3_05pru"]
+[ext_resource type="Resource" path="res://Assets/Configs/ManiacStage3Config.tres" id="3_stage3"]
+[ext_resource type="Texture2D" uid="uid://bx0ye7xrni3ix" path="res://Assets/Textures/NPCs/9a9a3147ec18946ac8f53c26d0099d1c.png" id="3_sybhg"]
+[ext_resource type="PackedScene" uid="uid://cx4dhxum88xak" path="res://Scenes/UI/ChallengeCounter.tscn" id="4_tnbqt"]
+[ext_resource type="Texture2D" uid="uid://dohto6nf1nd73" path="res://Assets/Textures/UIs/new tiles 16×16-1.png" id="4_umv6y"]
+[ext_resource type="Resource" uid="uid://6xq44tqbudix" path="res://Assets/Dialogues/ManiacDialogue.dialogue" id="5_4nbwd"]
+[ext_resource type="PackedScene" uid="uid://f7j6a5p8vguo" path="res://Scenes/UI/MyBalloon.tscn" id="6_ojyfu"]
+[ext_resource type="PackedScene" uid="uid://dq4jgo8v4l7kq" path="res://Scenes/Instances/Afterimage.tscn" id="7_afterimage"]
+[ext_resource type="Script" uid="uid://bw1fmebkjwy7o" path="res://Scripts/Components/AfterimageTrail.gd" id="8_afterimagetrail"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mu5ov"]
+atlas = ExtResource("3_sybhg")
+region = Rect2(224, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wg43d"]
+atlas = ExtResource("3_sybhg")
+region = Rect2(160, 160, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6k2lj"]
+atlas = ExtResource("3_sybhg")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sybhg"]
+atlas = ExtResource("3_sybhg")
+region = Rect2(192, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_umv6y"]
+atlas = ExtResource("3_sybhg")
+region = Rect2(192, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s6wss"]
+atlas = ExtResource("3_sybhg")
+region = Rect2(0, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_05pru"]
+atlas = ExtResource("3_sybhg")
+region = Rect2(128, 64, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fvu2l"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mu5ov")
+}],
+"loop": true,
+"name": &"AMAZED",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wg43d")
+}],
+"loop": true,
+"name": &"GOFANATICAL",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6k2lj")
+}],
+"loop": true,
+"name": &"IDLE",
+"speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sybhg")
+}],
+"loop": true,
+"name": &"IMPRESSED",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_umv6y")
+}],
+"loop": true,
+"name": &"MOVE",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s6wss")
+}],
+"loop": true,
+"name": &"STUNNED",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_05pru")
+}],
+"loop": true,
+"name": &"TALK",
+"speed": 4.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g62kn"]
+size = Vector2(22, 25)
+
+[node name="ManiacNPC" type="Area2D"]
+script = ExtResource("1_canhq")
+challenge_config = ExtResource("2_s6wss")
+stage2_challenge_config = ExtResource("3_05pru")
+stage3_challenge_config = ExtResource("3_stage3")
+challenge_ui_scene = ExtResource("4_tnbqt")
+afterimage_scene = ExtResource("7_afterimage")
+dialogue_resource = ExtResource("5_4nbwd")
+balloon_scene = ExtResource("6_ojyfu")
+
+[node name="AfterimageTrail" type="Node2D" parent="."]
+script = ExtResource("8_afterimagetrail")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_fvu2l")
+animation = &"GOFANATICAL"
+frame_progress = 0.3634001
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+light_mask = 33
+position = Vector2(0, -0.5)
+shape = SubResource("RectangleShape2D_g62kn")
+
+[node name="InteractionPrompt" type="Sprite2D" parent="."]
+position = Vector2(0, -17)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("4_umv6y")
+region_enabled = true
+region_rect = Rect2(96, 144, 17, 11)

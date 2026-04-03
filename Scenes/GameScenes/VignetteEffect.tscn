@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://bq2thpcuuy615"]
+
+[ext_resource type="Script" uid="uid://ien7avxpy8ek" path="res://Scripts/GameScenes/VignetteEffect.gd" id="1_ty0r0"]
+[ext_resource type="Shader" uid="uid://bkb8geaof3nxx" path="res://Scenes/GameScenes/VignetteEffect.gdshader" id="2_c3y4c"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hyeq7"]
+shader = ExtResource("2_c3y4c")
+shader_parameter/intensity = 0.0
+shader_parameter/color = Color(0, 0, 0, 1)
+shader_parameter/inner_radius = 0.3
+shader_parameter/outer_radius = 0.8
+
+[node name="VignetteEffect" type="CanvasLayer"]
+script = ExtResource("1_ty0r0")
+
+[node name="VignetteRect" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_hyeq7")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0)

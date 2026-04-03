@@ -1,0 +1,57 @@
+[gd_scene load_steps=6 format=3 uid="uid://b81s4uybrdtsf"]
+
+[ext_resource type="Script" uid="uid://g5mcy2rrpi1j" path="res://Scripts/UI/Scenes/DeleteConfirmDialog.gd" id="1_8trha"]
+[ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="2_s464x"]
+[ext_resource type="Texture2D" uid="uid://d2kgcg3c34q3t" path="res://Assets/Textures/UIs/box.tres" id="3_jublw"]
+[ext_resource type="Texture2D" uid="uid://ch1fg6f6gkdg7" path="res://Assets/Textures/UIs/boxo.tres" id="4_80f74"]
+[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="4_jublw"]
+
+[node name="DeleteConfirmDialog" type="CanvasLayer"]
+layer = 50
+script = ExtResource("1_8trha")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = 270.0
+offset_top = 137.0
+offset_right = 469.0
+offset_bottom = 264.0
+scale = Vector2(3, 3)
+color = Color(0, 0, 0, 0.5529412)
+
+[node name="DialogPanel" type="Panel" parent="Background"]
+layout_mode = 0
+offset_left = 6.6666718
+offset_top = 9.0
+offset_right = 189.66669
+offset_bottom = 119.0
+
+[node name="Message" type="Label" parent="Background/DialogPanel"]
+layout_mode = 0
+offset_left = 13.666667
+offset_top = 10.666667
+offset_right = 167.66667
+offset_bottom = 39.666668
+theme = ExtResource("2_s464x")
+theme_override_font_sizes/font_size = 20
+text = "是否删除存档？"
+
+[node name="ButtonContainer" type="HBoxContainer" parent="Background/DialogPanel"]
+layout_mode = 1
+offset_left = 13.333334
+offset_top = 62.333336
+offset_right = 87.66668
+offset_bottom = 77.333336
+scale = Vector2(2, 2)
+
+[node name="ConfirmButton" type="TextureButton" parent="Background/DialogPanel/ButtonContainer"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+texture_normal = ExtResource("3_jublw")
+texture_hover = ExtResource("4_80f74")
+texture_disabled = ExtResource("3_jublw")
+
+[node name="CancelButton" type="TextureButton" parent="Background/DialogPanel/ButtonContainer"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+texture_normal = ExtResource("4_jublw")
+stretch_mode = 3

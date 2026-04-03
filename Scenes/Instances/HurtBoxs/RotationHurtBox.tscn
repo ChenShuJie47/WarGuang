@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://jycjg4kaigun"]
+
+[ext_resource type="Script" uid="uid://bb4j2tx7680s8" path="res://Scripts/Instances/HurtBoxs/RotationHurtBox.gd" id="1_d4ko3"]
+[ext_resource type="Texture2D" uid="uid://bqh8rnopioeeo" path="res://Assets/Textures/Tiles/new tiles 8×8-01.png" id="2_i0k6e"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_aoy7i"]
+size = Vector2(68.09813, 4.137596)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_d4ko3"]
+size = Vector2(6, 96)
+
+[node name="RotationHurtBox" type="Area2D"]
+script = ExtResource("1_d4ko3")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(3, 3)
+texture = ExtResource("2_i0k6e")
+region_enabled = true
+region_rect = Rect2(16, 48, 32, 32)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+light_mask = 8
+position = Vector2(-5.722046e-06, 1.9073486e-06)
+scale = Vector2(1.4097307, 1.4501173)
+shape = SubResource("RectangleShape2D_aoy7i")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="."]
+light_mask = 8
+shape = SubResource("RectangleShape2D_d4ko3")

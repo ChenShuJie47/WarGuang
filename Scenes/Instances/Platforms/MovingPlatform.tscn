@@ -1,0 +1,53 @@
+[gd_scene load_steps=7 format=3 uid="uid://dkk1cgmjjmav7"]
+
+[ext_resource type="Script" uid="uid://bvbqmfh4sxacl" path="res://Scripts/Instances/Platforms/MovingPlatform.gd" id="1_5hvv5"]
+[ext_resource type="Texture2D" uid="uid://bqh8rnopioeeo" path="res://Assets/Textures/Tiles/new tiles 8×8-01.png" id="2_5hvv5"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_msjxt"]
+atlas = ExtResource("2_5hvv5")
+region = Rect2(0, 14, 8, 2)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5s885"]
+atlas = ExtResource("2_5hvv5")
+region = Rect2(24, 14, 8, 2)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_3tan2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_msjxt")
+}],
+"loop": true,
+"name": &"IDLE",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5s885")
+}],
+"loop": true,
+"name": &"MOVE",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_h0pqx"]
+size = Vector2(80, 20)
+
+[node name="MovingPlatform" type="CharacterBody2D"]
+collision_layer = 2
+script = ExtResource("1_5hvv5")
+move_speed = null
+start_offset = null
+end_offset = null
+wait_time = null
+acceleration_time = null
+deceleration_time = null
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(10, 10)
+sprite_frames = SubResource("SpriteFrames_3tan2")
+animation = &"IDLE"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+light_mask = 2
+shape = SubResource("RectangleShape2D_h0pqx")

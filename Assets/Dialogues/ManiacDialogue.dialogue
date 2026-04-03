@@ -1,0 +1,127 @@
+~ start
+
+# ==================== 最高优先级：检查挑战失败 ====================
+# 如果上次挑战失败了且还没完成第一阶段，直接给重试机会
+if Global.maniac_last_challenge_failed and not Global.maniac_challenge_completed
+    => failed_dialogue
+
+# 如果第二次挑战失败了，给重试机会
+if Global.maniac_stage2_last_challenge_failed and not Global.maniac_stage2_challenge_completed
+    => stage2_failed_dialogue
+
+# 如果第三次挑战失败了，给重试机会
+if Global.maniac_stage3_last_challenge_failed and not Global.maniac_stage3_challenge_completed
+    => stage3_failed_dialogue
+
+# ==================== 检查是否第一次交互 ====================
+if TaskManager.get_npc_dialogue_count("maniac_01") == 0
+    => first_interaction
+else
+    => subsequent_interaction
+
+# ==================== 第一次交互 ====================
+~ first_interaction
+
+# 修复：记录第一次交互
+do TaskManager.record_npc_dialogue("maniac_01")
+
+"疯子":！！！
+沃玛:你好？
+"疯子":你！？别来打扰我！
+沃玛:我是来挑战的...
+
+# 检查二段跳
+if Global.unlocked_abilities.get("double_jump", false)
+    => has_double_jump_first
+else
+    => no_double_jump_first
+
+~ has_double_jump_first
+
+"疯子":给你尝试的机会。
+do npc.launch_challenge()
+=> END
+
+~ no_double_jump_first
+
+"疯子":你！看起来弱不禁风。
+=> END
+
+# ==================== 后续交互 ====================
+~ subsequent_interaction
+
+# 检查是否已经完成第二阶段
+if Global.maniac_stage3_challenge_completed
+    => post_stage3_challenge
+
+# 检查是否已经完成第二阶段
+if Global.maniac_stage2_challenge_completed
+    => post_stage2_challenge
+
+# 检查是否已经完成第一阶段
+if Global.maniac_challenge_completed
+    => post_challenge
+
+# 检查是否有二段跳
+if Global.unlocked_abilities.get("double_jump", false)
+    => ready_for_challenge
+else
+    => still_weak
+
+~ still_weak
+
+"疯子":离开！
+=> END
+
+~ ready_for_challenge
+
+"疯子":有点变化...可以给你尝试的机会。
+do npc.launch_challenge()
+=> END
+
+# ==================== 特殊分支：第一阶段挑战失败后重试 ====================
+~ failed_dialogue
+
+"疯子":如我所料，再给你一次机会...
+do npc.launch_challenge()
+=> END
+
+# ==================== 特殊分支：已完成第一阶段，开启第二阶段 ====================
+~ post_challenge
+
+"疯子":一般水平吧...
+"疯子":你肯定不能完成接下来的挑战
+"疯子":不过...既然你想继续
+"疯子":那就给你试试更高级别的挑战...
+do npc.launch_stage2_challenge()
+=> END
+
+# ==================== 特殊分支：第二阶段挑战失败后重试 ====================
+~ stage2_failed_dialogue
+
+"疯子":看来你第一级挑战的成功纯属偶然啊...
+"疯子":可以再给你一次机会
+do npc.launch_stage2_challenge()
+=> END
+
+# ==================== 特殊分支：已完成第二阶段 ====================
+~ post_stage2_challenge
+
+"疯子":居然第二级挑战都成功了...稍微让我感到意外...
+"疯子":既然你还没放弃，那就试试第三级挑战...
+do npc.launch_stage3_challenge()
+=> END
+
+# ==================== 特殊分支：第三阶段挑战失败后重试 ====================
+~ stage3_failed_dialogue
+
+"疯子":还差得远...第三级再试一次吧。
+do npc.launch_stage3_challenge()
+=> END
+
+# ==================== 特殊分支：已完成第三阶段 ====================
+~ post_stage3_challenge
+
+"疯子":第三级也过了...你比我预想得更强。
+"疯子":后续挑战等我准备好再说。
+=> END

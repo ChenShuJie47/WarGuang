@@ -1,0 +1,10 @@
+~ start
+
+if TaskManager.get_npc_dialogue_count("npc4") == 0
+	    Player: 你是？！
+	    NPC: 是沃玛啊。
+	    do TaskManager.complete_task("unlock_black_dash")
+	    => END
+else
+	    NPC: 你都掌握了。
+	    => END

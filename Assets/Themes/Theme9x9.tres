@@ -1,0 +1,6 @@
+[gd_resource type="Theme" load_steps=2 format=3 uid="uid://x6qv7hs1dfnn"]
+
+[ext_resource type="FontFile" uid="uid://doiq1klof33ds" path="res://Assets/Themes/Theme9x9.ttf" id="1_gowpo"]
+
+[resource]
+default_font = ExtResource("1_gowpo")

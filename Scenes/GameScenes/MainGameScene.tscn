@@ -1,0 +1,71 @@
+[gd_scene load_steps=11 format=3 uid="uid://b03jaomk2cnqd"]
+
+[ext_resource type="Script" uid="uid://bgd4cnk4b8qrx" path="res://Scripts/GameScenes/MainGameScene.gd" id="1_dcv5v"]
+[ext_resource type="PackedScene" uid="uid://dwj2ydwabq3n0" path="res://Scenes/Player/Player.tscn" id="1_wdg0h"]
+[ext_resource type="PackedScene" uid="uid://kkrfw8yl08js" path="res://Scenes/Player/PlayerUI.tscn" id="2_4xi3m"]
+[ext_resource type="PackedScene" uid="uid://dmmevbmmo24d7" path="res://Scenes/GameScenes/Room1.tscn" id="3_mvl1i"]
+[ext_resource type="PackedScene" uid="uid://dbiq0bp6upwiq" path="res://Scenes/GameScenes/Room2.tscn" id="4_mvl1i"]
+[ext_resource type="PackedScene" uid="uid://cytmqowp6nqi7" path="res://Scenes/GameScenes/Room3.tscn" id="5_545fw"]
+[ext_resource type="PackedScene" uid="uid://cpl4se47i7uk6" path="res://Scenes/GameScenes/RoomDream10.tscn" id="6_rbrij"]
+[ext_resource type="PackedScene" uid="uid://bq2thpcuuy615" path="res://Scenes/GameScenes/VignetteEffect.tscn" id="8_jbabp"]
+[ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="18_iaaki"]
+
+[sub_resource type="Environment" id="Environment_jbabp"]
+
+[node name="MainGameScene" type="Node2D"]
+script = ExtResource("1_dcv5v")
+
+[node name="GlobalCanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.9406359, 0.94063586, 0.94063574, 1)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_jbabp")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+physics_interpolation_mode = 1
+position = Vector2(287, -41)
+zoom = Vector2(2.5, 2.5)
+process_callback = 0
+limit_enabled = false
+limit_left = -2000
+limit_top = -2000
+limit_right = 2000
+limit_bottom = 2000
+position_smoothing_speed = 8.0
+editor_draw_limits = true
+
+[node name="PhantomCameraHost" type="Node" parent="Camera2D"]
+process_priority = 300
+process_physics_priority = 300
+script = ExtResource("18_iaaki")
+
+[node name="RoomContainer" type="Node2D" parent="."]
+
+[node name="Room1" parent="RoomContainer" instance=ExtResource("3_mvl1i")]
+
+[node name="Room2" parent="RoomContainer" instance=ExtResource("4_mvl1i")]
+position = Vector2(3676, -17)
+
+[node name="Room3" parent="RoomContainer" instance=ExtResource("5_545fw")]
+position = Vector2(-2777, -1)
+
+[node name="Room4" parent="RoomContainer" instance=ExtResource("6_rbrij")]
+position = Vector2(146, 996)
+
+[node name="Player" parent="." instance=ExtResource("1_wdg0h")]
+position = Vector2(287, -41)
+
+[node name="PlayerUI" parent="." instance=ExtResource("2_4xi3m")]
+health_unit_spacing = 70.0
+health_unit_start_x = 0.0
+health_unit_y = 0.0
+coin_increment_delay = 1.5
+coin_hide_delay = 2.0
+coin_fade_duration = 0.5
+coin_change_interval_slow = 0.2
+coin_change_interval_mod = 0.05
+coin_change_interval_fast = 0.02
+save_label_show_duration = 2.0
+save_label_fade_duration = 0.5
+
+[node name="VignetteEffect" parent="." instance=ExtResource("8_jbabp")]

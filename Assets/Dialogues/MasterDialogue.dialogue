@@ -1,0 +1,20 @@
+~ first_meeting
+
+大师：我已经传授了你大部分技巧。
+do EventBus.emit_signal("dash_unlocked")
+do EventBus.emit_signal("double_jump_unlocked")
+do EventBus.emit_signal("glide_unlocked")
+do EventBus.emit_signal("wall_grip_unlocked")
+do EventBus.emit_signal("super_dash_unlocked")
+=> END
+
+~ second_meeting
+
+大师：现在，你已掌握所有技巧。
+do EventBus.emit_signal("black_dash_unlocked")
+=> END
+
+~ no_more_teachings
+
+大师：我已经没有什么能教你的了。
+=> END

@@ -1,0 +1,19 @@
+{
+  "servers": {
+    "godotiq": {
+      "command": "uvx",
+      "args": ["godotiq"],
+      "env": {
+        "GODOTIQ_PROJECT_ROOT": "D:\\Tools\\GameTools\\GODOT\\GodotGames\\warma-shadow-test"
+      }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "godot-docs": {
+      "command": "npx",
+      "args": ["@nuskey8/godot-docs-mcp@latest", "-y"]
+    }
+  }
+}

@@ -1,0 +1,47 @@
+[gd_scene load_steps=9 format=3 uid="uid://ti5ndmbw2337"]
+
+[ext_resource type="Script" uid="uid://0r1sd45ghf8l" path="res://Scripts/UI/Scenes/GameSettingScene.gd" id="1_vf3dq"]
+[ext_resource type="PackedScene" uid="uid://8vv4frjt0qmt" path="res://Scenes/UI/Scenes/SettingsScene.tscn" id="2_aemly"]
+[ext_resource type="Texture2D" uid="uid://bqh8rnopioeeo" path="res://Assets/Textures/Tiles/new tiles 8×8-01.png" id="2_hkahs"]
+[ext_resource type="Texture2D" uid="uid://clqgpfc2apnc8" path="res://Assets/Textures/UIs/BackButtonWhite.tres" id="3_w2175"]
+[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="4_uxd06"]
+[ext_resource type="Texture2D" uid="uid://br01fc8kaubld" path="res://Assets/Textures/UIs/BackButtonRed.tres" id="5_yhqj4"]
+[ext_resource type="Texture2D" uid="uid://bxkepjh3g6h5r" path="res://Assets/Textures/UIs/Shark1.tres" id="6_aemly"]
+[ext_resource type="Texture2D" uid="uid://bjtn70vsad0r7" path="res://Assets/Textures/UIs/warma.tres" id="7_aemly"]
+
+[node name="GameSettingScene" type="CanvasLayer"]
+script = ExtResource("1_vf3dq")
+settings_scene_resource = ExtResource("2_aemly")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(542, 346)
+scale = Vector2(59.00001, 38.750004)
+texture = ExtResource("2_hkahs")
+region_enabled = true
+region_rect = Rect2(0, 8, 8, 8)
+
+[node name="ContinueButton" type="TextureButton" parent="."]
+offset_left = 712.0
+offset_top = 199.0
+offset_right = 729.0
+offset_bottom = 210.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("3_w2175")
+texture_pressed = ExtResource("5_yhqj4")
+texture_hover = ExtResource("4_uxd06")
+
+[node name="SettingsButton" type="TextureButton" parent="."]
+offset_left = 364.0
+offset_top = 302.00003
+offset_right = 392.0
+offset_bottom = 332.00003
+scale = Vector2(5, 5)
+texture_normal = ExtResource("6_aemly")
+
+[node name="MainMenuButton" type="TextureButton" parent="."]
+offset_left = 602.0
+offset_top = 290.0
+offset_right = 622.0
+offset_bottom = 313.0
+scale = Vector2(6, 6)
+texture_normal = ExtResource("7_aemly")

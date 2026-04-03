@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cne63bnortpsx"]
+
+[ext_resource type="Script" uid="uid://bjicq4453uj5h" path="res://Scripts/Managers/TimerControlManager.gd" id="1_timer_control"]
+
+[node name="TimerControlManager" type="Node"]
+script = ExtResource("1_timer_control")

@@ -1,0 +1,102 @@
+[gd_scene load_steps=12 format=3 uid="uid://h0kyvxadfyys"]
+
+[ext_resource type="Script" uid="uid://dlnhn12wstg44" path="res://Scripts/Player/HealthUnit.gd" id="1_ddyvn"]
+[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="2_lb7it"]
+[ext_resource type="Texture2D" uid="uid://dsyolv1vx0smy" path="res://Assets/Textures/UIs/Apple.tres" id="4_pjbqo"]
+[ext_resource type="Texture2D" uid="uid://bxb8iqy5ueokq" path="res://Assets/Textures/UIs/health_empty.png" id="5_871ls"]
+[ext_resource type="Texture2D" uid="uid://br01fc8kaubld" path="res://Assets/Textures/UIs/BackButtonRed.tres" id="6_r7uek"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o3ubt"]
+atlas = ExtResource("2_lb7it")
+region = Rect2(0, 0, 17, 11)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cc5f1"]
+atlas = ExtResource("4_pjbqo")
+region = Rect2(0, 0, 13, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_igmv5"]
+atlas = ExtResource("4_pjbqo")
+region = Rect2(0, 0, 13, 15)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kv2ou"]
+atlas = ExtResource("5_871ls")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_la5pp"]
+atlas = ExtResource("6_r7uek")
+region = Rect2(0, 0, 17, 11)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_uasog"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o3ubt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o3ubt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o3ubt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o3ubt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o3ubt")
+}],
+"loop": false,
+"name": &"ADD",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cc5f1")
+}],
+"loop": true,
+"name": &"HAVE",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_igmv5")
+}],
+"loop": true,
+"name": &"LASTHAVE",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kv2ou")
+}],
+"loop": true,
+"name": &"NULL",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_la5pp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_la5pp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_la5pp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_la5pp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_la5pp")
+}],
+"loop": false,
+"name": &"REDUCE",
+"speed": 3.0
+}]
+
+[node name="HealthUnit" type="Node2D"]
+scale = Vector2(3, 3)
+script = ExtResource("1_ddyvn")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_uasog")
+animation = &"NULL"

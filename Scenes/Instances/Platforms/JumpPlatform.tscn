@@ -1,0 +1,66 @@
+[gd_scene load_steps=9 format=3 uid="uid://bxvaxvss2h54j"]
+
+[ext_resource type="Script" uid="uid://blvd2wk4ga47q" path="res://Scripts/Instances/Platforms/JumpPlatform.gd" id="1_44iju"]
+[ext_resource type="Texture2D" uid="uid://bqh8rnopioeeo" path="res://Assets/Textures/Tiles/new tiles 8×8-01.png" id="2_r2pb1"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eoxan"]
+atlas = ExtResource("2_r2pb1")
+region = Rect2(48, 16, 8, 4)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cqxt0"]
+atlas = ExtResource("2_r2pb1")
+region = Rect2(48, 24, 8, 4)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bmr04"]
+atlas = ExtResource("2_r2pb1")
+region = Rect2(48, 16, 8, 4)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u6b7b"]
+atlas = ExtResource("2_r2pb1")
+region = Rect2(48, 4, 8, 4)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_dtr26"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eoxan")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cqxt0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bmr04")
+}],
+"loop": true,
+"name": &"CYCLE",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u6b7b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u6b7b")
+}],
+"loop": false,
+"name": &"TOUCH",
+"speed": 3.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n7v7h"]
+size = Vector2(8, 4)
+
+[node name="JumpPlatform" type="Area2D"]
+scale = Vector2(4, 4)
+script = ExtResource("1_44iju")
+vertical_force = 900.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(4, 1)
+sprite_frames = SubResource("SpriteFrames_dtr26")
+animation = &"TOUCH"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+light_mask = 8
+scale = Vector2(4, 1)
+shape = SubResource("RectangleShape2D_n7v7h")
