@@ -2915,6 +2915,41 @@ func sync_phantom_camera_after_teleport() -> void:
 		phantom_camera.global_position = global_position + phantom_camera.follow_offset
 	phantom_camera.teleport_position()
 
+## 强制同步相机位置到玩家位置，忽略限制用于传送后
+func force_sync_camera_position_after_teleport() -> void:
+	var camera = get_viewport().get_camera_2d()
+	if not camera or not phantom_camera:
+		return
+	
+	# 计算期望的相机位置（中心对齐玩家 + offset）
+	var desired_center = global_position + phantom_camera.follow_offset
+	var viewport_size = get_viewport_rect().size
+	var desired_position = desired_center - viewport_size / 2
+	
+	# 临时禁用限制，设置位置
+	var original_limits_enabled = camera.limit_sides_enabled
+	var original_left = camera.limit_left
+	var original_top = camera.limit_top
+	var original_right = camera.limit_right
+	var original_bottom = camera.limit_bottom
+	
+	print("DEBUG: 传送后强制同步相机 - 玩家位置:", global_position, " 期望相机位置:", desired_position, " 限制:", original_left, ",", original_top, ",", original_right, ",", original_bottom)
+	
+	camera.limit_sides_enabled = false
+	camera.global_position = desired_position
+	
+	# 等待一帧应用
+	await get_tree().process_frame
+	
+	# 恢复限制（这会clamp相机位置）
+	camera.limit_left = original_left
+	camera.limit_top = original_top
+	camera.limit_right = original_right
+	camera.limit_bottom = original_bottom
+	camera.limit_sides_enabled = original_limits_enabled
+	
+	print("DEBUG: 相机位置设置后:", camera.global_position)
+
 #endregion
 
 ##Hit Stop 相关函数集
