@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="ChallengeConfig" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ChallengeConfig" load_steps=3 format=3 uid="uid://du82tvnhv0588"]
 
-[ext_resource type="Script" path="res://Scripts/Resources/ChallengeConfig.gd" id="1_cfg"]
-[ext_resource type="PackedScene" path="res://Scenes/Instances/ChallengeJumpBoxs/ChallengeMoveJumpBox.tscn" id="2_jumpbox"]
+[ext_resource type="Script" uid="uid://cjrjaqyt0i28c" path="res://Scripts/Resources/ChallengeConfig.gd" id="1_cfg"]
+[ext_resource type="PackedScene" uid="uid://cju2c48fydgly" path="res://Scenes/Instances/ChallengeJumpBoxs/ChallengeMoveJumpBox.tscn" id="2_jumpbox"]
 
 [resource]
 script = ExtResource("1_cfg")

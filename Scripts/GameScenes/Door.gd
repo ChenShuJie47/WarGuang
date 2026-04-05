@@ -88,10 +88,12 @@ func teleport_player(player):
 	await get_tree().physics_frame
 	if player.has_method("sync_phantom_camera_after_teleport"):
 		player.sync_phantom_camera_after_teleport()
+	if player.has_method("force_sync_camera_position_after_teleport"):
+		await player.force_sync_camera_position_after_teleport()
 	if player.has_method("start_camera_transition_guard"):
 		player.start_camera_transition_guard(0.18)
 	
-	# 关键新增：同步后额外等待一帧，让 PhantomCameraHost 更新 Camera2D
+	# 同步后额外等待一帧，让 PhantomCameraHost 更新 Camera2D
 	await get_tree().physics_frame
 	
 	# 3. 黑屏等待（相机已在上一段完成切换，此处仅保持全黑时长）
