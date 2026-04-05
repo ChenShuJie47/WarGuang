@@ -19,6 +19,7 @@ enum DamageType {
 const TARGET_FPS: float = 60.0                    # 目标帧率（与 physics_ticks_per_second 一致）
 const FIXED_DELTA: float = 1.0 / TARGET_FPS       # 固定时间步长 = 0.01667 秒
 const MAX_FRAME_TIME: float = 1.0 / 30.0          # 最大帧时间（30FPS 下限，防止卡顿时代码逻辑过快）
+const CAMERA_LIMIT_DISABLED: int = 10000000       # 禁用相机限制时使用的极大边界值（与 PhantomCamera2D 默认值一致）
 
 ## 节点引用
 @onready var right_wall_ray = $WallRays/RightWallRay
@@ -2926,8 +2927,7 @@ func force_sync_camera_position_after_teleport() -> void:
 	var viewport_size = get_viewport_rect().size
 	var desired_position = desired_center - viewport_size / 2
 	
-	# 临时禁用限制，设置位置
-	var original_limits_enabled = camera.limit_sides_enabled
+	# 保存原始限制
 	var original_left = camera.limit_left
 	var original_top = camera.limit_top
 	var original_right = camera.limit_right
@@ -2935,7 +2935,11 @@ func force_sync_camera_position_after_teleport() -> void:
 	
 	print("DEBUG: 传送后强制同步相机 - 玩家位置:", global_position, " 期望相机位置:", desired_position, " 限制:", original_left, ",", original_top, ",", original_right, ",", original_bottom)
 	
-	camera.limit_sides_enabled = false
+	# 临时设置极大限制范围，使相机可以自由移动到目标位置
+	camera.limit_left = -CAMERA_LIMIT_DISABLED
+	camera.limit_top = -CAMERA_LIMIT_DISABLED
+	camera.limit_right = CAMERA_LIMIT_DISABLED
+	camera.limit_bottom = CAMERA_LIMIT_DISABLED
 	camera.global_position = desired_position
 	
 	# 等待一帧应用
@@ -2946,7 +2950,6 @@ func force_sync_camera_position_after_teleport() -> void:
 	camera.limit_top = original_top
 	camera.limit_right = original_right
 	camera.limit_bottom = original_bottom
-	camera.limit_sides_enabled = original_limits_enabled
 	
 	print("DEBUG: 相机位置设置后:", camera.global_position)
 
