@@ -11,9 +11,5 @@
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/"
     },
-    "godot-docs": {
-      "command": "node",
-      "args": ["C:/Users/hzw71/AppData/Roaming/npm/node_modules/@nuskey8/godot-docs-mcp/index.js"]
-    }
   }
 }
