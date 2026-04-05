@@ -1,5 +1,7 @@
 extends Node
 
+const CAMERA_LIMIT_DISABLED: int = 10000000  # 禁用相机限制时使用的极大边界值（与 PhantomCamera2D 默认值一致）
+
 # 在变量声明部分添加
 var global_canvas_modulate: CanvasModulate = null
 
@@ -177,7 +179,11 @@ func update_camera_limits():
 			player_camera.limit_right = camera_limits.end.x
 			player_camera.limit_bottom = camera_limits.end.y
 		else:
-			player_camera.limit_sides_enabled = false
+			# 重置为默认的极大限制范围（相当于禁用限制）
+			player_camera.limit_left = -CAMERA_LIMIT_DISABLED
+			player_camera.limit_top = -CAMERA_LIMIT_DISABLED
+			player_camera.limit_right = CAMERA_LIMIT_DISABLED
+			player_camera.limit_bottom = CAMERA_LIMIT_DISABLED
 
 ## 设置玩家引用
 func set_player(player: Node):
