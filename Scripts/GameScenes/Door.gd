@@ -86,12 +86,10 @@ func teleport_player(player):
 	# 等场景树与物理一帧，使房间显隐、相机限制与变换就绪后再同步相机（仍处在全黑中）
 	await get_tree().process_frame
 	await get_tree().physics_frame
-	if player.has_method("sync_phantom_camera_after_teleport"):
+	if player.has_method("sync_camera_after_room_teleport"):
+		player.sync_camera_after_room_teleport()
+	elif player.has_method("sync_phantom_camera_after_teleport"):
 		player.sync_phantom_camera_after_teleport()
-	if player.has_method("force_sync_camera_position_after_teleport"):
-		await player.force_sync_camera_position_after_teleport()
-	if player.has_method("start_camera_transition_guard"):
-		player.start_camera_transition_guard(0.18)
 	
 	# 同步后额外等待一帧，让 PhantomCameraHost 更新 Camera2D
 	await get_tree().physics_frame
