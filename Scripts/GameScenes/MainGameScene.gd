@@ -65,11 +65,11 @@ func _load_from_save():
 	if the_player:
 		# 保险：再同步一次相机，避免首帧竞态
 		await get_tree().process_frame
-		if the_player.has_method("sync_phantom_camera_after_teleport"):
+		if the_player.has_method("sync_camera_after_room_teleport"):
+			the_player.sync_camera_after_room_teleport()
+		elif the_player.has_method("sync_phantom_camera_after_teleport"):
 			the_player.sync_phantom_camera_after_teleport()
 		_snap_camera_to_player_immediately(the_player)
-		if the_player.has_method("start_camera_transition_guard"):
-			the_player.start_camera_transition_guard(0.22)
 		await get_tree().physics_frame
 		
 		# 使用传送伤害的禁用时间，也是存档进入游戏开始时的禁用时间

@@ -20,6 +20,7 @@ const TARGET_FPS: float = 60.0                    # 目标帧率（与 physics_t
 const FIXED_DELTA: float = 1.0 / TARGET_FPS       # 固定时间步长 = 0.01667 秒
 const MAX_FRAME_TIME: float = 1.0 / 30.0          # 最大帧时间（30FPS 下限，防止卡顿时代码逻辑过快）
 const CAMERA_LIMIT_DISABLED: int = 10000000       # 禁用相机限制时使用的极大边界值（与 PhantomCamera2D 默认值一致）
+const CAMERA_TELEPORT_DEBUG: bool = false
 
 ## 节点引用
 @onready var right_wall_ray = $WallRays/RightWallRay
@@ -339,6 +340,8 @@ var original_camera_position: Vector2 = Vector2.ZERO  # 相机原始位置，用
 var camera_transition_guard_timer: float = 0.0
 var camera_transition_guard_active: bool = false
 var camera_transition_dead_zone_backup: Vector2 = Vector2(0.125, 0.1)
+var camera_transition_guard_elapsed: float = 0.0
+var camera_transition_guard_min_duration: float = 0.12
 
 ## 奔跑检测相关
 var last_move_input_time: float = 0.0           # 记录最后移动输入时间，用于快速双击检测
@@ -2880,41 +2883,116 @@ func reset_camera_position():
 		tween.set_ease(camera_offset_ease_type)
 		tween.tween_property(phantom_camera, "follow_offset", Vector2.ZERO, camera_offset_transition_duration)
 
-func start_camera_transition_guard(duration: float = 0.18) -> void:
+func start_camera_transition_guard(duration: float = 0.18, max_duration: float = 1.0) -> void:
+	# 兼容旧调用：当前改为无副作用保护窗，避免 dead-zone 来回切换引发边界抖动
 	if not phantom_camera:
 		return
-	if not camera_transition_guard_active:
-		camera_transition_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
 	camera_transition_guard_active = true
-	camera_transition_guard_timer = maxf(duration, 0.01)
-	# 传送后的短保护窗：临时放大死区，避免边界附近首帧误跟随
-	phantom_camera.dead_zone_width = 1.0
-	phantom_camera.dead_zone_height = 1.0
-	if phantom_camera.has_method("teleport_position"):
-		phantom_camera.teleport_position()
+	camera_transition_guard_elapsed = 0.0
+	camera_transition_guard_min_duration = maxf(duration, 0.01)
+	camera_transition_guard_timer = maxf(max_duration, camera_transition_guard_min_duration)
 
 func _update_camera_transition_guard(fixed_delta: float) -> void:
 	if not camera_transition_guard_active:
 		return
+	camera_transition_guard_elapsed += fixed_delta
 	camera_transition_guard_timer -= fixed_delta
-	if camera_transition_guard_timer > 0.0:
+	if camera_transition_guard_elapsed < camera_transition_guard_min_duration and camera_transition_guard_timer > 0.0:
 		return
 	camera_transition_guard_active = false
+
+
+func sync_camera_after_room_teleport() -> void:
 	if not phantom_camera:
 		return
-	phantom_camera.dead_zone_width = camera_transition_dead_zone_backup.x
-	phantom_camera.dead_zone_height = camera_transition_dead_zone_backup.y
+
+	var camera := get_viewport().get_camera_2d()
+	# 传送前清理残余震动，避免 camera.offset 在新房间首帧造成“抖一下”
+	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
+		CameraShakeManager.stop_shake(phantom_camera)
+	if camera:
+		camera.offset = Vector2.ZERO
+
+	var desired_center: Vector2 = global_position + phantom_camera.follow_offset
+	var clamped_center := _clamp_camera_center_by_limits(desired_center, phantom_camera, camera)
+
+	phantom_camera.global_position = clamped_center
 	if phantom_camera.has_method("teleport_position"):
 		phantom_camera.teleport_position()
 
+	if camera:
+		camera.global_position = clamped_center
+		if camera.has_method("reset_smoothing"):
+			camera.reset_smoothing()
+		if camera.has_method("reset_physics_interpolation"):
+			camera.reset_physics_interpolation()
+
+	if CAMERA_TELEPORT_DEBUG:
+		print("[CameraTeleportSync] desired=", desired_center, " clamped=", clamped_center)
+
+
+func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: Camera2D) -> Vector2:
+	if pcam == null:
+		return target_center
+
+	var limit_left: float = float(int(pcam.get("limit_left")))
+	var limit_top: float = float(int(pcam.get("limit_top")))
+	var limit_right: float = float(int(pcam.get("limit_right")))
+	var limit_bottom: float = float(int(pcam.get("limit_bottom")))
+
+	if limit_left <= -CAMERA_LIMIT_DISABLED + 1 and limit_right >= CAMERA_LIMIT_DISABLED - 1 and limit_top <= -CAMERA_LIMIT_DISABLED + 1 and limit_bottom >= CAMERA_LIMIT_DISABLED - 1:
+		return target_center
+
+	var viewport_size: Vector2 = get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return target_center
+
+	var zoom: Vector2 = Vector2.ONE
+	if camera:
+		zoom = camera.zoom
+	elif pcam.has_method("get_zoom"):
+		zoom = pcam.get_zoom()
+
+	var half_w: float = viewport_size.x * 0.5 / zoom.x
+	var half_h: float = viewport_size.y * 0.5 / zoom.y
+
+	var min_x: float = limit_left + half_w
+	var max_x: float = limit_right - half_w
+	var min_y: float = limit_top + half_h
+	var max_y: float = limit_bottom - half_h
+
+	# 当房间可视范围小于屏幕时，锁到中点，避免 clamp 反转导致抖动
+	if min_x > max_x:
+		min_x = (limit_left + limit_right) * 0.5
+		max_x = min_x
+	if min_y > max_y:
+		min_y = (limit_top + limit_bottom) * 0.5
+		max_y = min_y
+
+	return Vector2(clampf(target_center.x, min_x, max_x), clampf(target_center.y, min_y, max_y))
+
+func _is_player_inside_normal_camera_dead_zone() -> bool:
+	if not phantom_camera:
+		return true
+	var target: Node2D = phantom_camera.follow_target
+	if not target:
+		target = self
+	var viewport_size: Vector2 = get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return true
+
+	var viewport_position: Vector2 = (target.get_global_transform_with_canvas().get_origin() + phantom_camera.follow_offset) / viewport_size
+	var half_w := camera_transition_dead_zone_backup.x * 0.5
+	var half_h := camera_transition_dead_zone_backup.y * 0.5
+	var inside_x := viewport_position.x >= (0.5 - half_w) and viewport_position.x <= (0.5 + half_w)
+	var inside_y := viewport_position.y >= (0.5 - half_h) and viewport_position.y <= (0.5 + half_h)
+	if CAMERA_TELEPORT_DEBUG:
+		print("[CameraGuard] viewport=", viewport_position, " inside=", inside_x and inside_y)
+	return inside_x and inside_y
+
 ## 门传送等瞬移后调用：同步 PhantomCamera2D 与 Camera2D，修复 FRAMED 死区与视口坐标一帧不一致
 func sync_phantom_camera_after_teleport() -> void:
-	if not phantom_camera or not phantom_camera.has_method("teleport_position"):
-		return
-	# FRAMED：先把虚拟相机对齐到跟随点，再 teleport，减轻「旧视口 vs 新坐标」一帧错位（须在黑屏内调用）
-	if phantom_camera.follow_mode == PhantomCamera2D.FollowMode.FRAMED:
-		phantom_camera.global_position = global_position + phantom_camera.follow_offset
-	phantom_camera.teleport_position()
+	sync_camera_after_room_teleport()
 
 ## 强制同步相机位置到玩家位置，忽略限制用于传送后
 func force_sync_camera_position_after_teleport() -> void:
@@ -2922,10 +3000,9 @@ func force_sync_camera_position_after_teleport() -> void:
 	if not camera or not phantom_camera:
 		return
 	
-	# 计算期望的相机位置（中心对齐玩家 + offset）
+	# 计算期望的相机位置（Camera2D 的 global_position 就是中心点）
 	var desired_center = global_position + phantom_camera.follow_offset
-	var viewport_size = get_viewport_rect().size
-	var desired_position = desired_center - viewport_size / 2
+	var desired_position = desired_center
 	
 	# 保存原始限制
 	var original_left = camera.limit_left
@@ -2933,7 +3010,8 @@ func force_sync_camera_position_after_teleport() -> void:
 	var original_right = camera.limit_right
 	var original_bottom = camera.limit_bottom
 	
-	print("DEBUG: 传送后强制同步相机 - 玩家位置:", global_position, " 期望相机位置:", desired_position, " 限制:", original_left, ",", original_top, ",", original_right, ",", original_bottom)
+	if CAMERA_TELEPORT_DEBUG:
+		print("DEBUG: 传送后强制同步相机 - 玩家位置:", global_position, " 期望相机位置:", desired_position, " 限制:", original_left, ",", original_top, ",", original_right, ",", original_bottom)
 	
 	# 临时设置极大限制范围，使相机可以自由移动到目标位置
 	camera.limit_left = -CAMERA_LIMIT_DISABLED
@@ -2951,7 +3029,8 @@ func force_sync_camera_position_after_teleport() -> void:
 	camera.limit_right = original_right
 	camera.limit_bottom = original_bottom
 	
-	print("DEBUG: 相机位置设置后:", camera.global_position)
+	if CAMERA_TELEPORT_DEBUG:
+		print("DEBUG: 相机位置设置后:", camera.global_position)
 
 #endregion
 
