@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://svg0nqkaksx4"]
+[gd_scene load_steps=22 format=3 uid="uid://svg0nqkaksx4"]
 
 [ext_resource type="Script" uid="uid://o2ydc1bxasd2" path="res://Scripts/Instances/JumpBoxs/MovingJumpBox.gd" id="1_sx4gy"]
 [ext_resource type="Texture2D" uid="uid://4jbxxqn058o2" path="res://Assets/Textures/anim16×16_01-Sheet.png" id="2_mc2it"]
@@ -26,13 +26,13 @@ region = Rect2(208, 0, 16, 16)
 atlas = ExtResource("2_mc2it")
 region = Rect2(224, 0, 16, 16)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_1vcpc"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_63jv4"]
 atlas = ExtResource("2_mc2it")
-region = Rect2(128, 0, 16, 16)
+region = Rect2(224, 0, 16, 16)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_owj81"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_egnjw"]
 atlas = ExtResource("2_mc2it")
-region = Rect2(144, 0, 16, 16)
+region = Rect2(208, 0, 16, 16)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bbvj5"]
 atlas = ExtResource("2_mc2it")
@@ -66,6 +66,14 @@ region = Rect2(96, 0, 16, 16)
 atlas = ExtResource("2_mc2it")
 region = Rect2(112, 0, 16, 16)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_1vcpc"]
+atlas = ExtResource("2_mc2it")
+region = Rect2(128, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_owj81"]
+atlas = ExtResource("2_mc2it")
+region = Rect2(144, 0, 16, 16)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_j8rjy"]
 animations = [{
 "frames": [{
@@ -90,14 +98,28 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_1vcpc")
+"texture": SubResource("AtlasTexture_63jv4")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_owj81")
+"texture": SubResource("AtlasTexture_egnjw")
 }],
 "loop": true,
-"name": &"FLY",
+"name": &"NO",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ko278")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gdqoh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sx4gy")
+}],
+"loop": false,
+"name": &"NY_TRANSITION",
+"speed": 6.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -127,6 +149,31 @@ animations = [{
 "loop": false,
 "name": &"START",
 "speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1vcpc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_owj81")
+}],
+"loop": true,
+"name": &"YES",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sx4gy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gdqoh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ko278")
+}],
+"loop": false,
+"name": &"YN_TRANSITION",
+"speed": 6.0
 }]
 
 [node name="MovingJumpBox" type="Area2D"]
@@ -139,4 +186,4 @@ shape = SubResource("RectangleShape2D_5g173")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_j8rjy")
-animation = &"FLY"
+animation = &"YN_TRANSITION"
