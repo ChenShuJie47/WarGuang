@@ -13,14 +13,24 @@ var camera_transition_dead_zone_backup: Vector2 = Vector2(0.125, 0.1)
 var camera_transition_guard_elapsed: float = 0.0
 var camera_transition_guard_min_duration: float = 0.12
 var camera_transition_axis_lock_backup: int = 0
+var setup_completed: bool = false
 
 func setup(player_ref: Player) -> void:
 	player = player_ref
 	phantom_camera = player.get_node_or_null("PhantomCamera2D")
 	if phantom_camera:
+		if phantom_camera.follow_target == null:
+			phantom_camera.follow_target = player
 		camera_transition_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
+	setup_completed = true
 
 func physics_process(fixed_delta: float) -> void:
+	if not setup_completed:
+		return
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
+		return
 	_update_camera_transition_guard(fixed_delta)
 
 func reset_camera_position() -> void:
@@ -62,8 +72,14 @@ func _update_camera_transition_guard(fixed_delta: float) -> void:
 		print("[CameraGuard] lock end elapsed=", camera_transition_guard_elapsed, " timeout_left=", camera_transition_guard_timer)
 
 func sync_camera_after_room_teleport() -> void:
+	if not setup_completed:
+		return
 	if not player or not phantom_camera:
 		return
+	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
+		return
+	if phantom_camera.follow_target == null:
+		phantom_camera.follow_target = player
 
 	var camera := player.get_viewport().get_camera_2d()
 	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
@@ -91,7 +107,11 @@ func sync_camera_after_room_teleport() -> void:
 	start_camera_transition_guard(0.10, 0.65)
 
 func force_sync_camera_position_after_teleport() -> void:
+	if not setup_completed:
+		return
 	if not player or not phantom_camera:
+		return
+	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
 		return
 	var camera = player.get_viewport().get_camera_2d()
 	if not camera:

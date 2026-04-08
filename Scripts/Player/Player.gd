@@ -456,7 +456,7 @@ func _ready():
 	if phantom_camera:
 		original_camera_position = phantom_camera.position
 	if camera_controller and camera_controller.has_method("setup"):
-		camera_controller.setup(self)
+		camera_controller.call_deferred("setup", self)
 	
 	# 查找VignetteEffect
 	find_vignette_effect()
@@ -874,15 +874,9 @@ func handle_dash_timers(fixed_delta):
 #region Signals
 
 func handle_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed):
-	# 在所有空中状态中检查是否可以攀墙
-	if (current_state == PlayerState.JUMP or current_state == PlayerState.DOWN) and \
-	   !is_on_floor() and is_touching_wall and wall_grip_unlocked:
-		
-		# 检查是否按住向墙方向
-		var toward_wall = (move_input > 0 and wall_direction == 1) or (move_input < 0 and wall_direction == -1)
-		if toward_wall:
-			start_wallgrip()
-			return
+	# 统一空中转墙附着入口，避免 JUMP/DOWN/GLIDE/WALLJUMP 判定分散。
+	if _try_enter_wallgrip_from_air(move_input):
+		return
 	
 	if wall_grip_reverse_timer_node.time_left > 0 and jump_just_pressed:
 		# 在缓冲时间内按跳跃键，触发普通完整二段跳
@@ -925,6 +919,23 @@ func handle_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump
 			handle_wallgrip_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
 		PlayerState.WALLJUMP:
 			handle_walljump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
+
+func _try_enter_wallgrip_from_air(move_input: float) -> bool:
+	if is_on_floor() or not wall_grip_unlocked or not is_touching_wall:
+		return false
+
+	if current_state != PlayerState.JUMP and current_state != PlayerState.DOWN and current_state != PlayerState.GLIDE and current_state != PlayerState.WALLJUMP:
+		return false
+
+	if current_state == PlayerState.WALLJUMP and not can_reattach_to_wall:
+		return false
+
+	var toward_wall = (move_input > 0 and wall_direction == 1) or (move_input < 0 and wall_direction == -1)
+	if not toward_wall:
+		return false
+
+	start_wallgrip()
+	return current_state == PlayerState.WALLGRIP
 
 func handle_idle_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
 	# 首先检查是否可以切换到特殊状态
@@ -1568,11 +1579,14 @@ func handle_wallgrip_state(fixed_delta, move_input, jump_just_pressed, _jump_pre
 	if try_double_jump(jump_just_pressed):
 		return
 
-func handle_walljump_state(fixed_delta, move_input, _jump_just_pressed, jump_pressed, _jump_just_released, dash_just_pressed):
-	# 删除未使用的参数
+func handle_walljump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, _jump_just_released, dash_just_pressed):
 	
 	# 冲刺检测
 	if try_dash(dash_just_pressed):
+		return
+
+	# 墙跳阶段允许二段跳接续，避免墙跳后偶发二段跳失效。
+	if try_double_jump(jump_just_pressed):
 		return
 	
 	wall_jump_timer += fixed_delta
@@ -2604,6 +2618,9 @@ func start_wallgrip():
 	if wall_grip_unlocked and is_touching_wall and !is_on_floor() and can_reattach_to_wall:
 		# 停止反方向跳跃缓冲计时器
 		wall_grip_reverse_timer_node.stop()
+		# 进入攀墙时同步清理滑翔标记，防止状态残留阻塞后续转移。
+		is_gliding = false
+		glide_timer = 0.0
 		# 立即切换状态和动画
 		change_state(PlayerState.WALLGRIP)
 		velocity.y = 0
