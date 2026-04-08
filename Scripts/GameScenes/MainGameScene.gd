@@ -30,10 +30,6 @@ func _ready():
 	
 	await get_tree().process_frame
 	await get_tree().process_frame
-	var camera_host = $Camera2D/PhantomCameraHost
-	if camera_host:
-		camera_host.process_priority = -100
-		camera_host.process_physics_priority = -100
 	
 	RoomManager.auto_calculate_room_connections()
 	
