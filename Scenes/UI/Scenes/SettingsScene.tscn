@@ -1,26 +1,47 @@
-[gd_scene load_steps=16 format=3 uid="uid://8vv4frjt0qmt"]
+[gd_scene load_steps=29 format=3 uid="uid://8vv4frjt0qmt"]
 
 [ext_resource type="Script" uid="uid://b8qfrtedcjp8w" path="res://Scripts/UI/Scenes/SettingsScene.gd" id="1_kwsuw"]
-[ext_resource type="Texture2D" uid="uid://cckjdme671kpv" path="res://Assets/Textures/Backgrounds/636008b4d1c452661483b69762878d2d.png" id="2_8gcs1"]
+[ext_resource type="Texture2D" uid="uid://cckjdme671kpv" path="res://Assets/Textures/Backgrounds/3.png" id="2_8gcs1"]
 [ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="2_tpcns"]
-[ext_resource type="Texture2D" uid="uid://clqgpfc2apnc8" path="res://Assets/Textures/UIs/BackButtonWhite.tres" id="3_mnr88"]
-[ext_resource type="Texture2D" uid="uid://dt0k8iplo1ouj" path="res://Assets/Textures/UIs/MyBalloonBackground.tres" id="4_oi1yp"]
-[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="4_tyww6"]
-[ext_resource type="Texture2D" uid="uid://br01fc8kaubld" path="res://Assets/Textures/UIs/BackButtonRed.tres" id="5_8to8h"]
-[ext_resource type="Texture2D" uid="uid://c3vxbgsr8tfou" path="res://Assets/Textures/UIs/YellowDuck_Idle.tres" id="5_tyww6"]
+[ext_resource type="Texture2D" uid="uid://bv4wcsihjxeaa" path="res://Assets/Textures/UIs/SceneUIs/关闭1.tres" id="4_vx36v"]
+[ext_resource type="Texture2D" uid="uid://kxm2uujj5ma4" path="res://Assets/Textures/UIs/SceneUIs/关闭3.tres" id="5_bvn5r"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="5_wi6u5"]
-[ext_resource type="Texture2D" uid="uid://d2r7mg8undn5t" path="res://Assets/Textures/UIs/YellowDuck_Move.tres" id="6_vv02w"]
-[ext_resource type="Texture2D" uid="uid://qelcabiurba3" path="res://Assets/Textures/UIs/MasterVolumeSlider.tres" id="7_vv02w"]
+[ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/关闭2.tres" id="6_pn2j1"]
+[ext_resource type="Texture2D" uid="uid://clsfxo3yvpw85" path="res://Assets/Textures/UIs/SceneUIs/音量设置1.tres" id="8_rwgsd"]
+[ext_resource type="Texture2D" uid="uid://1s1p4qb2ylw1" path="res://Assets/Textures/UIs/SceneUIs/音量设置3.tres" id="9_vx36v"]
+[ext_resource type="Texture2D" uid="uid://drw5t7db5y62a" path="res://Assets/Textures/UIs/SceneUIs/音量设置2.tres" id="10_bvn5r"]
 [ext_resource type="Script" uid="uid://78cuppapjngy" path="res://Scripts/UI/Scenes/ControlsPage.gd" id="10_oi1yp"]
-[ext_resource type="Texture2D" uid="uid://d2kgcg3c34q3t" path="res://Assets/Textures/UIs/box.tres" id="11_8to8h"]
-[ext_resource type="Texture2D" uid="uid://dig1w10wa3nij" path="res://Assets/Textures/UIs/1.tres" id="11_r0asf"]
-[ext_resource type="Texture2D" uid="uid://dsyolv1vx0smy" path="res://Assets/Textures/UIs/Apple.tres" id="12_8gcs1"]
+[ext_resource type="Texture2D" uid="uid://ctxsxvklddrjj" path="res://Assets/Textures/UIs/SceneUIs/按键设置1.tres" id="11_pn2j1"]
+[ext_resource type="Texture2D" uid="uid://bfmrxf2530tkm" path="res://Assets/Textures/UIs/SceneUIs/按键设置3.tres" id="12_hlh84"]
+[ext_resource type="Texture2D" uid="uid://dq50bsyyfm8iu" path="res://Assets/Textures/UIs/SceneUIs/按键设置2.tres" id="13_houfj"]
+[ext_resource type="Texture2D" uid="uid://byvir3m2iyxib" path="res://Assets/Textures/UIs/SceneUIs/画面设置1.tres" id="14_ppuk0"]
+[ext_resource type="Texture2D" uid="uid://mwsdo3dlldy8" path="res://Assets/Textures/UIs/SceneUIs/画面设置3.tres" id="15_leam6"]
+[ext_resource type="Texture2D" uid="uid://eubxxblcwaux" path="res://Assets/Textures/UIs/SceneUIs/画面设置2.tres" id="16_ihv7n"]
+[ext_resource type="Texture2D" uid="uid://myf1ynvvcbp" path="res://Assets/Textures/UIs/SceneUIs/更改映射1.tres" id="18_ppuk0"]
+[ext_resource type="Texture2D" uid="uid://brcgevaq6ummn" path="res://Assets/Textures/UIs/SceneUIs/更改映射3.tres" id="19_leam6"]
+[ext_resource type="Texture2D" uid="uid://vduid6lfejtn" path="res://Assets/Textures/UIs/SceneUIs/更改映射2.tres" id="20_ihv7n"]
+[ext_resource type="Texture2D" uid="uid://xygjp77wxevl" path="res://Assets/Textures/UIs/SceneUIs/回退1.tres" id="21_pn2j1"]
+[ext_resource type="Texture2D" uid="uid://40v6kkfpqldt" path="res://Assets/Textures/UIs/SceneUIs/回退3.tres" id="22_hlh84"]
+[ext_resource type="Texture2D" uid="uid://duklbrpm0cx67" path="res://Assets/Textures/UIs/SceneUIs/回退2.tres" id="23_houfj"]
+[ext_resource type="Texture2D" uid="uid://bxip4ialo0qsl" path="res://Assets/Textures/UIs/SceneUIs/音量滑块1.tres" id="24_houfj"]
+[ext_resource type="Texture2D" uid="uid://dolaxw8vcjj6y" path="res://Assets/Textures/UIs/SceneUIs/音量滑块2.tres" id="25_ppuk0"]
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_tpcns"]
+color = Color(0.19607843, 0.15686275, 0.11764706, 1)
+thickness = 3
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_inflj"]
+color = Color(1, 1, 0.78431374, 1)
+thickness = 3
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_3bdlu"]
+color = Color(0, 0.5882353, 0, 1)
 
 [node name="SettingsScene" type="CanvasLayer"]
 script = ExtResource("1_kwsuw")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="."]
-color = Color(0.29954728, 0.29954752, 0.2995473, 1)
+color = Color(0.66656864, 0.6665687, 0.6665685, 1)
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(576, 324)
@@ -40,83 +61,77 @@ region_rect = Rect2(0, 0, 384, 216)
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -67.0
-offset_top = 15.0
-offset_right = -50.0
-offset_bottom = 26.0
+offset_left = -57.0
+offset_top = 5.0
+offset_right = -40.0
+offset_bottom = 21.0
 grow_horizontal = 0
 scale = Vector2(3, 3)
-texture_normal = ExtResource("3_mnr88")
-texture_pressed = ExtResource("4_tyww6")
-texture_hover = ExtResource("5_8to8h")
+texture_normal = ExtResource("4_vx36v")
+texture_pressed = ExtResource("5_bvn5r")
+texture_hover = ExtResource("6_pn2j1")
 
 [node name="SettingsRoot" type="Node2D" parent="."]
 
 [node name="TitleLabel" type="Label" parent="SettingsRoot"]
-offset_left = 483.0
-offset_top = 16.0
-offset_right = 669.0
-offset_bottom = 49.0
+offset_left = 399.0
+offset_top = 22.0
+offset_right = 585.0
+offset_bottom = 55.0
+scale = Vector2(2, 2)
 size_flags_horizontal = 4
 size_flags_vertical = 0
 theme = ExtResource("5_wi6u5")
 theme_override_font_sizes/font_size = 30
-text = "设          置"
+text = "设       置"
 horizontal_alignment = 1
 
 [node name="AudioButton" type="TextureButton" parent="SettingsRoot"]
 offset_left = 30.0
 offset_top = 570.0
-offset_right = 98.0
-offset_bottom = 590.0
+offset_right = 78.0
+offset_bottom = 586.0
 scale = Vector2(3, 3)
-texture_normal = ExtResource("4_oi1yp")
-
-[node name="AudioLabel" type="Label" parent="SettingsRoot"]
-offset_left = 90.0
-offset_top = 585.0
-offset_right = 222.0
-offset_bottom = 618.0
-size_flags_horizontal = 4
-size_flags_vertical = 0
-theme = ExtResource("5_wi6u5")
-theme_override_colors/font_color = Color(0.00033390365, 0.0003339036, 0.00033390356, 1)
-theme_override_font_sizes/font_size = 30
-text = "音量设置"
-horizontal_alignment = 1
+texture_normal = ExtResource("8_rwgsd")
+texture_pressed = ExtResource("9_vx36v")
+texture_hover = ExtResource("10_bvn5r")
+texture_disabled = ExtResource("9_vx36v")
 
 [node name="ControlsButton" type="TextureButton" parent="SettingsRoot"]
-offset_left = 270.0
+offset_left = 210.0
 offset_top = 570.0
-offset_right = 338.0
-offset_bottom = 590.0
+offset_right = 258.0
+offset_bottom = 586.0
 scale = Vector2(3, 3)
-texture_normal = ExtResource("4_oi1yp")
+texture_normal = ExtResource("11_pn2j1")
+texture_pressed = ExtResource("12_hlh84")
+texture_hover = ExtResource("13_houfj")
+texture_disabled = ExtResource("12_hlh84")
 
-[node name="ControlsLabel" type="Label" parent="SettingsRoot"]
-offset_left = 333.0
-offset_top = 585.0
-offset_right = 465.0
-offset_bottom = 618.0
-size_flags_horizontal = 4
-size_flags_vertical = 0
-theme = ExtResource("5_wi6u5")
-theme_override_colors/font_color = Color(0.00033390365, 0.0003339036, 0.00033390356, 1)
-theme_override_font_sizes/font_size = 30
-text = "按键设置"
-horizontal_alignment = 1
+[node name="GraphicsButton" type="TextureButton" parent="SettingsRoot"]
+offset_left = 390.0
+offset_top = 570.0
+offset_right = 438.0
+offset_bottom = 586.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("14_ppuk0")
+texture_pressed = ExtResource("15_leam6")
+texture_hover = ExtResource("16_ihv7n")
+texture_disabled = ExtResource("15_leam6")
 
 [node name="ControlsPage" type="Node2D" parent="SettingsRoot"]
+visible = false
 script = ExtResource("10_oi1yp")
 
 [node name="ActionList" type="VBoxContainer" parent="SettingsRoot/ControlsPage"]
-offset_left = 75.0
+offset_left = 30.0
 offset_top = 150.0
-offset_right = 433.0
-offset_bottom = 508.0
-theme_override_constants/separation = 20
+offset_right = 530.0
+offset_bottom = 516.0
+theme_override_constants/separation = 12
 
 [node name="LeftAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(500, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/LeftAction"]
@@ -134,14 +149,15 @@ theme_override_font_sizes/font_size = 20
 text = "A "
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/LeftAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
 [node name="RightAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/RightAction"]
@@ -159,14 +175,15 @@ theme_override_font_sizes/font_size = 20
 text = "D "
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/RightAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
 [node name="UpAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/UpAction"]
@@ -184,14 +201,15 @@ theme_override_font_sizes/font_size = 20
 text = "W  "
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/UpAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
 [node name="DownAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DownAction"]
@@ -209,14 +227,15 @@ theme_override_font_sizes/font_size = 20
 text = "S  "
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/DownAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
 [node name="JumpAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/JumpAction"]
@@ -234,14 +253,15 @@ theme_override_font_sizes/font_size = 20
 text = "K  "
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/JumpAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
 [node name="DashAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DashAction"]
@@ -259,14 +279,15 @@ theme_override_font_sizes/font_size = 20
 text = "L  "
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/DashAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
 [node name="InteractiveAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/InteractiveAction"]
@@ -284,14 +305,15 @@ theme_override_font_sizes/font_size = 20
 text = "U  "
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/InteractiveAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
 [node name="DialogueNextAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/DialogueNextAction"]
@@ -309,14 +331,15 @@ theme_override_font_sizes/font_size = 20
 text = "Space"
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/DialogueNextAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
 [node name="SuperDashAction" type="HBoxContainer" parent="SettingsRoot/ControlsPage/ActionList"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="SettingsRoot/ControlsPage/ActionList/SuperDashAction"]
@@ -334,52 +357,65 @@ theme_override_font_sizes/font_size = 20
 text = "O "
 
 [node name="RemapButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ActionList/SuperDashAction"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(96, 32)
 layout_mode = 2
-texture_normal = ExtResource("11_r0asf")
-texture_pressed = ExtResource("12_8gcs1")
-texture_hover = ExtResource("4_tyww6")
-stretch_mode = 1
+texture_normal = ExtResource("18_ppuk0")
+texture_pressed = ExtResource("19_leam6")
+texture_hover = ExtResource("20_ihv7n")
+stretch_mode = 0
 
-[node name="ResetPanel" type="HBoxContainer" parent="SettingsRoot/ControlsPage"]
-offset_left = 75.0
-offset_top = 50.0
-offset_right = 375.0
-offset_bottom = 82.0
-scale = Vector2(2, 2)
+[node name="ResetHintLabel2" type="Label" parent="SettingsRoot/ControlsPage"]
+offset_left = 30.0
+offset_top = 110.0
+offset_right = 140.0
+offset_bottom = 132.0
+theme = ExtResource("5_wi6u5")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "映射重置："
 
-[node name="ResetButton" type="TextureButton" parent="SettingsRoot/ControlsPage/ResetPanel"]
-layout_mode = 2
-texture_normal = ExtResource("11_8to8h")
+[node name="ResetButton" type="TextureButton" parent="SettingsRoot/ControlsPage"]
+offset_left = 149.0
+offset_top = 91.0
+offset_right = 165.0
+offset_bottom = 107.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("21_pn2j1")
+texture_pressed = ExtResource("22_hlh84")
+texture_hover = ExtResource("23_houfj")
 stretch_mode = 3
 
-[node name="ResetHintLabel" type="Label" parent="SettingsRoot/ControlsPage/ResetPanel"]
-layout_mode = 2
+[node name="ResetHintLabel" type="Label" parent="SettingsRoot/ControlsPage"]
+offset_left = 220.0
+offset_top = 110.0
+offset_right = 484.0
+offset_bottom = 132.0
 theme = ExtResource("5_wi6u5")
-theme_override_colors/font_color = Color(1, 1, 1, 0.11764706)
+theme_override_colors/font_color = Color(1, 1, 1, 0.60784316)
 theme_override_font_sizes/font_size = 20
 text = "再按一次以重置按键映射。"
 
 [node name="ControlsHint" type="Label" parent="SettingsRoot/ControlsPage"]
-offset_left = 650.0
-offset_top = 540.0
-offset_right = 1085.0
-offset_bottom = 573.0
+offset_left = 548.0
+offset_top = 510.0
+offset_right = 839.0
+offset_bottom = 532.0
 theme = ExtResource("5_wi6u5")
-theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(1, 1, 1, 0.60784316)
+theme_override_font_sizes/font_size = 20
 text = "请按下新的按键... (ESC取消)"
 
 [node name="AudioPage" type="Node2D" parent="SettingsRoot"]
 scale = Vector2(0.75, 0.75)
 
 [node name="VolumeContainer" type="Node2D" parent="SettingsRoot/AudioPage"]
-position = Vector2(20, 50)
+position = Vector2(0, 50)
 
 [node name="MasterVolumeLabel" type="Label" parent="SettingsRoot/AudioPage/VolumeContainer"]
 offset_left = 75.0
-offset_top = 100.0
+offset_top = 130.0
 offset_right = 187.0
-offset_bottom = 122.0
+offset_bottom = 152.0
 scale = Vector2(2, 2)
 theme = ExtResource("5_wi6u5")
 theme_override_font_sizes/font_size = 20
@@ -388,16 +424,18 @@ text = "主  音 量："
 [node name="MasterVolumeSlider" type="HSlider" parent="SettingsRoot/AudioPage/VolumeContainer/MasterVolumeLabel"]
 layout_mode = 0
 offset_left = 120.0
-offset_top = -20.0
+offset_top = -3.0
 offset_right = 270.0
-offset_bottom = 13.0
+offset_bottom = 15.0
 scale = Vector2(2, 2)
-theme_override_constants/center_grabber = 1
-theme_override_icons/grabber = ExtResource("5_tyww6")
-theme_override_icons/grabber_highlight = ExtResource("6_vv02w")
-theme_override_icons/grabber_disabled = ExtResource("5_tyww6")
-theme_override_icons/tick = ExtResource("7_vv02w")
-value = 80.0
+theme_override_icons/grabber = ExtResource("24_houfj")
+theme_override_icons/grabber_highlight = ExtResource("25_ppuk0")
+theme_override_styles/slider = SubResource("StyleBoxLine_tpcns")
+theme_override_styles/grabber_area = SubResource("StyleBoxLine_inflj")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxLine_3bdlu")
+value = 60.0
+rounded = true
+ticks_on_borders = true
 
 [node name="BGMVolumeLabel" type="Label" parent="SettingsRoot/AudioPage/VolumeContainer"]
 offset_left = 75.0
@@ -412,16 +450,18 @@ text = "BGM音量："
 [node name="BGMVolumeSlider" type="HSlider" parent="SettingsRoot/AudioPage/VolumeContainer/BGMVolumeLabel"]
 layout_mode = 0
 offset_left = 120.0
-offset_top = -20.0
+offset_top = -3.0
 offset_right = 270.0
-offset_bottom = 13.0
+offset_bottom = 15.0
 scale = Vector2(2, 2)
-theme_override_constants/center_grabber = 1
-theme_override_icons/grabber = ExtResource("5_tyww6")
-theme_override_icons/grabber_highlight = ExtResource("6_vv02w")
-theme_override_icons/grabber_disabled = ExtResource("5_tyww6")
-theme_override_icons/tick = ExtResource("7_vv02w")
-value = 40.0
+theme_override_icons/grabber = ExtResource("24_houfj")
+theme_override_icons/grabber_highlight = ExtResource("25_ppuk0")
+theme_override_styles/slider = SubResource("StyleBoxLine_tpcns")
+theme_override_styles/grabber_area = SubResource("StyleBoxLine_inflj")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxLine_3bdlu")
+value = 60.0
+rounded = true
+ticks_on_borders = true
 
 [node name="SFXVolumeLabel" type="Label" parent="SettingsRoot/AudioPage/VolumeContainer"]
 offset_left = 75.0
@@ -436,16 +476,18 @@ text = "音效音量："
 [node name="SFXVolumeSlider" type="HSlider" parent="SettingsRoot/AudioPage/VolumeContainer/SFXVolumeLabel"]
 layout_mode = 0
 offset_left = 120.0
-offset_top = -20.0
+offset_top = -3.0
 offset_right = 270.0
-offset_bottom = 13.0
+offset_bottom = 15.0
 scale = Vector2(2, 2)
-theme_override_constants/center_grabber = 1
-theme_override_icons/grabber = ExtResource("5_tyww6")
-theme_override_icons/grabber_highlight = ExtResource("6_vv02w")
-theme_override_icons/grabber_disabled = ExtResource("5_tyww6")
-theme_override_icons/tick = ExtResource("7_vv02w")
-value = 80.0
+theme_override_icons/grabber = ExtResource("24_houfj")
+theme_override_icons/grabber_highlight = ExtResource("25_ppuk0")
+theme_override_styles/slider = SubResource("StyleBoxLine_tpcns")
+theme_override_styles/grabber_area = SubResource("StyleBoxLine_inflj")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxLine_3bdlu")
+value = 60.0
+rounded = true
+ticks_on_borders = true
 
 [node name="VoiceVolumeLabel" type="Label" parent="SettingsRoot/AudioPage/VolumeContainer"]
 offset_left = 75.0
@@ -460,13 +502,15 @@ text = "角色音量："
 [node name="VoiceVolumeSlider" type="HSlider" parent="SettingsRoot/AudioPage/VolumeContainer/VoiceVolumeLabel"]
 layout_mode = 0
 offset_left = 120.0
-offset_top = -20.0
+offset_top = -3.0
 offset_right = 270.0
-offset_bottom = 13.0
+offset_bottom = 15.0
 scale = Vector2(2, 2)
-theme_override_constants/center_grabber = 1
-theme_override_icons/grabber = ExtResource("5_tyww6")
-theme_override_icons/grabber_highlight = ExtResource("6_vv02w")
-theme_override_icons/grabber_disabled = ExtResource("5_tyww6")
-theme_override_icons/tick = ExtResource("7_vv02w")
-value = 80.0
+theme_override_icons/grabber = ExtResource("24_houfj")
+theme_override_icons/grabber_highlight = ExtResource("25_ppuk0")
+theme_override_styles/slider = SubResource("StyleBoxLine_tpcns")
+theme_override_styles/grabber_area = SubResource("StyleBoxLine_inflj")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxLine_3bdlu")
+value = 60.0
+rounded = true
+ticks_on_borders = true

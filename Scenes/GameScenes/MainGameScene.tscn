@@ -57,15 +57,5 @@ position = Vector2(287, -41)
 
 [node name="PlayerUI" parent="." instance=ExtResource("2_4xi3m")]
 health_unit_spacing = 70.0
-health_unit_start_x = 0.0
-health_unit_y = 0.0
-coin_increment_delay = 1.5
-coin_hide_delay = 2.0
-coin_fade_duration = 0.5
-coin_change_interval_slow = 0.2
-coin_change_interval_mod = 0.05
-coin_change_interval_fast = 0.02
-save_label_show_duration = 2.0
-save_label_fade_duration = 0.5
 
 [node name="VignetteEffect" parent="." instance=ExtResource("8_jbabp")]

@@ -579,9 +579,7 @@ func initialize_player_ui():
 ## 初始化残影对象池，预创建一定数量的残影实例以提高性能
 func initialize_afterimage_pool():
 	_ensure_afterimage_trail()
-	if afterimage_trail != null:
-		print("[Player] 已启用本地 AfterimageTrail")
-	else:
+	if afterimage_trail == null:
 		push_error("[Player] 未找到本地 AfterimageTrail")
 
 func _ensure_afterimage_trail():

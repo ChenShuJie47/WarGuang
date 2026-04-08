@@ -2,22 +2,22 @@
 
 [ext_resource type="Script" uid="uid://c8ybqtmdpgils" path="res://Scripts/UI/Scenes/SaveSelectScene.gd" id="1_6ahw5"]
 [ext_resource type="Texture2D" uid="uid://dmxv540ejjtkg" path="res://Assets/Textures/UIs/SaveSlotBlue.tres" id="2_1iexe"]
-[ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1f270cfe43cf241afc03da9724ba6479.png" id="2_283jm"]
+[ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1.png" id="2_283jm"]
 [ext_resource type="PackedScene" uid="uid://b81s4uybrdtsf" path="res://Scenes/UI/Scenes/DeleteConfirmDialog.tscn" id="2_axbvp"]
 [ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="3_1ibob"]
 [ext_resource type="Texture2D" uid="uid://c1v56vyheog76" path="res://Assets/Textures/UIs/SaveSlotRed.tres" id="3_283jm"]
-[ext_resource type="Texture2D" uid="uid://clqgpfc2apnc8" path="res://Assets/Textures/UIs/BackButtonWhite.tres" id="4_1iexe"]
-[ext_resource type="Texture2D" uid="uid://br01fc8kaubld" path="res://Assets/Textures/UIs/BackButtonRed.tres" id="5_283jm"]
 [ext_resource type="Texture2D" uid="uid://d2kgcg3c34q3t" path="res://Assets/Textures/UIs/box.tres" id="5_whc8i"]
 [ext_resource type="Texture2D" uid="uid://ch1fg6f6gkdg7" path="res://Assets/Textures/UIs/boxo.tres" id="6_1p21j"]
-[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="6_wcy1u"]
+[ext_resource type="Texture2D" uid="uid://bv4wcsihjxeaa" path="res://Assets/Textures/UIs/SceneUIs/关闭1.tres" id="9_1ibob"]
+[ext_resource type="Texture2D" uid="uid://kxm2uujj5ma4" path="res://Assets/Textures/UIs/SceneUIs/关闭3.tres" id="10_nc2wn"]
+[ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/关闭2.tres" id="11_xxd4s"]
 
 [node name="SaveSelectScene" type="CanvasLayer"]
 script = ExtResource("1_6ahw5")
 delete_confirm_scene = ExtResource("2_axbvp")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="."]
-color = Color(0.12773591, 0.12773597, 0.12773588, 1)
+color = Color(0.41215247, 0.41215247, 0.41215247, 1)
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(575.00006, 324)
@@ -119,6 +119,6 @@ offset_top = 15.0
 offset_right = 1102.0
 offset_bottom = 26.0
 scale = Vector2(3, 3)
-texture_normal = ExtResource("4_1iexe")
-texture_pressed = ExtResource("6_wcy1u")
-texture_hover = ExtResource("5_283jm")
+texture_normal = ExtResource("9_1ibob")
+texture_pressed = ExtResource("10_nc2wn")
+texture_hover = ExtResource("11_xxd4s")

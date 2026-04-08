@@ -4,3 +4,4 @@
 
 [resource]
 default_font = ExtResource("1_gowpo")
+default_font_size = 20

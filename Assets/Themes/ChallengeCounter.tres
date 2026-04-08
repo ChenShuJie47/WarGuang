@@ -1,0 +1,15 @@
+[gd_resource type="LabelSettings" load_steps=2 format=3 uid="uid://covwm3vt436kf"]
+
+[ext_resource type="FontFile" uid="uid://doiq1klof33ds" path="res://Assets/Themes/Theme9x9.ttf" id="1_svqpg"]
+
+[resource]
+font = ExtResource("1_svqpg")
+font_size = 20
+font_color = Color(1, 0.9647059, 0.827451, 1)
+outline_size = 3
+outline_color = Color(0.11858138, 0.11858139, 0.11858136, 1)
+shadow_size = 0
+shadow_color = Color(0.15307656, 0.15307653, 0.15307653, 1)
+shadow_offset = Vector2(2, 2)
+stacked_outline_count = 1
+stacked_outline_0/size = 1

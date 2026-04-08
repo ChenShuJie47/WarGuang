@@ -1,8 +1,8 @@
 extends CanvasLayer
 
-@onready var message_label = $Background/DialogPanel/Message
-@onready var confirm_button = $Background/DialogPanel/ButtonContainer/ConfirmButton
-@onready var cancel_button = $Background/DialogPanel/ButtonContainer/CancelButton
+@onready var message_label = $Background/Message
+@onready var confirm_button = $Background/ButtonContainer/ConfirmButton
+@onready var cancel_button = $Background/ButtonContainer/CancelButton
 
 var confirm_callback: Callable
 

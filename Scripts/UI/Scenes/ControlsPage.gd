@@ -6,8 +6,8 @@ extends Node2D
 ## 节点引用
 @onready var action_list = $ActionList                     ## 动作列表容器
 @onready var controls_hint = $ControlsHint                 ## 控制页面提示标签
-@onready var reset_button = $ResetPanel/ResetButton        ## 重置按钮
-@onready var reset_hint_label = $ResetPanel/ResetHintLabel ## 重置提示标签
+@onready var reset_button = $ResetButton        ## 重置按钮
+@onready var reset_hint_label = $ResetHintLabel ## 重置提示标签
 
 ## 动作按钮映射（在_ready中填充）
 var action_buttons = {}

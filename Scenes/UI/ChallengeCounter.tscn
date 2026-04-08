@@ -1,33 +1,50 @@
-[gd_scene load_steps=4 format=3 uid="uid://cx4dhxum88xak"]
+[gd_scene load_steps=7 format=3 uid="uid://cx4dhxum88xak"]
 
 [ext_resource type="Script" uid="uid://bhrttajxebk6v" path="res://Scripts/UI/ChallengeCounter.gd" id="1_i3pks"]
-[ext_resource type="Texture2D" uid="uid://d2r7mg8undn5t" path="res://Assets/Textures/UIs/YellowDuck_Move.tres" id="1_un70i"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="2_i3pks"]
+[ext_resource type="Texture2D" uid="uid://dsyolv1vx0smy" path="res://Assets/Textures/UIs/Apple.tres" id="2_j65sp"]
+[ext_resource type="Texture2D" uid="uid://dt0k8iplo1ouj" path="res://Assets/Textures/UIs/MyBalloonBackground.tres" id="4_j65sp"]
+[ext_resource type="LabelSettings" uid="uid://covwm3vt436kf" path="res://Assets/Themes/ChallengeCounter.tres" id="5_7ybg0"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_7ybg0"]
+content_margin_left = 44.0
+content_margin_top = 10.0
+texture = ExtResource("4_j65sp")
+modulate_color = Color(1, 1, 0.92156863, 1)
 
 [node name="ChallengeCounter" type="CanvasLayer"]
 layer = 50
 script = ExtResource("1_i3pks")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
-offset_left = 536.0
-offset_top = 78.0
-offset_right = 576.0
-offset_bottom = 118.0
+offset_left = 481.0
+offset_top = 48.0
+offset_right = 672.0
+offset_bottom = 88.0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
-texture = ExtResource("1_un70i")
-expand_mode = 3
+texture = ExtResource("2_j65sp")
+expand_mode = 2
+stretch_mode = 5
 
 [node name="Label" type="Label" parent="MarginContainer/HBoxContainer/TextureRect"]
 layout_mode = 0
-offset_left = 35.0
-offset_top = 5.0
-offset_right = 133.0
-offset_bottom = 29.0
+offset_left = 52.0
+offset_top = 2.0
+offset_right = 188.0
+offset_bottom = 42.0
 theme = ExtResource("2_i3pks")
-theme_override_font_sizes/font_size = 20
-text = "0/12"
+theme_override_colors/font_color = Color(1, 0.9607843, 0.87058824, 1)
+theme_override_colors/font_shadow_color = Color(0.17821202, 0.17821205, 0.17821205, 1)
+theme_override_colors/font_outline_color = Color(0.1882353, 0.11764706, 0.09019608, 1)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/outline_size = 4
+theme_override_constants/shadow_outline_size = 0
+theme_override_styles/normal = SubResource("StyleBoxTexture_7ybg0")
+text = "12/12"
+label_settings = ExtResource("5_7ybg0")
