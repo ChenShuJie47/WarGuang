@@ -59,8 +59,8 @@ theme_override_font_sizes/font_size = 20
 text = "存档已更新 . . . "
 
 [node name="GameSettingButton" type="TextureButton" parent="."]
-offset_left = 1101.0
-offset_right = 1118.0
+offset_left = 1229.0
+offset_right = 1246.0
 offset_bottom = 16.0
 scale = Vector2(3, 3)
 texture_normal = ExtResource("7_p4cyq")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=101 format=3 uid="uid://dwj2ydwabq3n0"]
+[gd_scene load_steps=102 format=3 uid="uid://dwj2ydwabq3n0"]
 
 [ext_resource type="Script" uid="uid://b641fcmvm5n4c" path="res://Scripts/Player/Player.gd" id="1_kyqiw"]
 [ext_resource type="Texture2D" uid="uid://8ywn2x6bd5v2" path="res://Assets/Textures/Warmas/1.png" id="2_4wape"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://bgxa50fyfm01m" path="res://Assets/Textures/Warmas/2.png" id="4_4wape"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="4_jmcll"]
 [ext_resource type="Script" uid="uid://bw1fmebkjwy7o" path="res://Scripts/Components/AfterimageTrail.gd" id="5_afterimagetrail"]
+[ext_resource type="Script" uid="uid://c6igct05krujq" path="res://Scripts/Player/PlayerCameraController.gd" id="6_camera_controller"]
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_jmcll"]
 closed = false
@@ -771,6 +772,9 @@ afterimage_scene = ExtResource("2_t26db")
 [node name="AfterimageTrail" type="Node2D" parent="."]
 script = ExtResource("5_afterimagetrail")
 
+[node name="PlayerCameraController" type="Node" parent="."]
+script = ExtResource("6_camera_controller")
+
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(0.92156863, 0.92156863, 0.8235294, 1)
 energy = 0.6
@@ -807,7 +811,6 @@ follow_damping = true
 follow_damping_value = Vector2(0.1, 0.09)
 dead_zone_width = 0.14
 dead_zone_height = 0.12
-limit_margin = Vector4i(-1, 0, 0, 0)
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="Timers" type="Node2D" parent="."]

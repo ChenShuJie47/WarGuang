@@ -9,6 +9,7 @@ var global_canvas_modulate: CanvasModulate = null
 var rooms: Dictionary = {}
 var current_room: String = ""
 var player_ref: Node = null
+var suppress_player_enter_until_msec: int = 0
 
 ## 颜色状态管理
 var room_original_colors: Dictionary = {}  # 房间ID -> 原始颜色（检查器中设置的颜色）
@@ -82,9 +83,16 @@ func notify_dynamic_checkpoint_manager_room_change(new_room_id: String):
 
 ## 玩家进入房间
 func player_entered_room(room_id: String):
+	if Time.get_ticks_msec() < suppress_player_enter_until_msec:
+		return
 	if room_id == current_room:
 		return
 	load_room(room_id)
+
+
+func suppress_player_room_enter(seconds: float = 0.35):
+	var duration_msec := int(maxf(seconds, 0.0) * 1000.0)
+	suppress_player_enter_until_msec = Time.get_ticks_msec() + duration_msec
 
 ## 卸载远处（非相邻）房间
 func unload_distant_rooms(current_room_id: String):
