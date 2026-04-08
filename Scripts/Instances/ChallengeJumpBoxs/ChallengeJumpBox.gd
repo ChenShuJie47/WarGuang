@@ -73,6 +73,10 @@ func trigger_bounce(player):
 	# 额外的安全检查
 	if not is_active or not player:
 		return
+
+	# 防止边界帧重复触发导致受力叠加
+	if player.has_method("can_accept_jumpbox_bounce") and not player.can_accept_jumpbox_bounce():
+		return
 		
 	# 确保玩家仍然在正确状态
 	if not player.has_double_jumped or player.current_animation != "JUMP2":

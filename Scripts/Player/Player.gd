@@ -170,6 +170,12 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 @export var jump2_boost_decrease_time: float = 0.3
 ## 打断 JumpBox 持续二段跳后的垂直速度衰减时间（秒）
 @export var jump2_interrupt_decay_time: float = 0.1
+## JumpBox 重新触发锁定时间（毫秒）
+@export var jumpbox_retrigger_lock_ms: int = 120
+## JumpBox 单次触发的最大上抛力（像素/秒）
+@export var jumpbox_max_vertical_force: float = 700.0
+## JumpBox 水平速度上限（像素/秒）
+@export var jumpbox_max_horizontal_speed: float = 420.0
 
 @export_category("攀墙设置")
 ## 墙体检测距离（像素）
@@ -389,6 +395,7 @@ var jump2_boost_timer: float = 0.0              # 二段跳速度加成计时器
 var jump2_boost_direction: int = 1              # 二段跳速度加成的方向（1右，-1左）
 var is_jumpbox_triggered: bool = false          # 标记是否触发了JumpBox效果
 var jumpbox_force_applied: bool = false         # 标记是否已经应用了JumpBox的弹跳力
+var jumpbox_last_bounce_time_ms: int = -1000000 # 上次接收 JumpBox 弹跳的时间戳（毫秒）
 var jump2_boost_initial_speed: float = 0.0      # 二段跳速度加成的初始速度值
 var jump2_boost_target_speed: float = 0.0       # 二段跳速度加成衰减后的目标速度值
 
@@ -2349,10 +2356,26 @@ func handle_jump2_rotation(fixed_delta):
 		if animated_sprite.rotation_degrees != 0:
 			animated_sprite.rotation_degrees = 0
 			jump2_rotation = 0
+
+func can_accept_jumpbox_bounce() -> bool:
+	if is_dying or current_state == PlayerState.DIE:
+		return false
+
+	var now_ms = Time.get_ticks_msec()
+	return now_ms - jumpbox_last_bounce_time_ms >= jumpbox_retrigger_lock_ms
+
+func _apply_jumpbox_horizontal_speed(base_speed: float, direction: int) -> void:
+	var signed_speed = base_speed * effective_horizontal_multiplier * direction
+	velocity.x = clamp(signed_speed, -jumpbox_max_horizontal_speed, jumpbox_max_horizontal_speed)
 ## 由JumpBox触发的弹跳，进入持续二段跳状态并获得水平速度加成
 func start_jumpbox_bounce(vertical_force: float):
+	if not can_accept_jumpbox_bounce():
+		return
+
+	jumpbox_last_bounce_time_ms = Time.get_ticks_msec()
+
 	# 原有的弹跳处理逻辑保持不变
-	velocity.y = -vertical_force
+	velocity.y = -clamp(vertical_force, 0.0, jumpbox_max_vertical_force)
 	
 	# 刷新空中冲刺限制
 	has_dashed_in_air = false
@@ -2378,8 +2401,8 @@ func start_jumpbox_bounce(vertical_force: float):
 	var move_input = Input.get_axis("left", "right")
 	jump2_boost_direction = 1 if move_input > 0 else -1 if move_input < 0 else (1 if is_facing_right else -1)
 	if move_input != 0:
-		# 关键修改：JumpBox 水平速度保持加法，但应用环境乘数
-		velocity.x = (jump_move_speed + jump2_horizontal_boost) * effective_horizontal_multiplier * jump2_boost_direction
+		# 关键修改：JumpBox 水平速度保持加法，并增加速度上限钳制
+		_apply_jumpbox_horizontal_speed(jump_move_speed + jump2_horizontal_boost, jump2_boost_direction)
 	
 	# 激活残影效果
 	has_jumpbox_afterimage = true
@@ -2408,8 +2431,8 @@ func handle_jump2_boost(fixed_delta):
 		if jump2_boost_timer <= jump2_boost_duration:
 			# 持续阶段：保持最大加成速度
 			if move_input != 0:
-				# 关键修改：应用环境乘数
-				velocity.x = (jump_move_speed + jump2_horizontal_boost) * effective_horizontal_multiplier * jump2_boost_direction
+				# 关键修改：应用环境乘数，并增加速度上限钳制
+				_apply_jumpbox_horizontal_speed(jump_move_speed + jump2_horizontal_boost, jump2_boost_direction)
 			else:
 				# 无输入时自然减速（关键修改：应用加速度乘数）
 				velocity.x = move_toward(velocity.x, 0, air_control * ground_deceleration * (jump_move_speed + jump2_horizontal_boost) * effective_acceleration_multiplier)
@@ -2420,8 +2443,8 @@ func handle_jump2_boost(fixed_delta):
 			var current_boost = jump2_horizontal_boost * (1.0 - progress)
 			
 			if move_input != 0:
-				# 应用环境乘数
-				velocity.x = (jump_move_speed + current_boost) * effective_horizontal_multiplier * jump2_boost_direction
+				# 应用环境乘数，并增加速度上限钳制
+				_apply_jumpbox_horizontal_speed(jump_move_speed + current_boost, jump2_boost_direction)
 			else:
 				# 无输入时自然减速（应用加速度乘数）
 				velocity.x = move_toward(velocity.x, 0, air_control * ground_deceleration * (jump_move_speed + current_boost) * effective_acceleration_multiplier)
