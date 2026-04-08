@@ -140,6 +140,19 @@ func force_sync_camera_position_after_teleport() -> void:
 	if CAMERA_TELEPORT_DEBUG:
 		print("DEBUG: 相机位置设置后:", camera.global_position)
 
+func get_debug_snapshot() -> Dictionary:
+	return {
+		"setup_completed": setup_completed,
+		"guard_active": camera_transition_guard_active,
+		"guard_elapsed": camera_transition_guard_elapsed,
+		"guard_remaining": camera_transition_guard_timer,
+		"axis_lock": camera_transition_axis_lock_backup,
+		"player_inside_tree": is_instance_valid(player) and player.is_inside_tree() if player else false,
+		"camera_inside_tree": is_instance_valid(phantom_camera) and phantom_camera.is_inside_tree() if phantom_camera else false,
+		"camera_pos": phantom_camera.global_position if phantom_camera else Vector2.ZERO,
+		"follow_offset": phantom_camera.get_follow_offset() if phantom_camera and phantom_camera.has_method("get_follow_offset") else Vector2.ZERO
+	}
+
 func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: Camera2D) -> Vector2:
 	return PlayerCameraMathUtil.clamp_camera_center_by_limits(
 		target_center,

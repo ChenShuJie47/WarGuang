@@ -298,7 +298,7 @@ func _complete_challenge():
 	# 清理所有重生计时器
 	respawn_timers.clear()
 	
-	await _play_end_animation_and_cleanup_force()
+	_play_end_animation_and_cleanup_force()
 	
 	# 修复：同步淡出挑战 UI 和淡入玩家 UI
 	_hide_challenge_ui_with_fade()
@@ -317,7 +317,7 @@ func _fail_challenge():
 	# 清理所有重生计时器
 	respawn_timers.clear()
 	
-	await _play_end_animation_and_cleanup_force()
+	_play_end_animation_and_cleanup_force()
 	
 	# 修复：同步淡出挑战 UI 和淡入玩家 UI（与成功逻辑保持一致）
 	_hide_challenge_ui_with_fade()
@@ -326,7 +326,7 @@ func _fail_challenge():
 	challenge_failed.emit()
 
 ## 播放所有剩余 JumpBox 的 END 动画并清理（同时销毁）
-func _play_end_animation_and_cleanup_force():
+func _play_end_animation_and_cleanup_force() -> void:
 	if spawned_jumpboxes.is_empty():
 		return
 
@@ -334,11 +334,10 @@ func _play_end_animation_and_cleanup_force():
 		if not is_instance_valid(jumpbox):
 			continue
 		if jumpbox.has_method("destroy_with_end_animation"):
-			await jumpbox.destroy_with_end_animation()
+			jumpbox.destroy_with_end_animation()
 		else:
 			if jumpbox.animated_sprite and jumpbox.animated_sprite.sprite_frames and jumpbox.animated_sprite.sprite_frames.has_animation("END"):
 				jumpbox.animated_sprite.play("END")
-				await jumpbox.animated_sprite.animation_finished
 			jumpbox.queue_free()
 	
 	spawned_jumpboxes.clear()
