@@ -51,8 +51,8 @@ range_layer_max = 100
 texture = ExtResource("2_tpcns")
 
 [node name="Background" type="Sprite2D" parent="."]
-position = Vector2(575.9999, 324)
-scale = Vector2(3, 3)
+position = Vector2(639.99994, 359.99997)
+scale = Vector2(3.3333335, 3.333333)
 texture = ExtResource("2_8gcs1")
 region_enabled = true
 region_rect = Rect2(0, 0, 384, 216)
@@ -87,10 +87,10 @@ text = "设       置"
 horizontal_alignment = 1
 
 [node name="AudioButton" type="TextureButton" parent="SettingsRoot"]
-offset_left = 30.0
-offset_top = 570.0
-offset_right = 78.0
-offset_bottom = 586.0
+offset_left = 34.0
+offset_top = 634.0
+offset_right = 82.0
+offset_bottom = 650.0
 scale = Vector2(3, 3)
 texture_normal = ExtResource("8_rwgsd")
 texture_pressed = ExtResource("9_vx36v")
@@ -98,10 +98,10 @@ texture_hover = ExtResource("10_bvn5r")
 texture_disabled = ExtResource("9_vx36v")
 
 [node name="ControlsButton" type="TextureButton" parent="SettingsRoot"]
-offset_left = 210.0
-offset_top = 570.0
-offset_right = 258.0
-offset_bottom = 586.0
+offset_left = 204.0
+offset_top = 636.0
+offset_right = 252.0
+offset_bottom = 652.0
 scale = Vector2(3, 3)
 texture_normal = ExtResource("11_pn2j1")
 texture_pressed = ExtResource("12_hlh84")
@@ -109,10 +109,10 @@ texture_hover = ExtResource("13_houfj")
 texture_disabled = ExtResource("12_hlh84")
 
 [node name="GraphicsButton" type="TextureButton" parent="SettingsRoot"]
-offset_left = 390.0
-offset_top = 570.0
-offset_right = 438.0
-offset_bottom = 586.0
+offset_left = 379.0
+offset_top = 645.0
+offset_right = 427.0
+offset_bottom = 661.0
 scale = Vector2(3, 3)
 texture_normal = ExtResource("14_ppuk0")
 texture_pressed = ExtResource("15_leam6")
@@ -121,6 +121,7 @@ texture_disabled = ExtResource("15_leam6")
 
 [node name="ControlsPage" type="Node2D" parent="SettingsRoot"]
 visible = false
+position = Vector2(12, 45)
 script = ExtResource("10_oi1yp")
 
 [node name="ActionList" type="VBoxContainer" parent="SettingsRoot/ControlsPage"]

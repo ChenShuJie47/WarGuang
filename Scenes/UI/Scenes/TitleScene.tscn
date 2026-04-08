@@ -31,14 +31,14 @@ range_layer_max = 1
 texture = ExtResource("3_oeyvi")
 
 [node name="Background" type="Sprite2D" parent="."]
-position = Vector2(562, 329.00003)
+position = Vector2(640, 360.00003)
 scale = Vector2(2.5, 2.5)
 texture = ExtResource("4_oeyvi")
 region_enabled = true
 region_rect = Rect2(0, 0, 512, 288)
 
 [node name="Title" type="Sprite2D" parent="."]
-position = Vector2(579, 112)
+position = Vector2(648.00006, 137.99998)
 scale = Vector2(2.5, 2.5)
 texture = ExtResource("5_oeyvi")
 region_enabled = true

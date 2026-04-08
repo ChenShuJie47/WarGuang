@@ -342,6 +342,7 @@ var camera_transition_guard_active: bool = false
 var camera_transition_dead_zone_backup: Vector2 = Vector2(0.125, 0.1)
 var camera_transition_guard_elapsed: float = 0.0
 var camera_transition_guard_min_duration: float = 0.12
+var camera_transition_axis_lock_backup: int = 0
 
 ## 奔跑检测相关
 var last_move_input_time: float = 0.0           # 记录最后移动输入时间，用于快速双击检测
@@ -2882,9 +2883,10 @@ func reset_camera_position():
 		tween.tween_property(phantom_camera, "follow_offset", Vector2.ZERO, camera_offset_transition_duration)
 
 func start_camera_transition_guard(duration: float = 0.18, max_duration: float = 1.0) -> void:
-	# 兼容旧调用：当前改为无副作用保护窗，避免 dead-zone 来回切换引发边界抖动
 	if not phantom_camera:
 		return
+	camera_transition_axis_lock_backup = int(phantom_camera.follow_axis_lock)
+	phantom_camera.follow_axis_lock = PhantomCamera2D.FollowLockAxis.XY
 	camera_transition_guard_active = true
 	camera_transition_guard_elapsed = 0.0
 	camera_transition_guard_min_duration = maxf(duration, 0.01)
@@ -2895,9 +2897,17 @@ func _update_camera_transition_guard(fixed_delta: float) -> void:
 		return
 	camera_transition_guard_elapsed += fixed_delta
 	camera_transition_guard_timer -= fixed_delta
-	if camera_transition_guard_elapsed < camera_transition_guard_min_duration and camera_transition_guard_timer > 0.0:
+	if camera_transition_guard_elapsed < camera_transition_guard_min_duration:
+		return
+
+	# 传送后相机冻结结束条件：玩家回到正常死区，或超时兜底
+	if camera_transition_guard_timer > 0.0 and not _is_player_inside_normal_camera_dead_zone():
 		return
 	camera_transition_guard_active = false
+	if phantom_camera:
+		phantom_camera.follow_axis_lock = camera_transition_axis_lock_backup
+		if phantom_camera.has_method("teleport_position"):
+			phantom_camera.teleport_position()
 
 
 func sync_camera_after_room_teleport() -> void:
@@ -2927,6 +2937,9 @@ func sync_camera_after_room_teleport() -> void:
 
 	if CAMERA_TELEPORT_DEBUG:
 		print("[CameraTeleportSync] desired=", desired_center, " clamped=", clamped_center)
+
+	# 启动短时相机冻结：类似房间门过渡逻辑，避免角点边界首段移动触发错误跟随
+	start_camera_transition_guard(0.10, 0.65)
 
 
 func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: Camera2D) -> Vector2:
