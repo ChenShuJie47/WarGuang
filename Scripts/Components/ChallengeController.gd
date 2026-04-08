@@ -206,6 +206,10 @@ func _spawn_jumpbox_at(spawn_point: Marker2D):
 	var jumpbox = config.jumpbox_scene.instantiate()
 	jumpbox.global_position = spawn_point.global_position
 	jumpbox.challenge_id = config.challenge_name
+	for prop in jumpbox.get_property_list():
+		if prop.get("name", "") == "respawn_time":
+			jumpbox.set("respawn_time", config.cooldown_time)
+			break
 	
 	# 关键修复：添加到 MainGameScene 而不是 current_scene（确保坐标系统一）
 	var main_scene = get_tree().root.get_node_or_null("MainGameScene")
@@ -218,7 +222,8 @@ func _spawn_jumpbox_at(spawn_point: Marker2D):
 	if jumpbox.has_signal("bounce_triggered"):
 		jumpbox.bounce_triggered.connect(_on_jumpbox_bounce_triggered.bind(jumpbox, spawn_point))
 
-func _on_jumpbox_bounce_triggered(body, jumpbox, spawn_point):
+func _on_jumpbox_bounce_triggered(body, _jumpbox, _spawn_point):
+
 	if body.is_in_group("player") and current_state == State.ACTIVE:
 		if body.current_animation != "JUMP2":
 			return
@@ -226,27 +231,13 @@ func _on_jumpbox_bounce_triggered(body, jumpbox, spawn_point):
 		# 修复：立即增加计数并更新 UI
 		triggered_count += 1
 		
-		if jumpbox in spawned_jumpboxes:
-			spawned_jumpboxes.erase(jumpbox)
-		
 		# 修复：立即更新 UI
 		_update_challenge_ui()
 		
 		has_triggered_first = true
 		
-		var spawn_index = runtime_spawn_points.find(spawn_point)
-		
-		if jumpbox.animated_sprite and jumpbox.animated_sprite.sprite_frames:
-			if jumpbox.animated_sprite.sprite_frames.has_animation("END"):
-				jumpbox.animated_sprite.play("END")
-				await jumpbox.animated_sprite.animation_finished
-		
-		jumpbox.queue_free()
-		
 		if triggered_count >= config.target_count:
 			_complete_challenge()
-		else:
-			respawn_timers[spawn_index] = config.cooldown_time
 
 func _process(_delta):
 	if current_state == State.ACTIVE:
@@ -338,28 +329,16 @@ func _fail_challenge():
 func _play_end_animation_and_cleanup_force():
 	if spawned_jumpboxes.is_empty():
 		return
-	
+
 	for jumpbox in spawned_jumpboxes:
-		if is_instance_valid(jumpbox):
-			jumpbox.set_inactive()
-			jumpbox.current_anim_state = jumpbox.AnimState.FLY
-			
-			if jumpbox.animated_sprite and jumpbox.animated_sprite.sprite_frames:
-				if jumpbox.animated_sprite.sprite_frames.has_animation("END"):
-					jumpbox.animated_sprite.play("END")
-	
-	var max_wait_time = 0.0
-	for jumpbox in spawned_jumpboxes:
-		if is_instance_valid(jumpbox) and jumpbox.animated_sprite:
-			if jumpbox.animated_sprite.sprite_frames:
-				if jumpbox.animated_sprite.sprite_frames.has_animation("END"):
-					var anim_length = jumpbox.animated_sprite.sprite_frames.get_frame_duration("END", 0)
-					max_wait_time = max(max_wait_time, anim_length)
-	
-	await get_tree().create_timer(max_wait_time).timeout
-	
-	for jumpbox in spawned_jumpboxes:
-		if is_instance_valid(jumpbox):
+		if not is_instance_valid(jumpbox):
+			continue
+		if jumpbox.has_method("destroy_with_end_animation"):
+			await jumpbox.destroy_with_end_animation()
+		else:
+			if jumpbox.animated_sprite and jumpbox.animated_sprite.sprite_frames and jumpbox.animated_sprite.sprite_frames.has_animation("END"):
+				jumpbox.animated_sprite.play("END")
+				await jumpbox.animated_sprite.animation_finished
 			jumpbox.queue_free()
 	
 	spawned_jumpboxes.clear()

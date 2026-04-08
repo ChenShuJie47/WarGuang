@@ -21,6 +21,7 @@ const FIXED_DELTA: float = 1.0 / TARGET_FPS       # 固定时间步长 = 0.01667
 const MAX_FRAME_TIME: float = 1.0 / 30.0          # 最大帧时间（30FPS 下限，防止卡顿时代码逻辑过快）
 const CAMERA_LIMIT_DISABLED: int = 10000000       # 禁用相机限制时使用的极大边界值（与 PhantomCamera2D 默认值一致）
 const CAMERA_TELEPORT_DEBUG: bool = false
+const PlayerHitStopServiceScript = preload("res://Scripts/Player/PlayerHitStopService.gd")
 
 ## 节点引用
 @onready var right_wall_ray = $WallRays/RightWallRay
@@ -1888,7 +1889,7 @@ func take_damage_with_type(damage_source_position: Vector2, damage: int = 1, dam
 			is_invincible = true
 			
 			# 触发 Hit Stop（tier2 - 0.2s）
-			TimerControlManager.hit_stop(2)
+			_trigger_tier2_hit_stop_with_fallback(hurt_hit_stop_duration, hurt_hit_stop_intensity)
 			
 			# 根据伤害类型设置不同时间
 			if damage_type == DamageType.NORMAL or damage_type == DamageType.WARP_NORMAL:
@@ -2017,7 +2018,7 @@ func _on_player_died():
 
 func _start_async_death_process():
 	# 使用 TimerControlManager 触发 Hit Stop（tier2 - 0.2s）
-	TimerControlManager.hit_stop(2)
+	_trigger_tier2_hit_stop_with_fallback(hurt_hit_stop_duration, hurt_hit_stop_intensity)
 	
 	# 等待 Hit Stop 结束后开始死亡效果
 	await get_tree().create_timer(0.2).timeout
@@ -2373,6 +2374,9 @@ func start_jumpbox_bounce(vertical_force: float):
 		return
 
 	jumpbox_last_bounce_time_ms = Time.get_ticks_msec()
+
+	# JumpBox 弹跳后不再额外叠加 JUMP 按住增高，避免高度异常峰值。
+	jump_hold_timer = max_jump_hold_time
 
 	# 原有的弹跳处理逻辑保持不变
 	velocity.y = -clamp(vertical_force, 0.0, jumpbox_max_vertical_force)
@@ -2989,9 +2993,12 @@ func handle_hit_stop(fixed_delta):
 func start_hurt_hit_stop():
 	start_hit_stop(hurt_hit_stop_duration, hurt_hit_stop_intensity)
 
+func _trigger_tier2_hit_stop_with_fallback(duration_fallback: float, intensity_fallback: float) -> void:
+	PlayerHitStopServiceScript.trigger_tier2_with_fallback(self, duration_fallback, intensity_fallback)
+
 # JumpBox 专用的 Hit Stop（使用 tier2 档位）
 func start_jumpbox_hit_stop():
-	TimerControlManager.hit_stop(2)
+	_trigger_tier2_hit_stop_with_fallback(jumpbox_hit_stop_duration, jumpbox_hit_stop_intensity)
 
 #endregion
 

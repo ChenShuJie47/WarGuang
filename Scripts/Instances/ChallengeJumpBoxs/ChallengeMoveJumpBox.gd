@@ -41,6 +41,10 @@ func _ready():
 	current_target_index = 1  # 下一个目标是目标点 2
 
 func _process(delta):
+	# 仅 YES 激活态移动；NO 和所有 TRANSITION/END/START 状态都冻结移动。
+	if not is_active or not animated_sprite or animated_sprite.animation != "YES" or current_anim_state != AnimState.YES:
+		return
+
 	# 如果正在等待，更新计时器
 	if is_waiting:
 		wait_timer += delta
