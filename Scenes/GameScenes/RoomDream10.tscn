@@ -1,7 +1,7 @@
 [gd_scene load_steps=13 format=4 uid="uid://cpl4se47i7uk6"]
 
 [ext_resource type="Script" uid="uid://driejj5w0waqn" path="res://Scripts/GameScenes/Room.gd" id="1_83itb"]
-[ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1f270cfe43cf241afc03da9724ba6479.png" id="2_hofoq"]
+[ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1.png" id="2_hofoq"]
 [ext_resource type="Texture2D" uid="uid://fl5mcf6y1aa3" path="res://Assets/Textures/Tiles/new tiles 16×16-01.png" id="3_hofoq"]
 [ext_resource type="PackedScene" uid="uid://c7552ukdc1li7" path="res://Scenes/GameScenes/Door.tscn" id="4_auxex"]
 [ext_resource type="PackedScene" uid="uid://gij1n237uov8" path="res://Scenes/Instances/SavePoints/DynamicCheckpoint.tscn" id="5_6vpoh"]

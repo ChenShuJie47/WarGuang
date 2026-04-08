@@ -1,57 +1,52 @@
-[gd_scene load_steps=6 format=3 uid="uid://b81s4uybrdtsf"]
+[gd_scene load_steps=10 format=3 uid="uid://b81s4uybrdtsf"]
 
 [ext_resource type="Script" uid="uid://g5mcy2rrpi1j" path="res://Scripts/UI/Scenes/DeleteConfirmDialog.gd" id="1_8trha"]
+[ext_resource type="Texture2D" uid="uid://bnf2wds016uy8" path="res://Assets/Textures/UIs/SceneUIs/场景UI集.png" id="2_rl7e0"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="2_s464x"]
-[ext_resource type="Texture2D" uid="uid://d2kgcg3c34q3t" path="res://Assets/Textures/UIs/box.tres" id="3_jublw"]
-[ext_resource type="Texture2D" uid="uid://ch1fg6f6gkdg7" path="res://Assets/Textures/UIs/boxo.tres" id="4_80f74"]
-[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="4_jublw"]
+[ext_resource type="Texture2D" uid="uid://bwow0r831nkda" path="res://Assets/Textures/UIs/SceneUIs/确认1.tres" id="4_wv8yg"]
+[ext_resource type="Texture2D" uid="uid://knvng6xnqnc1" path="res://Assets/Textures/UIs/SceneUIs/确认3.tres" id="5_8pcg6"]
+[ext_resource type="Texture2D" uid="uid://di5f8dpskcf3n" path="res://Assets/Textures/UIs/SceneUIs/确认2.tres" id="6_nvsot"]
+[ext_resource type="Texture2D" uid="uid://d3up5h4l7og6c" path="res://Assets/Textures/UIs/SceneUIs/取消1.tres" id="7_lchh4"]
+[ext_resource type="Texture2D" uid="uid://bg28yyvx1w0e3" path="res://Assets/Textures/UIs/SceneUIs/取消3.tres" id="8_ww0du"]
+[ext_resource type="Texture2D" uid="uid://bqxqw0qqnx73x" path="res://Assets/Textures/UIs/SceneUIs/取消2.tres" id="9_uxqie"]
 
 [node name="DeleteConfirmDialog" type="CanvasLayer"]
 layer = 50
 script = ExtResource("1_8trha")
 
-[node name="Background" type="ColorRect" parent="."]
-offset_left = 270.0
-offset_top = 137.0
-offset_right = 469.0
-offset_bottom = 264.0
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(572, 314)
 scale = Vector2(3, 3)
-color = Color(0, 0, 0, 0.5529412)
+texture = ExtResource("2_rl7e0")
+region_enabled = true
+region_rect = Rect2(9, 169, 158, 110)
 
-[node name="DialogPanel" type="Panel" parent="Background"]
-layout_mode = 0
-offset_left = 6.6666718
-offset_top = 9.0
-offset_right = 189.66669
-offset_bottom = 119.0
-
-[node name="Message" type="Label" parent="Background/DialogPanel"]
-layout_mode = 0
-offset_left = 13.666667
-offset_top = 10.666667
-offset_right = 167.66667
-offset_bottom = 39.666668
+[node name="Message" type="Label" parent="Background"]
+offset_left = -39.666664
+offset_top = -27.666668
+offset_right = 37.333336
+offset_bottom = -16.666668
 theme = ExtResource("2_s464x")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.5, 0.050000012, 0.050000012, 1)
+theme_override_font_sizes/font_size = 10
 text = "是否删除存档？"
 
-[node name="ButtonContainer" type="HBoxContainer" parent="Background/DialogPanel"]
-layout_mode = 1
-offset_left = 13.333334
-offset_top = 62.333336
-offset_right = 87.66668
-offset_bottom = 77.333336
-scale = Vector2(2, 2)
+[node name="ButtonContainer" type="HBoxContainer" parent="Background"]
+offset_left = -51.66667
+offset_top = 1.6666613
+offset_right = 42.33333
+offset_bottom = 17.66666
+theme_override_constants/separation = 30
 
-[node name="ConfirmButton" type="TextureButton" parent="Background/DialogPanel/ButtonContainer"]
-custom_minimum_size = Vector2(40, 0)
+[node name="ConfirmButton" type="TextureButton" parent="Background/ButtonContainer"]
 layout_mode = 2
-texture_normal = ExtResource("3_jublw")
-texture_hover = ExtResource("4_80f74")
-texture_disabled = ExtResource("3_jublw")
+texture_normal = ExtResource("4_wv8yg")
+texture_pressed = ExtResource("5_8pcg6")
+texture_hover = ExtResource("6_nvsot")
 
-[node name="CancelButton" type="TextureButton" parent="Background/DialogPanel/ButtonContainer"]
-custom_minimum_size = Vector2(30, 0)
+[node name="CancelButton" type="TextureButton" parent="Background/ButtonContainer"]
 layout_mode = 2
-texture_normal = ExtResource("4_jublw")
+texture_normal = ExtResource("7_lchh4")
+texture_pressed = ExtResource("8_ww0du")
+texture_hover = ExtResource("9_uxqie")
 stretch_mode = 3

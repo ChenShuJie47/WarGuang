@@ -1,47 +1,55 @@
-[gd_scene load_steps=9 format=3 uid="uid://ti5ndmbw2337"]
+[gd_scene load_steps=13 format=3 uid="uid://ti5ndmbw2337"]
 
 [ext_resource type="Script" uid="uid://0r1sd45ghf8l" path="res://Scripts/UI/Scenes/GameSettingScene.gd" id="1_vf3dq"]
 [ext_resource type="PackedScene" uid="uid://8vv4frjt0qmt" path="res://Scenes/UI/Scenes/SettingsScene.tscn" id="2_aemly"]
-[ext_resource type="Texture2D" uid="uid://bqh8rnopioeeo" path="res://Assets/Textures/Tiles/new tiles 8×8-01.png" id="2_hkahs"]
-[ext_resource type="Texture2D" uid="uid://clqgpfc2apnc8" path="res://Assets/Textures/UIs/BackButtonWhite.tres" id="3_w2175"]
-[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="4_uxd06"]
-[ext_resource type="Texture2D" uid="uid://br01fc8kaubld" path="res://Assets/Textures/UIs/BackButtonRed.tres" id="5_yhqj4"]
-[ext_resource type="Texture2D" uid="uid://bxkepjh3g6h5r" path="res://Assets/Textures/UIs/Shark1.tres" id="6_aemly"]
-[ext_resource type="Texture2D" uid="uid://bjtn70vsad0r7" path="res://Assets/Textures/UIs/warma.tres" id="7_aemly"]
+[ext_resource type="Texture2D" uid="uid://bnf2wds016uy8" path="res://Assets/Textures/UIs/SceneUIs/场景UI集.png" id="3_urdrt"]
+[ext_resource type="Texture2D" uid="uid://xygjp77wxevl" path="res://Assets/Textures/UIs/SceneUIs/回退1.tres" id="4_urdrt"]
+[ext_resource type="Texture2D" uid="uid://40v6kkfpqldt" path="res://Assets/Textures/UIs/SceneUIs/回退3.tres" id="5_hmv1b"]
+[ext_resource type="Texture2D" uid="uid://duklbrpm0cx67" path="res://Assets/Textures/UIs/SceneUIs/回退2.tres" id="6_2syoe"]
+[ext_resource type="Texture2D" uid="uid://bkwq7q3nhcwib" path="res://Assets/Textures/UIs/SceneUIs/更改设置1.tres" id="7_1r1p8"]
+[ext_resource type="Texture2D" uid="uid://c8lov8jclog7u" path="res://Assets/Textures/UIs/SceneUIs/更改设置3.tres" id="8_g4qhq"]
+[ext_resource type="Texture2D" uid="uid://didtmh22n0ejg" path="res://Assets/Textures/UIs/SceneUIs/更改设置2.tres" id="9_fnua2"]
+[ext_resource type="Texture2D" uid="uid://cxmn1wm3r65dw" path="res://Assets/Textures/UIs/SceneUIs/退回标题1.tres" id="10_kd82h"]
+[ext_resource type="Texture2D" uid="uid://cns6coaem0l0r" path="res://Assets/Textures/UIs/SceneUIs/退回标题3.tres" id="11_eq7uf"]
+[ext_resource type="Texture2D" uid="uid://me0dbdwwg4ge" path="res://Assets/Textures/UIs/SceneUIs/退回标题2.tres" id="12_bmvyg"]
 
 [node name="GameSettingScene" type="CanvasLayer"]
 script = ExtResource("1_vf3dq")
 settings_scene_resource = ExtResource("2_aemly")
 
 [node name="Background" type="Sprite2D" parent="."]
-position = Vector2(542, 346)
-scale = Vector2(59.00001, 38.750004)
-texture = ExtResource("2_hkahs")
+position = Vector2(557, 299)
+scale = Vector2(3, 3)
+texture = ExtResource("3_urdrt")
 region_enabled = true
-region_rect = Rect2(0, 8, 8, 8)
+region_rect = Rect2(9, 169, 158, 110)
 
 [node name="ContinueButton" type="TextureButton" parent="."]
 offset_left = 712.0
-offset_top = 199.0
-offset_right = 729.0
-offset_bottom = 210.0
+offset_top = 155.0
+offset_right = 730.6667
+offset_bottom = 171.0
 scale = Vector2(3, 3)
-texture_normal = ExtResource("3_w2175")
-texture_pressed = ExtResource("5_yhqj4")
-texture_hover = ExtResource("4_uxd06")
+texture_normal = ExtResource("4_urdrt")
+texture_pressed = ExtResource("5_hmv1b")
+texture_hover = ExtResource("6_2syoe")
 
 [node name="SettingsButton" type="TextureButton" parent="."]
-offset_left = 364.0
-offset_top = 302.00003
-offset_right = 392.0
-offset_bottom = 332.00003
-scale = Vector2(5, 5)
-texture_normal = ExtResource("6_aemly")
+offset_left = 464.00003
+offset_top = 208.00002
+offset_right = 512.0
+offset_bottom = 224.00002
+scale = Vector2(3, 3)
+texture_normal = ExtResource("7_1r1p8")
+texture_pressed = ExtResource("8_g4qhq")
+texture_hover = ExtResource("9_fnua2")
 
 [node name="MainMenuButton" type="TextureButton" parent="."]
-offset_left = 602.0
-offset_top = 290.0
-offset_right = 622.0
-offset_bottom = 313.0
-scale = Vector2(6, 6)
-texture_normal = ExtResource("7_aemly")
+offset_left = 512.0
+offset_top = 296.0
+offset_right = 560.0
+offset_bottom = 312.0
+scale = Vector2(3, 3)
+texture_normal = ExtResource("10_kd82h")
+texture_pressed = ExtResource("11_eq7uf")
+texture_hover = ExtResource("12_bmvyg")

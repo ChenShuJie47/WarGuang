@@ -337,8 +337,6 @@ func ensure_afterimage_trail():
 	# 检查残影场景是否配置
 	if not afterimage_scene:
 		push_warning("ManiacNPC: afterimage_scene 未配置，残影将无法生成")
-	
-	print("ManiacNPC: 已启用本地 AfterimageTrail")
 
 ## 处理 ManiacNPC 移动残影
 func handle_maniac_afterimages(delta):

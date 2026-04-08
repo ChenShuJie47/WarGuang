@@ -1,54 +1,36 @@
-[gd_scene load_steps=9 format=3 uid="uid://kkrfw8yl08js"]
+[gd_scene load_steps=10 format=3 uid="uid://kkrfw8yl08js"]
 
 [ext_resource type="Script" uid="uid://bs7ste1w61ecf" path="res://Scripts/Player/PlayerUI.gd" id="1_uyejk"]
-[ext_resource type="Texture2D" uid="uid://bhu6b58wdr7hr" path="res://Assets/Textures/UIs/warma1.tres" id="2_27bup"]
-[ext_resource type="Texture2D" uid="uid://clqgpfc2apnc8" path="res://Assets/Textures/UIs/BackButtonWhite.tres" id="2_b22dx"]
-[ext_resource type="Texture2D" uid="uid://bshrqifraeukj" path="res://Assets/Textures/UIs/BackButtonBlue.tres" id="3_0t1lg"]
 [ext_resource type="PackedScene" uid="uid://ti5ndmbw2337" path="res://Scenes/UI/Scenes/GameSettingScene.tscn" id="3_dk7d2"]
 [ext_resource type="Texture2D" uid="uid://cd2fubv5xod12" path="res://Assets/Textures/UIs/coin1.tres" id="4_27bup"]
+[ext_resource type="Texture2D" uid="uid://dvv0jc1oeuum5" path="res://Assets/Textures/Warmas/w.png" id="4_p4cyq"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="4_ruvwe"]
 [ext_resource type="PackedScene" uid="uid://h0kyvxadfyys" path="res://Scenes/Player/HealthUnit.tscn" id="5_27bup"]
+[ext_resource type="Texture2D" uid="uid://wfe7dgsksxno" path="res://Assets/Textures/UIs/SceneUIs/设置1.tres" id="7_p4cyq"]
+[ext_resource type="Texture2D" uid="uid://b3bk8r4dyhftb" path="res://Assets/Textures/UIs/SceneUIs/设置3.tres" id="8_dk7d2"]
+[ext_resource type="Texture2D" uid="uid://kwnfo4pj52u1" path="res://Assets/Textures/UIs/SceneUIs/设置2.tres" id="9_7xpsu"]
 
 [node name="PlayerUI" type="CanvasLayer"]
 script = ExtResource("1_uyejk")
 health_unit_scene = ExtResource("5_27bup")
 game_setting_scene = ExtResource("3_dk7d2")
-health_unit_spacing = null
-health_unit_start_x = null
-health_unit_y = null
-coin_increment_delay = null
-coin_hide_delay = null
-coin_fade_duration = null
-coin_change_interval_slow = null
-coin_change_interval_mod = null
-coin_change_interval_fast = null
-save_label_show_duration = null
-save_label_fade_duration = null
 
 [node name="PlayerIcon" type="TextureRect" parent="."]
-offset_left = 10.0
-offset_top = 10.0
+offset_left = 2.0
+offset_top = 2.0
 offset_right = 34.0
-offset_bottom = 33.0
+offset_bottom = 30.0
 scale = Vector2(2, 2)
-texture = ExtResource("2_27bup")
+texture = ExtResource("4_p4cyq")
 
 [node name="HealthContainer" type="Node2D" parent="."]
-position = Vector2(100, 35)
-
-[node name="HealthUnit_0" parent="HealthContainer" instance=ExtResource("5_27bup")]
-
-[node name="HealthUnit_1" parent="HealthContainer" instance=ExtResource("5_27bup")]
-position = Vector2(70, 0)
-
-[node name="HealthUnit_2" parent="HealthContainer" instance=ExtResource("5_27bup")]
-position = Vector2(140, 0)
+position = Vector2(82, 34)
 
 [node name="CoinContainer" type="HBoxContainer" parent="."]
 offset_left = 10.0
-offset_top = 60.0
+offset_top = 68.0
 offset_right = 117.0
-offset_bottom = 82.0
+offset_bottom = 90.0
 
 [node name="CoinIcon" type="TextureRect" parent="CoinContainer"]
 layout_mode = 2
@@ -77,10 +59,10 @@ theme_override_font_sizes/font_size = 20
 text = "存档已更新 . . . "
 
 [node name="GameSettingButton" type="TextureButton" parent="."]
-offset_left = 1110.0
-offset_top = 5.0
-offset_right = 1127.0
+offset_left = 1101.0
+offset_right = 1118.0
 offset_bottom = 16.0
-scale = Vector2(2, 2)
-texture_normal = ExtResource("2_b22dx")
-texture_hover = ExtResource("3_0t1lg")
+scale = Vector2(3, 3)
+texture_normal = ExtResource("7_p4cyq")
+texture_pressed = ExtResource("8_dk7d2")
+texture_hover = ExtResource("9_7xpsu")
