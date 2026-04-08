@@ -23,8 +23,8 @@ environment = SubResource("Environment_jbabp")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 physics_interpolation_mode = 1
-position = Vector2(287, -41)
-zoom = Vector2(2.5, 2.5)
+position = Vector2(367, -77)
+zoom = Vector2(2, 2)
 process_callback = 0
 limit_enabled = false
 limit_left = -2000
@@ -53,7 +53,7 @@ position = Vector2(-2777, -1)
 position = Vector2(146, 996)
 
 [node name="Player" parent="." instance=ExtResource("1_wdg0h")]
-position = Vector2(287, -41)
+position = Vector2(367, -77)
 
 [node name="PlayerUI" parent="." instance=ExtResource("2_4xi3m")]
 health_unit_spacing = 70.0

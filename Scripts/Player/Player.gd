@@ -40,54 +40,54 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 ## 移动设置
 @export_category("移动设置")
 ## 基础移动速度（像素/秒）
-@export var base_move_speed: float = 110.0
+@export var base_move_speed: float = 120.0
 ## 奔跑移动速度（像素/秒）
-@export var run_move_speed: float = 220.0
+@export var run_move_speed: float = 240.0
 ## 地面加速度 (0-1，越大加速越快)
-@export var ground_acceleration: float = 0.6
+@export var ground_acceleration: float = 0.8
 ## 地面减速度 (0-1，越大减速越快)
-@export var ground_deceleration: float = 0.6
+@export var ground_deceleration: float = 0.8
 ## 空中移动控制力 (0-1，越小控制力越弱)
-@export var air_control: float = 0.28
+@export var air_control: float = 0.3
 
 ## 跳跃设置
 @export_category("跳跃设置")
 ## 跳跃移动速度（像素/秒）
-@export var jump_move_speed: float = 120.0
+@export var jump_move_speed: float = 140.0
 ## 一段跳初始速度
-@export var jump_velocity: float = -160.0
+@export var jump_velocity: float = -140.0
 ## 二段跳初始速度
-@export var double_jump_velocity: float = -130.0
+@export var double_jump_velocity: float = -120.0
 ## 最大跳跃按住时间（秒）
-@export var max_jump_hold_time: float = 0.22
+@export var max_jump_hold_time: float = 0.23
 ## 跳跃额外速度（长按期间每帧增加）
-@export var jump_hold_boost: float = -30.0
+@export var jump_hold_boost: float = -35.0
 ## 重力
 @export var gravity: float = 1300.0
 ## 最大下落速度
-@export var max_fall_speed: float = 400.0
+@export var max_fall_speed: float = 450.0
 ## 土狼时间（离开平台后仍可跳跃的时间）
 @export var coyote_time: float = 0.2
 ## 跳跃缓冲时间（提前按跳跃的有效时间）
 @export var jump_buffer_time: float = 0.15
 ## 触发落地抖动的最小DOWN状态持续时间
-@export var land_shake_min_down_time: float = 1
+@export var land_shake_min_down_time: float = 1.2
 
 ## 滑翔设置
 @export_category("滑翔设置")
 ## 进入滑翔的初始水平速度
-@export var glide_init_h_speed: float = 30.0
+@export var glide_init_h_speed: float = 60.0
 ## 滑翔目标水平速度
-@export var glide_target_h_speed: float = 130.0
+@export var glide_target_h_speed: float = 160.0
 ## 滑翔最大下落速度乘数
-@export var glide_max_fall_multiplier: float = 0.25
+@export var glide_max_fall_multiplier: float = 0.2
 ## 滑翔加速时间（秒）- 控制从初始到目标下落速度的过渡时间
 @export var glide_accel_time: float = 0.5
 
 ## 受伤设置
 @export_category("受伤设置")
 ## 受伤击退速度
-@export var hurt_knockback_speed: float = 200.0
+@export var hurt_knockback_speed: float = 100.0
 ## 受伤僵直时间（秒）
 @export var hurt_stun_time: float = 0.5
 ## 受伤无敌时间（秒）
@@ -102,9 +102,9 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 ## 死亡设置
 @export_category("死亡设置")
 ## 死亡动画持续时间（秒）
-@export var die_animation_time: float = 3.0
+@export var die_animation_time: float = 2.0
 ## 重生后禁用时间（秒）
-@export var respawn_invincible_time: float = 2.0
+@export var respawn_invincible_time: float = 1.0
 ## 传送渐黑渐显持续时间（秒）
 @export var fade_transition_time: float = 1.5
 ## 死亡慢动作时间（秒）
@@ -119,9 +119,9 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 ## 黑色冲刺持续时间（秒）
 @export var black_dash_duration: float = 0.22
 ## 冲刺冷却时间（秒）
-@export var dash_cooldown: float = 0.5
+@export var dash_cooldown: float = 0.6
 ## 冲刺后惯性初速度
-@export var dash_inertia_speed: float = 125.0
+@export var dash_inertia_speed: float = 100.0
 ## 冲刺后惯性衰减系数 (0-1，越大衰减越快)
 @export var dash_inertia_decay: float = 0.8
 
@@ -129,31 +129,31 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 ## 超级冲刺充电时间（秒）
 @export var super_dash_charge_time: float = 1.5
 ## 超级冲刺目标速度
-@export var super_dash_speed: float = 400
+@export var super_dash_speed: float = 450
 ## 超级冲刺加速时间（秒）
-@export var super_dash_accel_time: float = 0.2
+@export var super_dash_accel_time: float = 0.3
 ## 超级冲刺输入锁定时间（秒）
 @export var super_dash_input_lock_time: float = 0.2
 ## 超级冲刺最大持续时间（秒）
-@export var super_dash_max_duration: float = 3.5
+@export var super_dash_max_duration: float = 5
 
 ## 奔跑设置
 @export_category("奔跑设置")
 ## 快速按键时间窗口（秒）
 @export var quick_tap_time_window: float = 0.3
 ## 撞墙反弹的X轴速度
-@export var wall_bump_rebound_x: float = 175.0
+@export var wall_bump_rebound_x: float = 180.0
 ## 撞墙反弹的Y轴速度  
-@export var wall_bump_rebound_y: float = -125.0
+@export var wall_bump_rebound_y: float = -130.0
 
 ## 奔跑跳跃设置
 @export_category("奔跑跳跃设置")
 ## 奔跑跳跃水平速度加成
-@export var run_jump_boost_speed: float = 120.0
+@export var run_jump_boost_speed: float = 130.0
 ## 奔跑跳跃加成持续时间（秒）
-@export var run_jump_boost_duration: float = 0.3
+@export var run_jump_boost_duration: float = 0.4
 ## 奔跑跳跃衰减时间（秒）
-@export var run_jump_decay_time: float = 0.5
+@export var run_jump_decay_time: float = 0.25
 
 ## 二段跳旋转设置
 @export_category("二段跳旋转设置")
@@ -162,11 +162,11 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 
 @export_category("二段跳残影特殊效果设置")
 ## 水平速度加成（增加到基础移动速度上）
-@export var jump2_horizontal_boost: float = 250.0
+@export var jump2_horizontal_boost: float = 260.0
 ## 水平速度加成持续时间（秒）
-@export var jump2_boost_duration: float = 0.25
+@export var jump2_boost_duration: float = 0.3
 ## 水平速度加成减少过渡时间（秒）
-@export var jump2_boost_decrease_time: float = 0.4
+@export var jump2_boost_decrease_time: float = 0.3
 ## 打断 JumpBox 持续二段跳后的垂直速度衰减时间（秒）
 @export var jump2_interrupt_decay_time: float = 0.1
 
@@ -174,27 +174,27 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 ## 墙体检测距离（像素）
 @export var wall_detection_distance: float = 15.0 #可能多余
 ## 攀墙下滑速度（像素/秒）
-@export var wall_slide_speed: float = 120.0
+@export var wall_slide_speed: float = 140.0
 ## 攀墙缓慢下滑速度（像素/秒）
-@export var wall_slide_slow_speed: float = 30.0
+@export var wall_slide_slow_speed: float = 40.0
 ## 按住向墙方向键的静止时间（秒）
 @export var hold_toward_wall_time: float = 0.4
 ## 不按方向键的过渡时间（秒）  
 @export var no_input_time: float = 0.8
 ## 攀墙反方向跳跃缓冲时间（秒）
-@export var wall_grip_reverse_buffer_time: float = 0.2
+@export var wall_grip_reverse_buffer_time: float = 0.25
 
 @export_category("墙跳设置")
 ## 墙跳水平初速度（离开墙体的水平速度）
 @export var wall_jump_h_speed: float = 320.0
 ## 墙跳垂直速度
-@export var wall_jump_v_speed: float = -150.0
+@export var wall_jump_v_speed: float = -140.0
 ## 墙跳后重新附着延迟（秒）
 @export var wall_jump_reattach_delay: float = 0.2
 ## 墙跳最大按住时间（秒）
-@export var wall_jump_max_hold_time: float = 0.24
+@export var wall_jump_max_hold_time: float = 0.23
 ## 墙跳额外垂直速度（长按期间每帧增加）
-@export var wall_jump_hold_boost: float = -60.0
+@export var wall_jump_hold_boost: float = -50.0
 
 @export_category("特殊状态设置")
 ## IDLE状态进入SLEEP状态的时间（秒）
@@ -231,19 +231,6 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 @export_category("残影全局设置")
 ## 残影统一缩放倍数
 @export var afterimage_scale_multiplier: float = 1
-
-# ==================== 残影配置（已迁移到 AfterimageTrail 组件） ====================
-# - dash_afterimage_interval
-# - dash_afterimage_lifetime
-# - dash_afterimage_color
-# - black_dash_afterimage_color
-# - super_dash_afterimage_interval
-# - super_dash_afterimage_lifetime
-# - super_dash_afterimage_color
-# - jump2_afterimage_interval
-# - jump2_afterimage_lifetime
-# - jump2_afterimage_color
-# ====================================================================
 
 @export_category("Hit Stop 设置")
 ## 是否启用Hit Stop
@@ -2891,6 +2878,8 @@ func start_camera_transition_guard(duration: float = 0.18, max_duration: float =
 	camera_transition_guard_elapsed = 0.0
 	camera_transition_guard_min_duration = maxf(duration, 0.01)
 	camera_transition_guard_timer = maxf(max_duration, camera_transition_guard_min_duration)
+	if CAMERA_TELEPORT_DEBUG:
+		print("[CameraGuard] lock begin min=", camera_transition_guard_min_duration, " max=", camera_transition_guard_timer)
 
 func _update_camera_transition_guard(fixed_delta: float) -> void:
 	if not camera_transition_guard_active:
@@ -2908,6 +2897,8 @@ func _update_camera_transition_guard(fixed_delta: float) -> void:
 		phantom_camera.follow_axis_lock = camera_transition_axis_lock_backup
 		if phantom_camera.has_method("teleport_position"):
 			phantom_camera.teleport_position()
+	if CAMERA_TELEPORT_DEBUG:
+		print("[CameraGuard] lock end elapsed=", camera_transition_guard_elapsed, " timeout_left=", camera_transition_guard_timer)
 
 
 func sync_camera_after_room_teleport() -> void:
@@ -2985,20 +2976,53 @@ func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: 
 func _is_player_inside_normal_camera_dead_zone() -> bool:
 	if not phantom_camera:
 		return true
-	var target: Node2D = phantom_camera.follow_target
-	if not target:
-		target = self
+	# 使用世界坐标“相机自由区”判定，避免角点场景下仅靠屏幕坐标导致的早解锁
+	var camera := get_viewport().get_camera_2d()
+	if camera == null:
+		return true
+
+	var target_world: Vector2 = global_position + phantom_camera.follow_offset
 	var viewport_size: Vector2 = get_viewport_rect().size
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return true
 
-	var viewport_position: Vector2 = (target.get_global_transform_with_canvas().get_origin() + phantom_camera.follow_offset) / viewport_size
-	var half_w := camera_transition_dead_zone_backup.x * 0.5
-	var half_h := camera_transition_dead_zone_backup.y * 0.5
-	var inside_x := viewport_position.x >= (0.5 - half_w) and viewport_position.x <= (0.5 + half_w)
-	var inside_y := viewport_position.y >= (0.5 - half_h) and viewport_position.y <= (0.5 + half_h)
+	var zoom: Vector2 = camera.zoom
+	var half_view_w: float = viewport_size.x * 0.5 / zoom.x
+	var half_view_h: float = viewport_size.y * 0.5 / zoom.y
+	var half_dead_w: float = viewport_size.x * camera_transition_dead_zone_backup.x * 0.5 / zoom.x
+	var half_dead_h: float = viewport_size.y * camera_transition_dead_zone_backup.y * 0.5 / zoom.y
+
+	var limit_left: float = float(int(phantom_camera.get("limit_left")))
+	var limit_top: float = float(int(phantom_camera.get("limit_top")))
+	var limit_right: float = float(int(phantom_camera.get("limit_right")))
+	var limit_bottom: float = float(int(phantom_camera.get("limit_bottom")))
+
+	# 无限制时直接通过
+	if limit_left <= -CAMERA_LIMIT_DISABLED + 1 and limit_right >= CAMERA_LIMIT_DISABLED - 1 and limit_top <= -CAMERA_LIMIT_DISABLED + 1 and limit_bottom >= CAMERA_LIMIT_DISABLED - 1:
+		return true
+
+	var free_min_x: float = limit_left + half_view_w + half_dead_w
+	var free_max_x: float = limit_right - half_view_w - half_dead_w
+	var free_min_y: float = limit_top + half_view_h + half_dead_h
+	var free_max_y: float = limit_bottom - half_view_h - half_dead_h
+
+	var inside_x: bool
+	var inside_y: bool
+
+	# 房间太窄/太矮时该轴不存在自由区，视为通过（该轴本就会被限制锁定）
+	if free_min_x > free_max_x:
+		inside_x = true
+	else:
+		inside_x = target_world.x >= free_min_x and target_world.x <= free_max_x
+
+	if free_min_y > free_max_y:
+		inside_y = true
+	else:
+		inside_y = target_world.y >= free_min_y and target_world.y <= free_max_y
+
 	if CAMERA_TELEPORT_DEBUG:
-		print("[CameraGuard] viewport=", viewport_position, " inside=", inside_x and inside_y)
+		print("[CameraGuard] target=", target_world, " freeX=", free_min_x, "..", free_max_x, " freeY=", free_min_y, "..", free_max_y, " inside=", inside_x and inside_y)
+
 	return inside_x and inside_y
 
 ## 门传送等瞬移后调用：同步 PhantomCamera2D 与 Camera2D，修复 FRAMED 死区与视口坐标一帧不一致
