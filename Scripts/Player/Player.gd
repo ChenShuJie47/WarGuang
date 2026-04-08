@@ -29,6 +29,7 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 @onready var phantom_camera = $PhantomCamera2D
 @onready var point_light = $PointLight2D  
 @onready var timers = $Timers
+@onready var camera_controller = $PlayerCameraController
 @onready var canvas_modulate = get_tree().get_first_node_in_group("canvas_modulate")
 
 ##外部变量
@@ -324,12 +325,6 @@ var is_control_locked: bool = false             # 标记玩家控制是否被锁
 
 ## 相机相关
 var original_camera_position: Vector2 = Vector2.ZERO  # 相机原始位置，用于重置
-var camera_transition_guard_timer: float = 0.0
-var camera_transition_guard_active: bool = false
-var camera_transition_dead_zone_backup: Vector2 = Vector2(0.125, 0.1)
-var camera_transition_guard_elapsed: float = 0.0
-var camera_transition_guard_min_duration: float = 0.12
-var camera_transition_axis_lock_backup: int = 0
 
 ## 奔跑检测相关
 var last_move_input_time: float = 0.0           # 记录最后移动输入时间，用于快速双击检测
@@ -460,6 +455,8 @@ func _ready():
 	# 保存相机原始位置
 	if phantom_camera:
 		original_camera_position = phantom_camera.position
+	if camera_controller and camera_controller.has_method("setup"):
+		camera_controller.setup(self)
 	
 	# 查找VignetteEffect
 	find_vignette_effect()
@@ -606,7 +603,10 @@ func initialize_wall_detection():
 func _physics_process(delta):
 	# 关键修复：限制最大 delta 值，确保不同帧率下行为一致
 	var fixed_delta = min(delta, MAX_FRAME_TIME)
-	_update_camera_transition_guard(fixed_delta)
+	if camera_controller and camera_controller.has_method("physics_process"):
+		camera_controller.physics_process(fixed_delta)
+	else:
+		_update_camera_transition_guard(fixed_delta)
 	# ========== 阶段 0：游戏暂停状态处理 ==========
 	# 检测游戏暂停状态
 	is_game_paused = _check_game_pause_state()
@@ -2863,167 +2863,21 @@ func _on_control_lock_timeout():
 #region Signals
 # 添加相机偏移函数
 func reset_camera_position():
-	if phantom_camera:
-		var tween = create_tween()
-		tween.set_trans(camera_offset_transition_type)
-		tween.set_ease(camera_offset_ease_type)
-		tween.tween_property(phantom_camera, "follow_offset", Vector2.ZERO, camera_offset_transition_duration)
+	if camera_controller and camera_controller.has_method("reset_camera_position"):
+		camera_controller.reset_camera_position()
 
 func start_camera_transition_guard(duration: float = 0.18, max_duration: float = 1.0) -> void:
-	if not phantom_camera:
-		return
-	camera_transition_axis_lock_backup = int(phantom_camera.follow_axis_lock)
-	phantom_camera.follow_axis_lock = PhantomCamera2D.FollowLockAxis.XY
-	camera_transition_guard_active = true
-	camera_transition_guard_elapsed = 0.0
-	camera_transition_guard_min_duration = maxf(duration, 0.01)
-	camera_transition_guard_timer = maxf(max_duration, camera_transition_guard_min_duration)
-	if CAMERA_TELEPORT_DEBUG:
-		print("[CameraGuard] lock begin min=", camera_transition_guard_min_duration, " max=", camera_transition_guard_timer)
+	if camera_controller and camera_controller.has_method("start_camera_transition_guard"):
+		camera_controller.start_camera_transition_guard(duration, max_duration)
 
 func _update_camera_transition_guard(fixed_delta: float) -> void:
-	if not camera_transition_guard_active:
-		return
-	camera_transition_guard_elapsed += fixed_delta
-	camera_transition_guard_timer -= fixed_delta
-	if camera_transition_guard_elapsed < camera_transition_guard_min_duration:
-		return
-
-	# 传送后相机冻结结束条件：玩家回到正常死区，或超时兜底
-	if camera_transition_guard_timer > 0.0 and not _is_player_inside_normal_camera_dead_zone():
-		return
-	camera_transition_guard_active = false
-	if phantom_camera:
-		phantom_camera.follow_axis_lock = camera_transition_axis_lock_backup
-		if phantom_camera.has_method("teleport_position"):
-			phantom_camera.teleport_position()
-	if CAMERA_TELEPORT_DEBUG:
-		print("[CameraGuard] lock end elapsed=", camera_transition_guard_elapsed, " timeout_left=", camera_transition_guard_timer)
+	if camera_controller and camera_controller.has_method("physics_process"):
+		camera_controller.physics_process(fixed_delta)
 
 
 func sync_camera_after_room_teleport() -> void:
-	if not phantom_camera:
-		return
-
-	var camera := get_viewport().get_camera_2d()
-	# 传送前清理残余震动，避免 camera.offset 在新房间首帧造成“抖一下”
-	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
-		CameraShakeManager.stop_shake(phantom_camera)
-	if camera:
-		camera.offset = Vector2.ZERO
-
-	var desired_center: Vector2 = global_position + phantom_camera.follow_offset
-	var clamped_center := _clamp_camera_center_by_limits(desired_center, phantom_camera, camera)
-
-	phantom_camera.global_position = clamped_center
-	if phantom_camera.has_method("teleport_position"):
-		phantom_camera.teleport_position()
-
-	if camera:
-		camera.global_position = clamped_center
-		if camera.has_method("reset_smoothing"):
-			camera.reset_smoothing()
-		if camera.has_method("reset_physics_interpolation"):
-			camera.reset_physics_interpolation()
-
-	if CAMERA_TELEPORT_DEBUG:
-		print("[CameraTeleportSync] desired=", desired_center, " clamped=", clamped_center)
-
-	# 启动短时相机冻结：类似房间门过渡逻辑，避免角点边界首段移动触发错误跟随
-	start_camera_transition_guard(0.10, 0.65)
-
-
-func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: Camera2D) -> Vector2:
-	if pcam == null:
-		return target_center
-
-	var limit_left: float = float(int(pcam.get("limit_left")))
-	var limit_top: float = float(int(pcam.get("limit_top")))
-	var limit_right: float = float(int(pcam.get("limit_right")))
-	var limit_bottom: float = float(int(pcam.get("limit_bottom")))
-
-	if limit_left <= -CAMERA_LIMIT_DISABLED + 1 and limit_right >= CAMERA_LIMIT_DISABLED - 1 and limit_top <= -CAMERA_LIMIT_DISABLED + 1 and limit_bottom >= CAMERA_LIMIT_DISABLED - 1:
-		return target_center
-
-	var viewport_size: Vector2 = get_viewport_rect().size
-	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
-		return target_center
-
-	var zoom: Vector2 = Vector2.ONE
-	if camera:
-		zoom = camera.zoom
-	elif pcam.has_method("get_zoom"):
-		zoom = pcam.get_zoom()
-
-	var half_w: float = viewport_size.x * 0.5 / zoom.x
-	var half_h: float = viewport_size.y * 0.5 / zoom.y
-
-	var min_x: float = limit_left + half_w
-	var max_x: float = limit_right - half_w
-	var min_y: float = limit_top + half_h
-	var max_y: float = limit_bottom - half_h
-
-	# 当房间可视范围小于屏幕时，锁到中点，避免 clamp 反转导致抖动
-	if min_x > max_x:
-		min_x = (limit_left + limit_right) * 0.5
-		max_x = min_x
-	if min_y > max_y:
-		min_y = (limit_top + limit_bottom) * 0.5
-		max_y = min_y
-
-	return Vector2(clampf(target_center.x, min_x, max_x), clampf(target_center.y, min_y, max_y))
-
-func _is_player_inside_normal_camera_dead_zone() -> bool:
-	if not phantom_camera:
-		return true
-	# 使用世界坐标“相机自由区”判定，避免角点场景下仅靠屏幕坐标导致的早解锁
-	var camera := get_viewport().get_camera_2d()
-	if camera == null:
-		return true
-
-	var target_world: Vector2 = global_position + phantom_camera.follow_offset
-	var viewport_size: Vector2 = get_viewport_rect().size
-	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
-		return true
-
-	var zoom: Vector2 = camera.zoom
-	var half_view_w: float = viewport_size.x * 0.5 / zoom.x
-	var half_view_h: float = viewport_size.y * 0.5 / zoom.y
-	var half_dead_w: float = viewport_size.x * camera_transition_dead_zone_backup.x * 0.5 / zoom.x
-	var half_dead_h: float = viewport_size.y * camera_transition_dead_zone_backup.y * 0.5 / zoom.y
-
-	var limit_left: float = float(int(phantom_camera.get("limit_left")))
-	var limit_top: float = float(int(phantom_camera.get("limit_top")))
-	var limit_right: float = float(int(phantom_camera.get("limit_right")))
-	var limit_bottom: float = float(int(phantom_camera.get("limit_bottom")))
-
-	# 无限制时直接通过
-	if limit_left <= -CAMERA_LIMIT_DISABLED + 1 and limit_right >= CAMERA_LIMIT_DISABLED - 1 and limit_top <= -CAMERA_LIMIT_DISABLED + 1 and limit_bottom >= CAMERA_LIMIT_DISABLED - 1:
-		return true
-
-	var free_min_x: float = limit_left + half_view_w + half_dead_w
-	var free_max_x: float = limit_right - half_view_w - half_dead_w
-	var free_min_y: float = limit_top + half_view_h + half_dead_h
-	var free_max_y: float = limit_bottom - half_view_h - half_dead_h
-
-	var inside_x: bool
-	var inside_y: bool
-
-	# 房间太窄/太矮时该轴不存在自由区，视为通过（该轴本就会被限制锁定）
-	if free_min_x > free_max_x:
-		inside_x = true
-	else:
-		inside_x = target_world.x >= free_min_x and target_world.x <= free_max_x
-
-	if free_min_y > free_max_y:
-		inside_y = true
-	else:
-		inside_y = target_world.y >= free_min_y and target_world.y <= free_max_y
-
-	if CAMERA_TELEPORT_DEBUG:
-		print("[CameraGuard] target=", target_world, " freeX=", free_min_x, "..", free_max_x, " freeY=", free_min_y, "..", free_max_y, " inside=", inside_x and inside_y)
-
-	return inside_x and inside_y
+	if camera_controller and camera_controller.has_method("sync_camera_after_room_teleport"):
+		camera_controller.sync_camera_after_room_teleport()
 
 ## 门传送等瞬移后调用：同步 PhantomCamera2D 与 Camera2D，修复 FRAMED 死区与视口坐标一帧不一致
 func sync_phantom_camera_after_teleport() -> void:
@@ -3031,41 +2885,8 @@ func sync_phantom_camera_after_teleport() -> void:
 
 ## 强制同步相机位置到玩家位置，忽略限制用于传送后
 func force_sync_camera_position_after_teleport() -> void:
-	var camera = get_viewport().get_camera_2d()
-	if not camera or not phantom_camera:
-		return
-	
-	# 计算期望的相机位置（Camera2D 的 global_position 就是中心点）
-	var desired_center = global_position + phantom_camera.follow_offset
-	var desired_position = desired_center
-	
-	# 保存原始限制
-	var original_left = camera.limit_left
-	var original_top = camera.limit_top
-	var original_right = camera.limit_right
-	var original_bottom = camera.limit_bottom
-	
-	if CAMERA_TELEPORT_DEBUG:
-		print("DEBUG: 传送后强制同步相机 - 玩家位置:", global_position, " 期望相机位置:", desired_position, " 限制:", original_left, ",", original_top, ",", original_right, ",", original_bottom)
-	
-	# 临时设置极大限制范围，使相机可以自由移动到目标位置
-	camera.limit_left = -CAMERA_LIMIT_DISABLED
-	camera.limit_top = -CAMERA_LIMIT_DISABLED
-	camera.limit_right = CAMERA_LIMIT_DISABLED
-	camera.limit_bottom = CAMERA_LIMIT_DISABLED
-	camera.global_position = desired_position
-	
-	# 等待一帧应用
-	await get_tree().process_frame
-	
-	# 恢复限制（这会clamp相机位置）
-	camera.limit_left = original_left
-	camera.limit_top = original_top
-	camera.limit_right = original_right
-	camera.limit_bottom = original_bottom
-	
-	if CAMERA_TELEPORT_DEBUG:
-		print("DEBUG: 相机位置设置后:", camera.global_position)
+	if camera_controller and camera_controller.has_method("force_sync_camera_position_after_teleport"):
+		await camera_controller.force_sync_camera_position_after_teleport()
 
 #endregion
 

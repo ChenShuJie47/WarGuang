@@ -27,12 +27,7 @@ position = Vector2(367, -77)
 zoom = Vector2(2, 2)
 process_callback = 0
 limit_enabled = false
-limit_left = -2000
-limit_top = -2000
-limit_right = 2000
-limit_bottom = 2000
 position_smoothing_speed = 8.0
-editor_draw_limits = true
 
 [node name="PhantomCameraHost" type="Node" parent="Camera2D"]
 process_priority = 300
@@ -50,7 +45,7 @@ position = Vector2(3676, -17)
 position = Vector2(-2777, -1)
 
 [node name="Room4" parent="RoomContainer" instance=ExtResource("6_rbrij")]
-position = Vector2(146, 996)
+position = Vector2(-2167, -1156)
 
 [node name="Player" parent="." instance=ExtResource("1_wdg0h")]
 position = Vector2(367, -77)

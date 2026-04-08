@@ -76,6 +76,10 @@ func teleport_player(player):
 	# 2. 黑屏期间切换房间和传送玩家
 	var target_room_id = other_door.get_room_id()
 	var target_position = other_door.global_position
+
+	# 传送窗口内临时抑制 RoomTrigger 切房回调，防止角点门附近二次切房竞态
+	if RoomManager and RoomManager.has_method("suppress_player_room_enter"):
+		RoomManager.suppress_player_room_enter(0.45)
 	
 	RoomManager.load_room(target_room_id)
 	
