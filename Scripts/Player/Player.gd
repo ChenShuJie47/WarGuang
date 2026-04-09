@@ -89,11 +89,11 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 ## 滑翔水平加速度（越大越快进入目标速度）
 @export var glide_horizontal_acceleration: float = 900.0
 ## 滑翔松开方向键时的水平减速（越小越“飘”）
-@export var glide_release_deceleration: float = 70.0
+@export var glide_release_deceleration: float = 80.0
 ## 滑翔最大下落速度乘数
 @export var glide_max_fall_multiplier: float = 0.2
 ## 滑翔加速时间（秒）- 控制从初始到目标下落速度的过渡时间
-@export var glide_accel_time: float = 0.5
+@export var glide_accel_time: float = 2
 
 ## 受伤设置
 @export_category("受伤设置")
@@ -207,15 +207,15 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 
 @export_category("墙跳设置")
 ## 墙跳水平初速度（离开墙体的水平速度）
-@export var wall_jump_h_speed: float = 320.0
+@export var wall_jump_h_speed: float = 360.0
 ## 墙跳垂直速度
-@export var wall_jump_v_speed: float = -100.0
+@export var wall_jump_v_speed: float = -140.0
 ## 墙跳后重新附着延迟（秒）
-@export var wall_jump_reattach_delay: float = 0.2
+@export var wall_jump_reattach_delay: float = 0.24
 ## 墙跳最大按住时间（秒）
 @export var wall_jump_max_hold_time: float = 0.23
 ## 墙跳额外垂直速度（长按期间每帧增加）
-@export var wall_jump_hold_boost: float = -50.0
+@export var wall_jump_hold_boost: float = -60.0
 
 @export_category("特殊状态设置")
 ## IDLE状态进入SLEEP状态的时间（秒）
