@@ -61,6 +61,8 @@ func _apply_trigger_effect(player, trigger_grade: String) -> void:
 		player.start_jumpbox_bounce(vertical_force, trigger_grade, effect_overrides)
 	if player.has_method("start_jumpbox_hit_stop"):
 		player.start_jumpbox_hit_stop(trigger_grade)
+	_debug_jumpbox_camera(player, "before_jumpbox_shake", trigger_grade)
 	get_tree().create_timer(0.06).timeout.connect(func():
 		CameraShakeManager.shake("y_weak", player.phantom_camera)
+		_debug_jumpbox_camera(player, "after_jumpbox_shake", trigger_grade)
 	)

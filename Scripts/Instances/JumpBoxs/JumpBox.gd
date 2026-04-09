@@ -122,12 +122,17 @@ func _is_visual_yes_state() -> bool:
 
 func _apply_trigger_effect(player, trigger_grade: String) -> void:
 	var applied_force = vertical_force * 2.0 if trigger_grade == "perfect" else vertical_force
+	var effect_overrides := {
+		"max_vertical_force_multiplier": 2.0 if trigger_grade == "perfect" else 1.0
+	}
 	if player.has_method("start_jumpbox_bounce"):
-		player.start_jumpbox_bounce(applied_force, trigger_grade, {})
+		player.start_jumpbox_bounce(applied_force, trigger_grade, effect_overrides)
 	if player.has_method("start_jumpbox_hit_stop"):
 		player.start_jumpbox_hit_stop(trigger_grade)
+	_debug_jumpbox_camera(player, "before_jumpbox_shake", trigger_grade)
 	get_tree().create_timer(0.06).timeout.connect(func():
 		CameraShakeManager.shake("y_weak", player.phantom_camera)
+		_debug_jumpbox_camera(player, "after_jumpbox_shake", trigger_grade)
 	)
 
 func _consume_after_trigger(_player, _trigger_grade: String) -> void:
@@ -170,7 +175,7 @@ func set_active() -> void:
 		collision_shape.set_deferred("disabled", false)
 
 func trigger_bounce(player):
-	await super.trigger_bounce(player)
+	super.trigger_bounce(player)
 
 func _play_loop_if_exists(anim_name: String) -> void:
 	if not animated_sprite or not animated_sprite.sprite_frames:

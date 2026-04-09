@@ -768,6 +768,7 @@ script = ExtResource("4_jmcll")
 collision_mask = 63
 script = ExtResource("1_kyqiw")
 afterimage_scene = ExtResource("2_t26db")
+camera_damage_debug = true
 
 [node name="AfterimageTrail" type="Node2D" parent="."]
 script = ExtResource("5_afterimagetrail")

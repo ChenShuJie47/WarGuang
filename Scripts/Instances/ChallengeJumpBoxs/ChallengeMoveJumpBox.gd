@@ -40,7 +40,7 @@ func _ready():
 	global_position = actual_target_1
 	current_target_index = 1  # 下一个目标是目标点 2
 
-func _process(delta):
+func _update_custom(delta):
 	# 仅 YES 激活态移动；NO 和所有 TRANSITION/END/START 状态都冻结移动。
 	if not is_active or not animated_sprite or animated_sprite.animation != "YES" or current_anim_state != AnimState.YES:
 		return
@@ -109,6 +109,8 @@ func _apply_trigger_effect(player, trigger_grade: String) -> void:
 		player.start_jumpbox_bounce(vertical_force, trigger_grade, effect_overrides)
 	if player.has_method("start_jumpbox_hit_stop"):
 		player.start_jumpbox_hit_stop(trigger_grade)
+	_debug_jumpbox_camera(player, "before_jumpbox_shake", trigger_grade)
 	get_tree().create_timer(0.06).timeout.connect(func():
 		CameraShakeManager.shake("y_weak", player.phantom_camera)
+		_debug_jumpbox_camera(player, "after_jumpbox_shake", trigger_grade)
 	)
