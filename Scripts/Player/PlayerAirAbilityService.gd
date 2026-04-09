@@ -48,14 +48,16 @@ static func try_double_jump(player: Node, jump_just_pressed: bool) -> bool:
 static func start_glide(player: Node) -> void:
 	player.is_gliding = true
 	player.glide_timer = 0.0
+	player.glide_move_timer = 0.0
 	player.glide_direction = 1 if player.is_facing_right else -1
-	player.velocity.x = player.glide_direction * player.glide_init_h_speed
+	player.velocity.x = 0.0
 	player.velocity.y = 0
 	player.change_state(player.PlayerState.GLIDE)
 
 static func exit_glide(player: Node) -> void:
 	player.is_gliding = false
 	player.glide_timer = 0.0
+	player.glide_move_timer = 0.0
 	player.is_double_jump_holding = false
 	if player.velocity.y < 0:
 		player.change_state(player.PlayerState.JUMP)

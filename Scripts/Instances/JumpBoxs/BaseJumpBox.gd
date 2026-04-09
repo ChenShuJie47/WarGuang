@@ -111,13 +111,16 @@ func trigger_bounce(player):
 	_apply_trigger_effect(player, trigger_grade)
 	_apply_common_feedback(player, trigger_grade)
 	pending_perfect_until_ms.erase(player.get_instance_id())
-	var post_result = _consume_after_trigger(player, trigger_grade)
-	if post_result is GDScriptFunctionState:
-		await post_result
+	_consume_after_trigger(player, trigger_grade)
 
 func _apply_common_feedback(_player, trigger_grade: String) -> void:
 	_play_trigger_sfx(trigger_grade)
 	_play_trigger_flash()
+	_debug_jumpbox_camera(_player, "after_common_feedback", trigger_grade)
+
+func _debug_jumpbox_camera(player, stage: String, trigger_grade: String) -> void:
+	if player and player.has_method("_debug_camera_jumpbox_state"):
+		player._debug_camera_jumpbox_state(stage, trigger_grade, global_position)
 
 func _play_trigger_sfx(trigger_grade: String) -> void:
 	if _trigger_sfx_player == null:

@@ -290,31 +290,22 @@ func _process_active_shakes(delta):
 		
 		# 关键修复：直接修改 Camera2D.offset，绕过 PhantomCamera 的限制和平滑
 		if has_active_shakes and is_instance_valid(target_pcam):
-			# 获取 PhantomCamera2D 对应的 Camera2D
-			var host = target_pcam.get_node_or_null("PhantomCameraHost")
-			if host and host.has_node("../.."):
-				var camera = host.get_parent().get_parent()
-				if camera is Camera2D:
-					camera.offset = total_offset
-					# print("[CameraShake] 应用 Camera2D offset:", total_offset, "- 活跃抖动数:", shakes.size())
-			else:
-				# 备用方案：尝试通过 viewport 获取 Camera2D
-				var viewport = target_pcam.get_viewport()
-				if viewport:
-					var camera = viewport.get_camera_2d()
-					if camera:
-						camera.offset = total_offset
-						# print("[CameraShake] 应用 viewport Camera2D offset:", total_offset)
+			var camera = _get_target_camera(target_pcam)
+			if camera:
+				if not total_offset.is_finite():
+					total_offset = Vector2.ZERO
+				camera.offset = total_offset
+				if not camera.offset.is_finite():
+					camera.offset = Vector2.ZERO
+				# print("[CameraShake] 应用 viewport Camera2D offset:", total_offset)
 		
 		# 如果没有任何活跃抖动，清理这个 target
 		if not has_active_shakes:
 			_active_shakes.erase(target_pcam)
 			# 重置 Camera2D offset
-			var host = target_pcam.get_node_or_null("PhantomCameraHost")
-			if host and host.has_node("../.."):
-				var camera = host.get_parent().get_parent()
-				if camera is Camera2D:
-					camera.offset = Vector2.ZERO
+			var camera = _get_target_camera(target_pcam)
+			if camera:
+				camera.offset = Vector2.ZERO
 
 func _get_falloff_factor(falloff_type: int, progress: float) -> float:
 	## 衰减类型：0=线性，1=快速（二次方），2=缓慢（平方根）
@@ -335,3 +326,11 @@ func _noise_1d(x: float) -> float:
 	## 使用 Godot 内置的 noise 函数实现平滑过渡
 	var noise_value = sin(x * 2.5) * 0.5 + sin(x * 5.3) * 0.3 + sin(x * 8.7) * 0.2
 	return clamp(noise_value, -1.0, 1.0)
+
+func _get_target_camera(target_pcam: Node2D) -> Camera2D:
+	if not is_instance_valid(target_pcam):
+		return null
+	var viewport = target_pcam.get_viewport()
+	if viewport == null:
+		return null
+	return viewport.get_camera_2d()

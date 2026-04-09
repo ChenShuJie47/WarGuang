@@ -24,7 +24,9 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 const PlayerHitStopServiceScript = preload("res://Scripts/Player/PlayerHitStopService.gd")
 const PlayerAirStateServiceScript = preload("res://Scripts/Player/PlayerAirStateService.gd")
 const PlayerAirAbilityServiceScript = preload("res://Scripts/Player/PlayerAirAbilityService.gd")
+const PlayerAirMotionServiceScript = preload("res://Scripts/Player/PlayerAirMotionService.gd")
 const PlayerMovementServiceScript = preload("res://Scripts/Player/PlayerMovementService.gd")
+const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedbackService.gd")
 
 ## 节点引用
 @onready var right_wall_ray = $WallRays/RightWallRay
@@ -84,6 +86,10 @@ const PlayerMovementServiceScript = preload("res://Scripts/Player/PlayerMovement
 @export var glide_init_h_speed: float = 0.0
 ## 滑翔目标水平速度
 @export var glide_target_h_speed: float = 160.0
+## 滑翔水平加速度（越大越快进入目标速度）
+@export var glide_horizontal_acceleration: float = 900.0
+## 滑翔松开方向键时的水平减速（越小越“飘”）
+@export var glide_release_deceleration: float = 70.0
 ## 滑翔最大下落速度乘数
 @export var glide_max_fall_multiplier: float = 0.2
 ## 滑翔加速时间（秒）- 控制从初始到目标下落速度的过渡时间
@@ -311,6 +317,7 @@ var was_on_floor: bool = true                   # 上一帧是否在地面上，
 ## 滑翔相关
 var is_gliding: bool = false                    # 标记是否正在滑翔
 var glide_timer: float = 0.0                    # 滑翔计时器，用于控制滑翔速度变化
+var glide_move_timer: float = 0.0               # 滑翔移动计时器（仅在有水平输入时累计）
 var glide_direction: int = 1                    # 滑翔方向（1=右，-1=左）
 var can_glide: bool = false                     # 标记当前是否可以进入滑翔状态
 var is_double_jump_holding: bool = false        # 标记是否正在按住二段跳（影响滑翔触发）
@@ -394,6 +401,7 @@ var is_pressing_down: bool = false              # 标记是否按下下方向键
 var afterimage_timer: float = 0.0               # 残影生成计时器
 var afterimage_spawn_rate: float = 1.0          # 残影生成频率倍率
 var afterimage_trail: Node = null
+var feedback_hooks: Dictionary = {}
 
 ## JumpBox 残影独立管理
 var has_jumpbox_afterimage: bool = false        # 标记是否激活了JumpBox残影效果
@@ -411,6 +419,7 @@ var jumpbox_trigger_grade: String = "normal"   # 当前JumpBox触发等级（nor
 var jumpbox_afterimage_type: String = "jumpbox_perfect"
 var jumpbox_horizontal_boost_multiplier: float = 1.0
 var jumpbox_boost_duration_multiplier: float = 1.0
+var jumpbox_max_vertical_force_multiplier: float = 1.0
 
 ## JumpBox持续二段跳打断相关
 var is_jumpbox_continuous_jump: bool = false    # 标记是否处于JumpBox触发的持续二段跳状态
@@ -969,10 +978,8 @@ func handle_jump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed,
 		velocity.y += jump_hold_boost
 		jump_hold_timer += fixed_delta
 	
-	# 水平移动控制
-	if move_input != 0 and !is_run_jumping and !is_gliding and !is_jump2_boost_active:
-		var target_speed = move_input * jump_move_speed * effective_horizontal_multiplier
-		velocity.x = move_toward(velocity.x, target_speed, air_control * ground_acceleration * jump_move_speed * effective_horizontal_multiplier)
+	# 空中水平控制（含无输入快速减速）
+	PlayerAirMotionServiceScript.apply_air_horizontal_motion(self, move_input)
 	
 	# 状态转换条件：垂直速度>=0且不在滑翔状态时切换到DOWN
 	if velocity.y >= 0 and !is_gliding:
@@ -1021,10 +1028,8 @@ func handle_down_state(fixed_delta, move_input, jump_just_pressed, jump_pressed,
 		velocity.y += jump_hold_boost
 		jump_hold_timer += fixed_delta
 	
-	# 水平移动控制
-	if move_input != 0 and !is_run_jumping and !is_gliding and !is_jump2_boost_active:
-		var target_speed = move_input * jump_move_speed * effective_horizontal_multiplier
-		velocity.x = move_toward(velocity.x, target_speed, air_control * ground_acceleration * jump_move_speed * effective_horizontal_multiplier)
+	# 空中水平控制（含无输入快速减速）
+	PlayerAirMotionServiceScript.apply_air_horizontal_motion(self, move_input)
 
 func handle_glide_state(fixed_delta, move_input, jump_pressed, dash_just_pressed):
 	# 冲刺检测（最高优先级，可打断滑翔）
@@ -1041,9 +1046,16 @@ func handle_glide_state(fixed_delta, move_input, jump_pressed, dash_just_pressed
 		exit_glide()
 		return
 	
-	# 更新滑翔速度
+	# 下落速度过渡始终从进入滑翔开始计算，不依赖方向输入。
 	glide_timer += fixed_delta
-	var progress = min(glide_timer / glide_accel_time, 1.0)
+	var fall_progress = min(glide_timer / glide_accel_time, 1.0)
+
+	# 仅在有移动输入时推进水平滑翔加速计时，避免“先不动后瞬间满速”。
+	if move_input != 0:
+		glide_move_timer += fixed_delta
+	var move_progress = min(glide_move_timer / glide_accel_time, 1.0)
+	# 二次曲线：先慢后快。
+	var curved_progress = move_progress * move_progress
 	
 	# 根据输入方向更新滑翔方向
 	if move_input != 0:
@@ -1051,17 +1063,18 @@ func handle_glide_state(fixed_delta, move_input, jump_pressed, dash_just_pressed
 		is_facing_right = glide_direction > 0
 	
 	# 计算水平速度
-	var target_horizontal_speed = 0.0
+	var target_horizontal_speed = glide_direction * glide_target_h_speed * effective_horizontal_multiplier
 	if move_input != 0:
-		target_horizontal_speed = glide_direction * lerp(glide_init_h_speed, glide_target_h_speed, progress)
+		var acceleration_scale = lerp(0.15, 1.0, curved_progress)
+		var glide_accel = glide_horizontal_acceleration * acceleration_scale * effective_horizontal_multiplier * fixed_delta
+		velocity.x = move_toward(velocity.x, target_horizontal_speed, glide_accel)
 	else:
-		target_horizontal_speed = move_toward(velocity.x, 0, glide_init_h_speed * fixed_delta)
-	
-	# 关键修改：应用水平速度乘数
-	velocity.x = target_horizontal_speed * effective_horizontal_multiplier
+		glide_move_timer = 0.0
+		var glide_release = glide_release_deceleration * effective_horizontal_multiplier * fixed_delta
+		velocity.x = move_toward(velocity.x, 0.0, glide_release)
 	
 	# 只限制最大下落速度，不手动应用重力（由阶段 11 统一处理）
-	var current_max_fall = max_fall_speed * lerp(0.0, glide_max_fall_multiplier, progress)
+	var current_max_fall = max_fall_speed * lerp(0.0, glide_max_fall_multiplier, fall_progress)
 	velocity.y = min(velocity.y, current_max_fall * effective_max_fall_multiplier)
 
 func handle_dash_state():
@@ -1615,6 +1628,13 @@ func take_damage_with_type(damage_source_position: Vector2, damage: int = 1, dam
 	var _old_health = player_ui.get_health()
 	player_ui.take_damage(damage)
 	var new_health = player_ui.get_health()
+	trigger_feedback_event(&"damage_taken", {
+		"damage": damage,
+		"damage_type": damage_type,
+		"new_health": new_health,
+		"knockback_force": knockback_force,
+		"source_position": damage_source_position
+	})
 	
 	# 致命伤害处理 - 恢复立即死亡
 	if new_health <= 0 and not is_in_death_process:
@@ -1927,7 +1947,10 @@ func handle_run_jump(fixed_delta):
 	if is_run_jumping:
 		run_jump_timer -= fixed_delta
 		var move_input = Input.get_axis("left", "right")
-		if move_input != 0 and sign(move_input) != run_jump_original_direction:
+		if move_input == 0:
+			# 无输入时立即结束奔跑跳加速，交还给空中减速逻辑处理。
+			is_run_jumping = false
+		elif sign(move_input) != run_jump_original_direction:
 			is_run_jumping = false
 		elif run_jump_timer > 0:
 			velocity.x = run_jump_original_direction * (base_move_speed + run_jump_boost_speed) * effective_horizontal_multiplier
@@ -1999,12 +2022,20 @@ func start_jumpbox_bounce(vertical_force: float, trigger_grade: String = "normal
 	jumpbox_afterimage_type = "jumpbox_perfect" if jumpbox_trigger_grade == "perfect" else "jumpbox_normal"
 	jumpbox_horizontal_boost_multiplier = float(effect_overrides.get("horizontal_boost_multiplier", 1.0))
 	jumpbox_boost_duration_multiplier = float(effect_overrides.get("boost_duration_multiplier", 1.0))
+	jumpbox_max_vertical_force_multiplier = float(effect_overrides.get("max_vertical_force_multiplier", 1.0))
+	trigger_feedback_event(&"jumpbox_bounce_started", {
+		"grade": jumpbox_trigger_grade,
+		"afterimage_type": jumpbox_afterimage_type,
+		"vertical_force": vertical_force,
+		"effect_overrides": effect_overrides
+	})
 
 	# JumpBox 弹跳后不再额外叠加 JUMP 按住增高，避免高度异常峰值。
 	jump_hold_timer = max_jump_hold_time
 
 	# 原有的弹跳处理逻辑保持不变
-	velocity.y = -clamp(vertical_force, 0.0, jumpbox_max_vertical_force)
+	var max_vertical_cap = jumpbox_max_vertical_force * jumpbox_max_vertical_force_multiplier
+	velocity.y = -clamp(vertical_force, 0.0, max_vertical_cap)
 	
 	# 刷新空中冲刺限制
 	has_dashed_in_air = false
@@ -2156,6 +2187,7 @@ func clear_jumpbox_effect():
 		jumpbox_afterimage_type = "jumpbox_perfect"
 		jumpbox_horizontal_boost_multiplier = 1.0
 		jumpbox_boost_duration_multiplier = 1.0
+		jumpbox_max_vertical_force_multiplier = 1.0
 		is_jump2_boost_active = false
 		has_jumpbox_afterimage = false
 		is_double_jump_holding = false
@@ -2257,48 +2289,36 @@ func exit_wallgrip():
 ## 残影函数集
 #region Signals
 func handle_afterimages(fixed_delta):
-	var current_fps = Engine.get_frames_per_second()
-	if current_fps < 45:
-		afterimage_spawn_rate = lerp(afterimage_spawn_rate, 2.0, fixed_delta * 2.0)
-	elif current_fps > 55:
-		afterimage_spawn_rate = lerp(afterimage_spawn_rate, 0.8, fixed_delta * 2.0)
-	
-	afterimage_spawn_rate = clamp(afterimage_spawn_rate, 0.5, 2.0)
-	
-	match current_state:
-		PlayerState.DASH:
-			afterimage_timer += fixed_delta
-			var dash_type = "black_dash" if black_dash_unlocked else "dash"
-			var interval = _get_afterimage_interval(dash_type) * afterimage_spawn_rate
-			if afterimage_timer >= interval:
-				afterimage_timer = 0
-				# ⭐ 关键修复：检查是否是暗影冲刺
-				if black_dash_unlocked:
-					create_afterimage(PlayerState.DASH, false, "black_dash")  # ⭐ 使用 black_dash 池
-				else:
-					create_afterimage(PlayerState.DASH, false)  # 普通 dash 池
-		PlayerState.SUPERDASH:
-			super_dash_afterimage_timer += fixed_delta
-			var interval = _get_afterimage_interval("super_dash") * afterimage_spawn_rate
-			if super_dash_afterimage_timer >= interval:
-				super_dash_afterimage_timer = 0
-				create_afterimage(PlayerState.SUPERDASH, false)  # super_dash 池
-		_:
-			afterimage_timer = 0
-	
-	# JumpBox 残影（使用独立池）
-	if has_jumpbox_afterimage and current_animation == "JUMP2":
-		jump2_afterimage_timer += fixed_delta
-		var interval = _get_afterimage_interval(jumpbox_afterimage_type) * afterimage_spawn_rate
-		if jump2_afterimage_timer >= interval:
-			jump2_afterimage_timer = 0
-			create_afterimage(PlayerState.JUMP, true, jumpbox_afterimage_type)
-	elif has_jumpbox_afterimage and current_animation != "JUMP2":
-		
-		has_jumpbox_afterimage = false
-		jump2_afterimage_timer = 0
-		# 关键修复：JumpBox 残影结束后清理专用池
-		clear_jumpbox_afterimage_pool()
+	PlayerFeedbackServiceScript.handle_afterimages(self, fixed_delta)
+
+func register_feedback_hook(event_name: StringName, callback: Callable) -> void:
+	if not callback.is_valid():
+		return
+	if not feedback_hooks.has(event_name):
+		feedback_hooks[event_name] = []
+	var callbacks: Array = feedback_hooks[event_name]
+	for existing in callbacks:
+		if existing == callback:
+			return
+	callbacks.append(callback)
+	feedback_hooks[event_name] = callbacks
+
+func unregister_feedback_hook(event_name: StringName, callback: Callable) -> void:
+	if not feedback_hooks.has(event_name):
+		return
+	var callbacks: Array = feedback_hooks[event_name]
+	callbacks = callbacks.filter(func(existing): return existing != callback)
+	if callbacks.is_empty():
+		feedback_hooks.erase(event_name)
+	else:
+		feedback_hooks[event_name] = callbacks
+
+func trigger_feedback_event(event_name: StringName, payload: Dictionary = {}) -> void:
+	if not feedback_hooks.has(event_name):
+		return
+	for callback in feedback_hooks[event_name]:
+		if callback is Callable and callback.is_valid():
+			callback.call(payload)
 
 func return_afterimage(afterimage: Node, _type_name: String = "dash"):
 	if is_instance_valid(afterimage) and afterimage.has_method("return_to_pool"):
@@ -2324,6 +2344,11 @@ func create_afterimage(state: PlayerState, is_jumpbox: bool = false, custom_type
 		_ensure_afterimage_trail()
 	if afterimage_trail != null:
 		_create_afterimage_new(state, is_jumpbox, custom_type)
+		trigger_feedback_event(&"afterimage_spawned", {
+			"state": state,
+			"is_jumpbox": is_jumpbox,
+			"custom_type": custom_type
+		})
 	else:
 		push_warning("[Player] 残影系统不可用，跳过残影生成")
 
@@ -2660,6 +2685,34 @@ func _debug_camera_damage_state(stage: String, damage_source_position: Vector2, 
 		" damage=", damage,
 		" type=", damage_type,
 		" kb=", knockback_force,
+		" controller=", controller_snapshot)
+
+func _debug_camera_jumpbox_state(stage: String, trigger_grade: String, jumpbox_position: Vector2) -> void:
+	if not camera_damage_debug:
+		return
+	var camera_pos := Vector2.ZERO
+	var camera_offset := Vector2.ZERO
+	var follow_offset := Vector2.ZERO
+	var controller_snapshot = {}
+	if phantom_camera:
+		camera_pos = phantom_camera.global_position
+		if phantom_camera.has_method("get_follow_offset"):
+			follow_offset = phantom_camera.get_follow_offset()
+	var viewport_camera := get_viewport().get_camera_2d() if get_viewport() else null
+	if viewport_camera:
+		camera_offset = viewport_camera.offset
+	if camera_controller and camera_controller.has_method("get_debug_snapshot"):
+		controller_snapshot = camera_controller.get_debug_snapshot()
+	print("[CameraJumpBoxDebug] stage=", stage,
+		" grade=", trigger_grade,
+		" jumpbox_pos=", jumpbox_position,
+		" player_pos=", global_position,
+		" cam_pos=", camera_pos,
+		" cam_offset=", camera_offset,
+		" follow_offset=", follow_offset,
+		" state=", current_state,
+		" anim=", current_animation,
+		" vel=", velocity,
 		" controller=", controller_snapshot)
 
 ## 启动Vignette普通受伤效果
