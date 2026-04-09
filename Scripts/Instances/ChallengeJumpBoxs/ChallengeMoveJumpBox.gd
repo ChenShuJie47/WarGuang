@@ -17,7 +17,7 @@ class_name ChallengeMoveJumpBox
 ## 移动目标点 2（相对于初始位置的偏移）
 @export var target_point_2_offset: Vector2 = Vector2(100, 0)
 ## 移动速度（像素/秒）- 帧率独立
-@export var move_speed: float = 20.0
+@export var move_speed: float = 40.0
 ## 到达端点后停留时间（秒）
 @export var wait_time_at_endpoint: float = 1.0
 
@@ -99,3 +99,16 @@ func get_extended_state() -> Dictionary:
 	base_state["wait_timer"] = wait_timer
 	base_state["current_target_index"] = current_target_index
 	return base_state
+
+func _apply_trigger_effect(player, trigger_grade: String) -> void:
+	var effect_overrides := {
+		"horizontal_boost_multiplier": 1.5,
+		"boost_duration_multiplier": 2.0 if trigger_grade == "perfect" else 1.0
+	}
+	if player.has_method("start_jumpbox_bounce"):
+		player.start_jumpbox_bounce(vertical_force, trigger_grade, effect_overrides)
+	if player.has_method("start_jumpbox_hit_stop"):
+		player.start_jumpbox_hit_stop(trigger_grade)
+	get_tree().create_timer(0.06).timeout.connect(func():
+		CameraShakeManager.shake("y_weak", player.phantom_camera)
+	)

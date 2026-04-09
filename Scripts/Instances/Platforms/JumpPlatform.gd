@@ -31,8 +31,11 @@ func _on_body_entered(body):
 		if body.current_state == body.PlayerState.DASH:
 			return
 		
-		# 简单条件：只要在JUMP2动画状态就可以触发
-		if body.current_animation == "JUMP2":
+		# 与 JumpBox 一致：JUMP2动画，或刚在检测区内按出二段跳
+		var eligible = body.current_animation == "JUMP2"
+		if not eligible and body.has_method("is_recent_double_jump_start"):
+			eligible = body.is_recent_double_jump_start(0.12)
+		if eligible:
 			trigger_bounce(body)
 
 func trigger_bounce(player):
@@ -45,7 +48,10 @@ func trigger_bounce(player):
 		return
 		
 	# 确保玩家仍然在正确状态
-	if not player.has_double_jumped or player.current_animation != "JUMP2":
+	var eligible = player.has_double_jumped and player.current_animation == "JUMP2"
+	if not eligible and player.has_method("is_recent_double_jump_start"):
+		eligible = player.has_double_jumped and player.is_recent_double_jump_start(0.12)
+	if not eligible:
 		print("DEBUG JumpBox: 触发时状态已改变，取消触发")
 		return
 		

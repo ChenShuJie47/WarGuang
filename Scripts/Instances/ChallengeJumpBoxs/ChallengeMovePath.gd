@@ -10,7 +10,7 @@ class_name ChallengeMovePath
 ## 目标点 2 偏移
 @export var target_point_2_offset: Vector2 = Vector2(50, 0)
 ## 路径颜色
-@export var path_color: Color = Color(0.0, 1.0, 0.0, 0.392)
+@export var path_color: Color = Color(0.196, 0.784, 0.353, 0.255)
 
 func _ready():
 	# 运行时自动删除

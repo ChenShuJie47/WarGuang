@@ -117,6 +117,53 @@ target_point_1_offset = Vector2(-100, 0)
 target_point_2_offset = Vector2(100, 0)
 path_color = Color(0, 1, 0, 0.5)
 
+[node name="SpawnPoints3" type="Node2D" parent="NPCs/ManiacNPC"]
+
+[node name="SpawnPoint1" type="Marker2D" parent="NPCs/ManiacNPC/SpawnPoints3"]
+position = Vector2(-29, -51)
+
+[node name="MovePath" type="Node2D" parent="NPCs/ManiacNPC/SpawnPoints3/SpawnPoint1"]
+script = ExtResource("8_3br1t")
+target_point_1_offset = Vector2(-100, 0)
+target_point_2_offset = Vector2(100, 0)
+path_color = Color(0, 1, 0, 0.5)
+
+[node name="SpawnPoint2" type="Marker2D" parent="NPCs/ManiacNPC/SpawnPoints3"]
+position = Vector2(-226, -99)
+
+[node name="MovePath" type="Node2D" parent="NPCs/ManiacNPC/SpawnPoints3/SpawnPoint2"]
+script = ExtResource("8_3br1t")
+target_point_1_offset = Vector2(-100, 0)
+target_point_2_offset = Vector2(100, 0)
+path_color = Color(0, 1, 0, 0.5)
+
+[node name="SpawnPoint3" type="Marker2D" parent="NPCs/ManiacNPC/SpawnPoints3"]
+position = Vector2(-84, -187)
+
+[node name="MovePath" type="Node2D" parent="NPCs/ManiacNPC/SpawnPoints3/SpawnPoint3"]
+script = ExtResource("8_3br1t")
+target_point_1_offset = Vector2(-100, 0)
+target_point_2_offset = Vector2(100, 0)
+path_color = Color(0, 1, 0, 0.5)
+
+[node name="SpawnPoint4" type="Marker2D" parent="NPCs/ManiacNPC/SpawnPoints3"]
+position = Vector2(-83, -233)
+
+[node name="MovePath" type="Node2D" parent="NPCs/ManiacNPC/SpawnPoints3/SpawnPoint4"]
+script = ExtResource("8_3br1t")
+target_point_1_offset = Vector2(-100, 0)
+target_point_2_offset = Vector2(100, 0)
+path_color = Color(0, 1, 0, 0.5)
+
+[node name="SpawnPoint5" type="Marker2D" parent="NPCs/ManiacNPC/SpawnPoints3"]
+position = Vector2(-84, -274)
+
+[node name="MovePath" type="Node2D" parent="NPCs/ManiacNPC/SpawnPoints3/SpawnPoint5"]
+script = ExtResource("8_3br1t")
+target_point_1_offset = Vector2(-100, 0)
+target_point_2_offset = Vector2(100, 0)
+path_color = Color(0, 1, 0, 0.5)
+
 [node name="NPC_Areas" type="Node2D" parent="."]
 
 [node name="Maniac_Patrol" type="Node2D" parent="NPC_Areas"]

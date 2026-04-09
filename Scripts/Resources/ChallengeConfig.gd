@@ -15,16 +15,10 @@ class_name ChallengeConfig
 ## 需要触发的 JumpBox 总数量
 @export var target_count: int = 12
 
-## JumpBox 被触发后的冷却时间（秒）
-@export var cooldown_time: float = 5.0
-
 @export_group("JumpBox 配置")
 
 ## ChallengeJumpBox 场景资源（预加载的弹跳箱场景）
 @export var jumpbox_scene: PackedScene
-
-## JumpBox 的弹跳力大小（垂直向上的力）
-@export var jump_force: float = 500.0
 
 @export_group("生成位置配置")
 

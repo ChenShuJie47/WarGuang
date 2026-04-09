@@ -42,7 +42,7 @@ extends Node
 ## Tier 2 - 短暂停（秒）
 @export var hit_stop_tier2_duration: float = 0.2
 ## Tier 3 - 中等暂停（秒）
-@export var hit_stop_tier3_duration: float = 0.5
+@export var hit_stop_tier3_duration: float = 0.35
 ## Tier 4 - 长时间暂停（秒）
 @export var hit_stop_tier4_duration: float = 1.0
 

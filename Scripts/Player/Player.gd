@@ -24,6 +24,7 @@ const CAMERA_TELEPORT_DEBUG: bool = false
 const PlayerHitStopServiceScript = preload("res://Scripts/Player/PlayerHitStopService.gd")
 const PlayerAirStateServiceScript = preload("res://Scripts/Player/PlayerAirStateService.gd")
 const PlayerAirAbilityServiceScript = preload("res://Scripts/Player/PlayerAirAbilityService.gd")
+const PlayerMovementServiceScript = preload("res://Scripts/Player/PlayerMovementService.gd")
 
 ## 节点引用
 @onready var right_wall_ray = $WallRays/RightWallRay
@@ -292,6 +293,7 @@ var jump_hold_timer: float = 0.0                # 跳跃键按住计时器，用
 var jump_count: int = 0                         # 跳跃次数计数
 var has_double_jumped: bool = false             # 标记是否已经使用了二段跳
 var can_double_jump: bool = false               # 标记当前是否可以执行二段跳
+var last_double_jump_started_time_ms: int = -1000000
 
 ## 落地抖动相关
 var down_state_entry_time: float = 0.0          # 记录进入DOWN状态的时间（基于游戏时间）
@@ -405,6 +407,10 @@ var jumpbox_force_applied: bool = false         # 标记是否已经应用了Jum
 var jumpbox_last_bounce_time_ms: int = -1000000 # 上次接收 JumpBox 弹跳的时间戳（毫秒）
 var jump2_boost_initial_speed: float = 0.0      # 二段跳速度加成的初始速度值
 var jump2_boost_target_speed: float = 0.0       # 二段跳速度加成衰减后的目标速度值
+var jumpbox_trigger_grade: String = "normal"   # 当前JumpBox触发等级（normal/perfect）
+var jumpbox_afterimage_type: String = "jumpbox_perfect"
+var jumpbox_horizontal_boost_multiplier: float = 1.0
+var jumpbox_boost_duration_multiplier: float = 1.0
 
 ## JumpBox持续二段跳打断相关
 var is_jumpbox_continuous_jump: bool = false    # 标记是否处于JumpBox触发的持续二段跳状态
@@ -859,29 +865,7 @@ func handle_special_state_timers(fixed_delta, _move_input):
 		look_timer = 0.0
 ## 处理冲刺相关的计时器，包括冲刺持续时间和冷却时间
 func handle_dash_timers(fixed_delta):
-	# 冲刺持续时间计时器 - 修复黑色冲刺持续时间
-	if current_state == PlayerState.DASH:
-		
-		dash_duration_timer += fixed_delta
-		# 关键修复：根据是否黑色冲刺使用不同的持续时间
-		var current_dash_duration = black_dash_duration if black_dash_unlocked else dash_duration
-		if dash_duration_timer >= current_dash_duration:
-			dash_duration_timer = 0
-			# 恢复到之前的状态或下落状态
-			if was_gliding_before_dash:
-				was_gliding_before_dash = false
-				change_state(PlayerState.DOWN)
-			elif is_on_floor() or coyote_time_active:
-				var move_input = Input.get_axis("left", "right")
-				if move_input == 0:
-					change_state(PlayerState.IDLE)
-				else:
-					change_state(PlayerState.MOVE)
-			else:
-				if velocity.y < 0:
-					change_state(PlayerState.JUMP)
-				else:
-					change_state(PlayerState.DOWN)
+	PlayerMovementServiceScript.handle_dash_timers(self, fixed_delta)
 #endregion
 
 ##角色状态函数集
@@ -935,147 +919,16 @@ func handle_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump
 			handle_walljump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
 
 func _try_enter_wallgrip_from_air(move_input: float) -> bool:
-	if is_on_floor() or not wall_grip_unlocked or not is_touching_wall:
-		return false
-
-	if current_state != PlayerState.JUMP and current_state != PlayerState.DOWN and current_state != PlayerState.GLIDE and current_state != PlayerState.WALLJUMP:
-		return false
-
-	if current_state == PlayerState.WALLJUMP and not can_reattach_to_wall:
-		return false
-
-	var toward_wall = (move_input > 0 and wall_direction == 1) or (move_input < 0 and wall_direction == -1)
-	if not toward_wall:
-		return false
-
-	start_wallgrip()
-	return current_state == PlayerState.WALLGRIP
+	return PlayerMovementServiceScript.try_enter_wallgrip_from_air(self, move_input)
 
 func handle_idle_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
-	# 首先检查是否可以切换到特殊状态
-	if sleep_timer >= idle_to_sleep_time:
-		change_state(PlayerState.SLEEP)
-		return
-	
-	if is_pressing_up and !is_pressing_down and look_timer >= idle_to_look_time:
-		change_state(PlayerState.LOOKUP)
-		return
-	
-	if is_pressing_down and !is_pressing_up and look_timer >= idle_to_look_time:
-		change_state(PlayerState.LOOKDOWN)
-		return
-	
-	# 超级冲刺充电检测（在地面且不在冲刺状态时）
-	if super_dash_unlocked and Input.is_action_pressed("super_dash") and current_state != PlayerState.DASH:
-		is_super_dash_charging = true
-		change_state(PlayerState.SUPERDASHSTART)
-		return
-	
-	if !is_on_floor() and !coyote_time_active:
-		if velocity.y < 0:
-			change_state(PlayerState.JUMP)
-		else:
-			change_state(PlayerState.DOWN)
-		return
-	
-	# 冲刺检测（最高优先级）
-	if try_dash(dash_just_pressed):
-		return
-	
-	# 跳跃检测
-	if try_jump(jump_just_pressed):
-		return
-	
-	if move_input != 0:
-		if is_running:
-			change_state(PlayerState.RUN)
-		else:
-			change_state(PlayerState.MOVE)
-	else:
-		# 减速到停止
-		var target_speed = move_input * base_move_speed * effective_horizontal_multiplier
-		velocity.x = move_toward(velocity.x, target_speed, ground_acceleration * base_move_speed * effective_horizontal_multiplier)
+	PlayerMovementServiceScript.handle_idle_state(self, _delta, move_input, jump_just_pressed, dash_just_pressed)
 
 func handle_move_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
-	if !is_on_floor() and !coyote_time_active:
-		if velocity.y < 0:
-			change_state(PlayerState.JUMP)
-		else:
-			change_state(PlayerState.DOWN)
-		return
-	
-	# 冲刺检测（最高优先级）
-	if try_dash(dash_just_pressed):
-		return
-	
-	# 跳跃检测
-	if try_jump(jump_just_pressed):
-		return
-	
-	# 超级冲刺充电检测（在地面且不在冲刺状态时）
-	if super_dash_unlocked and Input.is_action_pressed("super_dash") and current_state != PlayerState.DASH:
-		is_super_dash_charging = true
-		change_state(PlayerState.SUPERDASHSTART)
-		return
-	
-	# 撞墙检测 - 在RUN状态下就触发
-	if current_state == PlayerState.RUN and is_on_wall():
-		var wall_normal = get_wall_normal()
-		if wall_normal.dot(Vector2(move_input, 0)) < 0:  # 移动方向朝向墙壁
-			# 触发撞墙效果
-			handle_wall_bump()
-			return
-	
-	if move_input == 0:
-		change_state(PlayerState.IDLE)
-	else:
-		if is_running:
-			change_state(PlayerState.RUN)
-		
-		# 移动逻辑
-		var target_speed = move_input * base_move_speed * effective_horizontal_multiplier
-		velocity.x = move_toward(velocity.x, target_speed, ground_acceleration * base_move_speed * effective_horizontal_multiplier)
+	PlayerMovementServiceScript.handle_move_state(self, _delta, move_input, jump_just_pressed, dash_just_pressed)
 
 func handle_run_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
-	if !is_on_floor() and !coyote_time_active:
-		if velocity.y < 0:
-			change_state(PlayerState.JUMP)
-		else:
-			change_state(PlayerState.DOWN)
-		return
-	
-	# 冲刺检测（最高优先级）
-	if try_dash(dash_just_pressed):
-		return
-	
-	# 跳跃检测
-	if try_jump(jump_just_pressed):
-		return
-	
-	# 超级冲刺充电检测（在地面且不在冲刺状态时）
-	if super_dash_unlocked and Input.is_action_pressed("super_dash") and current_state != PlayerState.DASH:
-		is_super_dash_charging = true
-		change_state(PlayerState.SUPERDASHSTART)
-		return
-	
-	# 撞墙检测 - 在 RUN 状态下就触发
-	if current_state == PlayerState.RUN and is_on_wall():
-		var wall_normal = get_wall_normal()
-		if wall_normal.dot(Vector2(move_input, 0)) < 0:  # 移动方向朝向墙壁
-			# 触发撞墙效果
-			handle_wall_bump()
-			return
-	
-	if move_input == 0:
-		change_state(PlayerState.IDLE)
-	else:
-		if !is_running:
-			change_state(PlayerState.MOVE)
-		else:
-			# 奔跑移动逻辑
-			# 关键修改：水中也会应用 effective_horizontal_multiplier (0.5)
-			var target_speed = move_input * run_move_speed * effective_horizontal_multiplier
-			velocity.x = move_toward(velocity.x, target_speed, ground_acceleration * run_move_speed * effective_horizontal_multiplier)
+	PlayerMovementServiceScript.handle_run_state(self, _delta, move_input, jump_just_pressed, dash_just_pressed)
 
 func handle_jump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed):
 	# 首先检查落地
@@ -1212,19 +1065,7 @@ func handle_glide_state(fixed_delta, move_input, jump_pressed, dash_just_pressed
 	velocity.y = min(velocity.y, current_max_fall * effective_max_fall_multiplier)
 
 func handle_dash_state():
-	# 冲刺期间保持固定速度
-	var dash_direction = 1 if is_facing_right else -1
-	velocity.x = dash_direction * dash_speed
-	velocity.y = 0
-	
-	# 检测跳跃缓冲
-	if Input.is_action_pressed("jump"):
-		if can_double_jump and !has_double_jumped:
-			jump_buffer_after_dash = true
-			jump_buffer_type = 2  # 二段跳
-		else:
-			jump_buffer_after_dash = true
-			jump_buffer_type = 1  # 一段跳
+	PlayerMovementServiceScript.handle_dash_state(self)
 
 func handle_super_dash_start_state(fixed_delta, _move_input, _jump_just_pressed, _dash_just_pressed):
 	# 检查是否松开 O 键
@@ -1521,119 +1362,10 @@ func handle_lookdown_state(_delta, move_input, jump_just_pressed, dash_just_pres
 		tween.tween_property(phantom_camera, "follow_offset", Vector2(0, lookdown_camera_offset), camera_offset_transition_duration)
 
 func handle_wallgrip_state(fixed_delta, move_input, jump_just_pressed, _jump_pressed, _jump_just_released, dash_just_pressed):
-	# 冲刺检测（最高优先级）
-	if try_dash(dash_just_pressed):
-		return
-	
-	# 检查是否还在墙上
-	if !is_touching_wall or is_on_floor():
-		exit_wallgrip()
-		return
-	
-	# 检查按键方向
-	var toward_wall = (move_input > 0 and wall_direction == 1) or (move_input < 0 and wall_direction == -1)
-	var away_from_wall = (move_input < 0 and wall_direction == 1) or (move_input > 0 and wall_direction == -1)
-	
-	# 处理动画状态重叠：如果受伤，强制退出攀墙状态
-	if is_invincible and current_state == PlayerState.HURT:
-		exit_wallgrip()
-		return
-	
-	if toward_wall:
-		# 规则：按住向墙方向键
-		# 重置 no_input_timer，因为输入状态改变
-		no_input_timer = 0.0
-		
-		hold_toward_wall_timer += fixed_delta
-		
-		if hold_toward_wall_timer < hold_toward_wall_time:
-			# a 时间内：静止不下滑
-			velocity.y = 0
-			current_wall_slide_speed = 0
-			
-			# 调试输出
-			if Engine.is_editor_hint():
-				pass  # 占位符
-		else:
-			# a 时间后：缓慢下滑（关键修改：应用重力乘数）
-			velocity.y = wall_slide_slow_speed * effective_gravity_multiplier
-			current_wall_slide_speed = wall_slide_slow_speed * effective_gravity_multiplier
-			
-			# 调试输出
-			if Engine.is_editor_hint():
-				pass  # 占位符
-		velocity.x = 0
-		
-	elif away_from_wall:
-		# 按反方向键，启动缓冲计时器
-		wall_grip_reverse_timer_node.start(wall_grip_reverse_buffer_time)
-		exit_wallgrip()
-		return
-	else:
-		# 规则：没有按方向键
-		no_input_timer += fixed_delta
-		
-		# 计算线性变化进度（0 到 1）
-		var progress = min(no_input_timer / no_input_time, 1.0)
-		
-		# 从 wall_slide_slow_speed 线性变化到 wall_slide_speed（关键修改：应用重力乘数）
-		current_wall_slide_speed = lerp(wall_slide_slow_speed, wall_slide_speed, progress) * effective_gravity_multiplier
-		velocity.y = current_wall_slide_speed
-		velocity.x = 0
-	
-	# 跳跃处理
-	if jump_just_pressed:
-		if toward_wall:
-			start_wall_jump()
-		else:
-			start_normal_jump_from_wall()
-		return
-	
-	# 二段跳检测
-	if try_double_jump(jump_just_pressed):
-		return
+	PlayerMovementServiceScript.handle_wallgrip_state(self, fixed_delta, move_input, jump_just_pressed, _jump_pressed, _jump_just_released, dash_just_pressed)
 
 func handle_walljump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, _jump_just_released, dash_just_pressed):
-	
-	# 冲刺检测
-	if try_dash(dash_just_pressed):
-		return
-
-	# 墙跳阶段允许二段跳接续，避免墙跳后偶发二段跳失效。
-	if try_double_jump(jump_just_pressed):
-		return
-	
-	wall_jump_timer += fixed_delta
-	
-	# 第一阶段：墙跳初速度（0.1 秒内）
-	if wall_jump_timer < 0.1:
-		# 关键修改：应用水平和垂直乘数
-		velocity.x = wall_jump_h_speed * -wall_direction * effective_horizontal_multiplier  # 向墙外跳
-		velocity.y = wall_jump_v_speed * effective_vertical_multiplier
-	else:
-		# 第二阶段：允许玩家控制
-		if move_input != 0:
-			var target_speed = move_input * base_move_speed
-			# 关键修改：应用加速度乘数
-			velocity.x = move_toward(velocity.x, target_speed, air_control * ground_acceleration * base_move_speed * effective_acceleration_multiplier)
-	
-	# 跳跃保持
-	if jump_pressed and wall_jump_hold_timer < wall_jump_max_hold_time:
-		velocity.y += wall_jump_hold_boost
-		wall_jump_hold_timer += fixed_delta
-	
-	# 关键修改：应用重力乘数（之前是直接调用 apply_gravity，但现在统一使用乘数）
-	apply_gravity(fixed_delta)
-	
-	# 墙跳结束后可以重新附着
-	if wall_jump_timer >= wall_jump_reattach_delay:
-		can_reattach_to_wall = true
-		
-		# 检查是否可以回到墙上
-		if is_touching_wall and move_input != 0 and sign(move_input) == wall_direction:
-			start_wallgrip()
-		elif velocity.y >= 0:
-			change_state(PlayerState.DOWN)
+	PlayerMovementServiceScript.handle_walljump_state(self, fixed_delta, move_input, jump_just_pressed, jump_pressed, _jump_just_released, dash_just_pressed)
 
 func change_state(new_state: PlayerState):
 	# 如果状态相同，不进行切换
@@ -2186,85 +1918,27 @@ func detect_run_input(move_input):
 		was_running_before_coyote = is_running
 
 func handle_wall_bump():
-	# 触发相机抖动
-	CameraShakeManager.shake("x_strong", phantom_camera)
-	
-	# 施加反弹力
-	velocity.x = wall_bump_rebound_x * (-1 if is_facing_right else 1)
-	velocity.y = wall_bump_rebound_y
-	
-	# 设置僵直时间，但不切换状态
-	hurt_timer = hurt_stun_time
-	is_wall_bump_stun = true
+	PlayerMovementServiceScript.handle_wall_bump(self)
 
 func handle_wall_bump_stun(fixed_delta):
-	# 应用重力
-	apply_gravity(fixed_delta)
-	
-	# 水平速度衰减
-	velocity.x = move_toward(velocity.x, 0, dash_inertia_decay * base_move_speed * fixed_delta)
-	
-	# 僵直时间处理
-	hurt_timer -= fixed_delta
-	
-	if hurt_timer <= 0:
-		# 僵直结束
-		is_wall_bump_stun = false
-		
-		# 回到适当状态
-		if is_on_floor():
-			change_state(PlayerState.IDLE)
-		else:
-			change_state(PlayerState.DOWN)
+	PlayerMovementServiceScript.handle_wall_bump_stun(self, fixed_delta)
 
 func handle_run_jump(fixed_delta):
 	if is_run_jumping:
 		run_jump_timer -= fixed_delta
-		
-		# 检查是否反向输入
 		var move_input = Input.get_axis("left", "right")
 		if move_input != 0 and sign(move_input) != run_jump_original_direction:
-			# 反向输入，立即结束奔跑跳跃加成
 			is_run_jumping = false
 		elif run_jump_timer > 0:
-			# 关键修改：应用水平速度乘数
 			velocity.x = run_jump_original_direction * (base_move_speed + run_jump_boost_speed) * effective_horizontal_multiplier
 		else:
-			# 加成时间结束，开始衰减
 			var target_speed = run_jump_original_direction * base_move_speed
 			velocity.x = move_toward(velocity.x, target_speed, run_jump_boost_speed * fixed_delta / run_jump_decay_time)
-			
-			# 如果已经衰减到基础速度，结束奔跑跳跃状态
 			if abs(velocity.x) <= base_move_speed:
 				is_run_jumping = false
 
 func try_dash(dash_just_pressed: bool) -> bool:
-	if dash_just_pressed and can_dash and dash_unlocked:
-		# 记录冲刺前是否在滑翔
-		was_gliding_before_dash = (current_state == PlayerState.GLIDE)
-		
-		# 如果是从滑翔状态进入冲刺，需要正确退出滑翔状态
-		if was_gliding_before_dash:
-			is_gliding = false
-			glide_timer = 0.0
-			is_double_jump_holding = false
-		
-		# 检查空中冲刺限制
-		if not is_on_floor() and not coyote_time_active:
-			if has_dashed_in_air:
-				return false
-			has_dashed_in_air = true
-		
-		change_state(PlayerState.DASH)
-		can_dash = false
-		dash_duration_timer = 0
-		var current_dash_duration = black_dash_duration if black_dash_unlocked else dash_duration
-		dash_duration_timer_node.start(current_dash_duration)
-		dash_cooldown_timer_node.start(dash_cooldown)  # 使用节点计时器
-		return true
-	elif dash_just_pressed and !dash_unlocked:
-		print("冲刺能力尚未解锁！")
-	return false
+	return PlayerMovementServiceScript.try_dash(self, dash_just_pressed)
 
 func start_super_dash():
 	is_super_dash_charging = false
@@ -2305,15 +1979,26 @@ func can_accept_jumpbox_bounce() -> bool:
 	var now_ms = Time.get_ticks_msec()
 	return now_ms - jumpbox_last_bounce_time_ms >= jumpbox_retrigger_lock_ms
 
+func mark_double_jump_started() -> void:
+	last_double_jump_started_time_ms = Time.get_ticks_msec()
+
+func is_recent_double_jump_start(window_sec: float = 0.12) -> bool:
+	var now_ms = Time.get_ticks_msec()
+	return now_ms - last_double_jump_started_time_ms <= int(window_sec * 1000.0)
+
 func _apply_jumpbox_horizontal_speed(base_speed: float, direction: int) -> void:
 	var signed_speed = base_speed * effective_horizontal_multiplier * direction
 	velocity.x = clamp(signed_speed, -jumpbox_max_horizontal_speed, jumpbox_max_horizontal_speed)
 ## 由JumpBox触发的弹跳，进入持续二段跳状态并获得水平速度加成
-func start_jumpbox_bounce(vertical_force: float):
+func start_jumpbox_bounce(vertical_force: float, trigger_grade: String = "normal", effect_overrides: Dictionary = {}):
 	if not can_accept_jumpbox_bounce():
 		return
 
 	jumpbox_last_bounce_time_ms = Time.get_ticks_msec()
+	jumpbox_trigger_grade = "perfect" if trigger_grade == "perfect" else "normal"
+	jumpbox_afterimage_type = "jumpbox_perfect" if jumpbox_trigger_grade == "perfect" else "jumpbox_normal"
+	jumpbox_horizontal_boost_multiplier = float(effect_overrides.get("horizontal_boost_multiplier", 1.0))
+	jumpbox_boost_duration_multiplier = float(effect_overrides.get("boost_duration_multiplier", 1.0))
 
 	# JumpBox 弹跳后不再额外叠加 JUMP 按住增高，避免高度异常峰值。
 	jump_hold_timer = max_jump_hold_time
@@ -2346,7 +2031,8 @@ func start_jumpbox_bounce(vertical_force: float):
 	jump2_boost_direction = 1 if move_input > 0 else -1 if move_input < 0 else (1 if is_facing_right else -1)
 	if move_input != 0:
 		# 关键修改：JumpBox 水平速度保持加法，并增加速度上限钳制
-		_apply_jumpbox_horizontal_speed(jump_move_speed + jump2_horizontal_boost, jump2_boost_direction)
+		var boosted = jump2_horizontal_boost * jumpbox_horizontal_boost_multiplier
+		_apply_jumpbox_horizontal_speed(jump_move_speed + boosted, jump2_boost_direction)
 	
 	# 激活残影效果
 	has_jumpbox_afterimage = true
@@ -2362,6 +2048,8 @@ func handle_jump2_boost(fixed_delta):
 	if current_animation == "JUMP2":
 		# 更新计时器
 		jump2_boost_timer += fixed_delta
+		var boosted = jump2_horizontal_boost * jumpbox_horizontal_boost_multiplier
+		var boost_duration_scaled = jump2_boost_duration * jumpbox_boost_duration_multiplier
 		
 		var move_input = Input.get_axis("left", "right")
 		var current_direction = 1 if move_input > 0 else -1 if move_input < 0 else jump2_boost_direction
@@ -2370,21 +2058,21 @@ func handle_jump2_boost(fixed_delta):
 		if move_input != 0:
 			jump2_boost_direction = current_direction
 		
-		var total_duration = jump2_boost_duration + jump2_boost_decrease_time
+		var total_duration = boost_duration_scaled + jump2_boost_decrease_time
 		
-		if jump2_boost_timer <= jump2_boost_duration:
+		if jump2_boost_timer <= boost_duration_scaled:
 			# 持续阶段：保持最大加成速度
 			if move_input != 0:
 				# 关键修改：应用环境乘数，并增加速度上限钳制
-				_apply_jumpbox_horizontal_speed(jump_move_speed + jump2_horizontal_boost, jump2_boost_direction)
+				_apply_jumpbox_horizontal_speed(jump_move_speed + boosted, jump2_boost_direction)
 			else:
 				# 无输入时自然减速（关键修改：应用加速度乘数）
-				velocity.x = move_toward(velocity.x, 0, air_control * ground_deceleration * (jump_move_speed + jump2_horizontal_boost) * effective_acceleration_multiplier)
+				velocity.x = move_toward(velocity.x, 0, air_control * ground_deceleration * (jump_move_speed + boosted) * effective_acceleration_multiplier)
 			
 		elif jump2_boost_timer <= total_duration:
 			# 衰减阶段：线性衰减到基础跳跃速度
-			var progress = (jump2_boost_timer - jump2_boost_duration) / jump2_boost_decrease_time
-			var current_boost = jump2_horizontal_boost * (1.0 - progress)
+			var progress = (jump2_boost_timer - boost_duration_scaled) / jump2_boost_decrease_time
+			var current_boost = boosted * (1.0 - progress)
 			
 			if move_input != 0:
 				# 应用环境乘数，并增加速度上限钳制
@@ -2452,6 +2140,8 @@ func handle_jump_interrupt_decay(fixed_delta):
 func end_jumpbox_continuous_jump():
 	is_jumpbox_continuous_jump = false
 	is_jumpbox_triggered = false
+	jumpbox_horizontal_boost_multiplier = 1.0
+	jumpbox_boost_duration_multiplier = 1.0
 ## 清除JumpBox触发的所有效果（包括速度加成、残影、旋转等）
 func clear_jumpbox_effect():
 	if is_jumpbox_triggered:
@@ -2462,6 +2152,10 @@ func clear_jumpbox_effect():
 		
 		
 		is_jumpbox_triggered = false
+		jumpbox_trigger_grade = "normal"
+		jumpbox_afterimage_type = "jumpbox_perfect"
+		jumpbox_horizontal_boost_multiplier = 1.0
+		jumpbox_boost_duration_multiplier = 1.0
 		is_jump2_boost_active = false
 		has_jumpbox_afterimage = false
 		is_double_jump_holding = false
@@ -2595,10 +2289,10 @@ func handle_afterimages(fixed_delta):
 	# JumpBox 残影（使用独立池）
 	if has_jumpbox_afterimage and current_animation == "JUMP2":
 		jump2_afterimage_timer += fixed_delta
-		var interval = _get_afterimage_interval("jumpbox") * afterimage_spawn_rate
+		var interval = _get_afterimage_interval(jumpbox_afterimage_type) * afterimage_spawn_rate
 		if jump2_afterimage_timer >= interval:
 			jump2_afterimage_timer = 0
-			create_afterimage(PlayerState.JUMP, true)  # 标记为 JumpBox 残影
+			create_afterimage(PlayerState.JUMP, true, jumpbox_afterimage_type)
 	elif has_jumpbox_afterimage and current_animation != "JUMP2":
 		
 		has_jumpbox_afterimage = false
@@ -2618,7 +2312,7 @@ func _get_afterimage_type_name(state: PlayerState, is_jumpbox: bool = false) -> 
 		PlayerState.SUPERDASH:
 			return "super_dash"
 		PlayerState.JUMP:
-			return "jumpbox" if is_jumpbox else "dash"
+			return jumpbox_afterimage_type if is_jumpbox else "dash"
 		_:
 			return "dash"
 
@@ -2888,8 +2582,14 @@ func start_hurt_hit_stop():
 func _trigger_tier2_hit_stop_with_fallback(duration_fallback: float, intensity_fallback: float) -> void:
 	PlayerHitStopServiceScript.trigger_tier2_with_fallback(self, duration_fallback, intensity_fallback)
 
+func _trigger_tier3_hit_stop_with_fallback(duration_fallback: float, intensity_fallback: float) -> void:
+	PlayerHitStopServiceScript.trigger_tier3_with_fallback(self, duration_fallback, intensity_fallback)
+
 # JumpBox 专用的 Hit Stop（使用 tier2 档位）
-func start_jumpbox_hit_stop():
+func start_jumpbox_hit_stop(trigger_grade: String = "normal"):
+	if trigger_grade == "perfect":
+		_trigger_tier3_hit_stop_with_fallback(jumpbox_hit_stop_duration, jumpbox_hit_stop_intensity)
+		return
 	_trigger_tier2_hit_stop_with_fallback(jumpbox_hit_stop_duration, jumpbox_hit_stop_intensity)
 
 #endregion

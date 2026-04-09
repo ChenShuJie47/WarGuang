@@ -206,10 +206,6 @@ func _spawn_jumpbox_at(spawn_point: Marker2D):
 	var jumpbox = config.jumpbox_scene.instantiate()
 	jumpbox.global_position = spawn_point.global_position
 	jumpbox.challenge_id = config.challenge_name
-	for prop in jumpbox.get_property_list():
-		if prop.get("name", "") == "respawn_time":
-			jumpbox.set("respawn_time", config.cooldown_time)
-			break
 	
 	# 关键修复：添加到 MainGameScene 而不是 current_scene（确保坐标系统一）
 	var main_scene = get_tree().root.get_node_or_null("MainGameScene")
@@ -225,7 +221,10 @@ func _spawn_jumpbox_at(spawn_point: Marker2D):
 func _on_jumpbox_bounce_triggered(body, _jumpbox, _spawn_point):
 
 	if body.is_in_group("player") and current_state == State.ACTIVE:
-		if body.current_animation != "JUMP2":
+		var eligible = body.current_animation == "JUMP2"
+		if not eligible and body.has_method("is_recent_double_jump_start"):
+			eligible = body.is_recent_double_jump_start(0.12)
+		if not eligible:
 			return
 		
 		# 修复：立即增加计数并更新 UI
