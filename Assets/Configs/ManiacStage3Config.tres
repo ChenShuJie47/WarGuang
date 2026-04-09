@@ -7,7 +7,7 @@
 script = ExtResource("1_cfg")
 challenge_name = "第三阶段"
 stage_id = 3
-target_count = 20
-cooldown_time = 3.5
+target_count = 18
+cooldown_time = 4.0
 jumpbox_scene = ExtResource("2_jumpbox")
 spawn_points = [null, null, null, null, null]

@@ -29,6 +29,8 @@ static func try_double_jump(player: Node, jump_just_pressed: bool) -> bool:
 		player.velocity.y = player.double_jump_velocity
 		player.jump_hold_timer = 0.0
 		PlayerAirStateServiceScript.apply_double_jump_state(player, true)
+		if player.has_method("mark_double_jump_started"):
+			player.mark_double_jump_started()
 		player.change_state(player.PlayerState.JUMP)
 		return true
 
@@ -36,6 +38,8 @@ static func try_double_jump(player: Node, jump_just_pressed: bool) -> bool:
 		player.velocity.y = player.double_jump_velocity
 		player.jump_hold_timer = 0.0
 		PlayerAirStateServiceScript.apply_double_jump_state(player, false)
+		if player.has_method("mark_double_jump_started"):
+			player.mark_double_jump_started()
 		player.change_state(player.PlayerState.JUMP)
 		return true
 

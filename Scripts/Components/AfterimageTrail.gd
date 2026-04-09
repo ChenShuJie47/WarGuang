@@ -68,21 +68,37 @@ class AfterimageConfig:
 ## 超级冲刺残影位移强度
 @export var super_dash_move_distance: float = 60.0
 
-@export_group("JumpBox")
-## JumpBox二段跳残影颜色
-@export var jumpbox_color: Color = Color(0.902, 0.608, 1.0, 1.0)
-## JumpBox二段跳残影生命周期（秒）
-@export var jumpbox_lifetime: float = 0.3
-## JumpBox二段跳残影生成间隔（秒）
-@export var jumpbox_interval: float = 0.05
-## JumpBox二段跳残影对象池大小
-@export var jumpbox_pool_size: int = 40
-## JumpBox二段跳是否使用纯色渲染
-@export var jumpbox_solid_color: bool = true
-## JumpBox二段跳是否启用淡出缩放效果
-@export var jumpbox_fade_scale_effect: bool = true
-## JumpBox二段跳残影位移强度
-@export var jumpbox_move_distance: float = 40.0
+@export_group("JumpBox Perfect")
+## JumpBox完美触发二段跳残影颜色
+@export var jumpbox_perfect_color: Color = Color(0.902, 0.608, 1.0, 1.0)
+## JumpBox完美触发二段跳残影生命周期（秒）
+@export var jumpbox_perfect_lifetime: float = 0.35
+## JumpBox完美触发二段跳残影生成间隔（秒）
+@export var jumpbox_perfect_interval: float = 0.05
+## JumpBox完美触发二段跳残影对象池大小
+@export var jumpbox_perfect_pool_size: int = 40
+## JumpBox完美触发二段跳是否使用纯色渲染
+@export var jumpbox_perfect_solid_color: bool = true
+## JumpBox完美触发二段跳是否启用淡出缩放效果
+@export var jumpbox_perfect_fade_scale_effect: bool = true
+## JumpBox完美触发二段跳残影位移强度
+@export var jumpbox_perfect_move_distance: float = 50.0
+
+@export_group("JumpBox Normal")
+## JumpBox普通触发二段跳残影颜色（白色）
+@export var jumpbox_normal_color: Color = Color(1.0, 1.0, 1.0, 1.0)
+## JumpBox普通触发二段跳残影生命周期（秒）
+@export var jumpbox_normal_lifetime: float = 0.25
+## JumpBox普通触发二段跳残影生成间隔（秒）
+@export var jumpbox_normal_interval: float = 0.05
+## JumpBox普通触发二段跳残影对象池大小
+@export var jumpbox_normal_pool_size: int = 30
+## JumpBox普通触发二段跳是否使用纯色渲染
+@export var jumpbox_normal_solid_color: bool = true
+## JumpBox普通触发二段跳是否启用淡出缩放效果
+@export var jumpbox_normal_fade_scale_effect: bool = true
+## JumpBox普通触发二段跳残影位移强度
+@export var jumpbox_normal_move_distance: float = 40.0
 
 @export_group("Maniac Move")
 ## ManiacNPC 移动残影颜色（暗红色系）
@@ -125,7 +141,10 @@ func _register_default_pools():
 	_register_pool("dash", dash_color, dash_lifetime, dash_interval, dash_pool_size, dash_solid_color, dash_fade_scale_effect, dash_move_distance)
 	_register_pool("black_dash", black_dash_color, black_dash_lifetime, black_dash_interval, black_dash_pool_size, black_dash_solid_color, black_dash_fade_scale_effect, black_dash_move_distance)
 	_register_pool("super_dash", super_dash_color, super_dash_lifetime, super_dash_interval, super_dash_pool_size, super_dash_solid_color, super_dash_fade_scale_effect, super_dash_move_distance)
-	_register_pool("jumpbox", jumpbox_color, jumpbox_lifetime, jumpbox_interval, jumpbox_pool_size, jumpbox_solid_color, jumpbox_fade_scale_effect, jumpbox_move_distance)
+	_register_pool("jumpbox_perfect", jumpbox_perfect_color, jumpbox_perfect_lifetime, jumpbox_perfect_interval, jumpbox_perfect_pool_size, jumpbox_perfect_solid_color, jumpbox_perfect_fade_scale_effect, jumpbox_perfect_move_distance)
+	_register_pool("jumpbox_normal", jumpbox_normal_color, jumpbox_normal_lifetime, jumpbox_normal_interval, jumpbox_normal_pool_size, jumpbox_normal_solid_color, jumpbox_normal_fade_scale_effect, jumpbox_normal_move_distance)
+	# 向后兼容旧类型名
+	_register_pool("jumpbox", jumpbox_perfect_color, jumpbox_perfect_lifetime, jumpbox_perfect_interval, jumpbox_perfect_pool_size, jumpbox_perfect_solid_color, jumpbox_perfect_fade_scale_effect, jumpbox_perfect_move_distance)
 	_register_pool("maniac_move", maniac_move_color, maniac_move_lifetime, maniac_move_interval, maniac_move_pool_size, maniac_move_solid_color, maniac_move_fade_scale_effect, maniac_move_distance)
 
 func _register_pool(type: String, color: Color, life: float, interval: float, size: int, solid_color: bool, fade_scale: bool, move_distance: float):
