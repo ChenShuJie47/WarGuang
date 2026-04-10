@@ -235,16 +235,34 @@ func _start_shake(target_pcam: Node2D, params: Dictionary) -> void:
 	if not is_instance_valid(target_pcam):
 		return
 	
+	var duration := float(params.get("duration", 0.3))
+	if not is_finite(duration):
+		duration = 0.3
+	duration = maxf(duration, 0.001)
+	
+	var speed := float(params.get("speed", 10.0))
+	if not is_finite(speed):
+		speed = 10.0
+	speed = maxf(absf(speed), 0.01)
+	
+	var x_intensity := float(params.get("x_intensity", 10.0))
+	if not is_finite(x_intensity):
+		x_intensity = 10.0
+	
+	var y_intensity := float(params.get("y_intensity", 10.0))
+	if not is_finite(y_intensity):
+		y_intensity = 10.0
+	
 	# 初始化数组（支持多抖动源叠加）
 	if not _active_shakes.has(target_pcam):
 		_active_shakes[target_pcam] = []
 	
 	# 添加新的抖动源 - 使用噪声实现平滑抖动
 	_active_shakes[target_pcam].append({
-		"x_intensity": params.get("x_intensity", 10.0),
-		"y_intensity": params.get("y_intensity", 10.0),
-		"duration": params.get("duration", 0.3),
-		"speed": params.get("speed", 10.0),  # 噪声采样速度
+		"x_intensity": x_intensity,
+		"y_intensity": y_intensity,
+		"duration": duration,
+		"speed": speed,  # 噪声采样速度
 		"falloff_type": params.get("falloff_type", 1),
 		"timer": 0.0,
 		"noise_offset_x": randf() * 1000,  # 随机噪声起始点
@@ -267,7 +285,11 @@ func _process_active_shakes(delta):
 		for shake_data in shakes:
 			# 检查是否已结束
 			shake_data.timer += delta
-			var progress = shake_data.timer / shake_data.duration
+			var duration: float = maxf(float(shake_data.duration), 0.001)
+			var progress: float = shake_data.timer / duration
+			if not is_finite(progress):
+				continue
+			progress = clampf(progress, 0.0, 1.0)
 			
 			if progress >= 1.0:
 				# 这个抖动结束了，跳过不处理
@@ -277,6 +299,9 @@ func _process_active_shakes(delta):
 			
 			# 计算衰减因子
 			var falloff_factor = _get_falloff_factor(shake_data.falloff_type, progress)
+			if not is_finite(falloff_factor):
+				falloff_factor = 0.0
+			falloff_factor = maxf(falloff_factor, 0.0)
 			
 			# 使用噪声生成平滑的抖动值
 			var noise_x = _noise_1d(_noise_time * shake_data.speed + shake_data.noise_offset_x)

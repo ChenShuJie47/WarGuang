@@ -7,6 +7,7 @@ size = Vector2(24, 20)
 
 [node name="Door" type="Area2D"]
 script = ExtResource("1_sr1d7")
+use_non_instant_camera_follow_test = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 scale = Vector2(2, 4)

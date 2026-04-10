@@ -14,6 +14,10 @@ extends Area2D
 @export var black_screen_duration: float = 0.5
 ## 淡出时间（秒）
 @export var fade_out_duration: float = 0.4
+## Door 非瞬移追镜时长（秒）
+@export var door_camera_catchup_duration: float = 0.20
+## Door 传送后临时放开相机限制时长（秒）
+@export var door_camera_limit_unlock_duration: float = 0.32
 
 # 内部变量
 var can_teleport: bool = true
@@ -55,6 +59,11 @@ func _on_body_exited(body):
 
 ## 传送玩家
 func teleport_player(player):
+	# 进入 Door 即锁输入并清理惯性，直到自动走位结束。
+	if player.has_method("lock_control"):
+		player.lock_control(999.0, "door_transfer")
+	player.velocity = Vector2.ZERO
+
 	# 中断受伤视觉效果
 	if player.has_method("interrupt_hurt_visual_only"):
 		player.interrupt_hurt_visual_only()
@@ -90,10 +99,18 @@ func teleport_player(player):
 	# 等场景树与物理一帧，使房间显隐、相机限制与变换就绪后再同步相机（仍处在全黑中）
 	await get_tree().process_frame
 	await get_tree().physics_frame
-	if player.has_method("sync_camera_after_room_teleport"):
-		player.sync_camera_after_room_teleport()
-	elif player.has_method("sync_phantom_camera_after_teleport"):
-		player.sync_phantom_camera_after_teleport()
+	if player.has_method("start_door_camera_catchup_after_teleport"):
+		player.start_door_camera_catchup_after_teleport(
+			door_camera_catchup_duration,
+			door_camera_limit_unlock_duration
+		)
+	# 传送到目标房间后稍作停顿，再开始自动走位；期间保持连续锁控。
+	await get_tree().create_timer(0.1).timeout
+	if player.has_method("start_door_autowalk_to_dynamic_checkpoint"):
+		var autowalk_started: bool = player.start_door_autowalk_to_dynamic_checkpoint(target_room_id, target_position, player.is_facing_right)
+		if not autowalk_started and player.has_method("lock_control"):
+			# 目标房间可能暂无动态检查点，避免无限锁输入。
+			player.lock_control(0.18, "door_transfer_fallback")
 	
 	# 同步后额外等待一帧，让 PhantomCameraHost 更新 Camera2D
 	await get_tree().physics_frame

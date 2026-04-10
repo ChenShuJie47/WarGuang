@@ -218,12 +218,12 @@ item_id = "2"
 position = Vector2(1576, 0)
 
 [node name="DynamicCheckpoint" parent="DynamicCheckpoints" instance=ExtResource("11_3br1t")]
-position = Vector2(-1528, -48)
+position = Vector2(-1496, -47)
 checkpoint_id = 201
 belongs_to_room = "Room2"
 
 [node name="DynamicCheckpoint2" parent="DynamicCheckpoints" instance=ExtResource("11_3br1t")]
-position = Vector2(504, -48)
+position = Vector2(487, -49)
 checkpoint_id = 202
 belongs_to_room = "Room2"
 

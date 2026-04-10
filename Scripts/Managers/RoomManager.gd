@@ -200,3 +200,29 @@ func set_player(player: Node):
 ## 获取当前房间数据
 func get_current_room_data():
 	return rooms.get(current_room, null)
+
+## 根据世界坐标解析所属房间；未命中边界时回退最近房间中心。
+func get_room_id_by_position(world_pos: Vector2) -> String:
+	if rooms.is_empty():
+		return current_room
+	
+	for room_id in rooms.keys():
+		var room_data: Dictionary = rooms[room_id]
+		var bounds: Rect2 = room_data.get("bounds", Rect2())
+		if bounds.has_area() and bounds.has_point(world_pos):
+			return room_id
+	
+	var nearest_room_id := current_room
+	var nearest_distance := INF
+	for room_id in rooms.keys():
+		var room_data: Dictionary = rooms[room_id]
+		var bounds: Rect2 = room_data.get("bounds", Rect2())
+		if not bounds.has_area():
+			continue
+		var center: Vector2 = bounds.get_center()
+		var dist_sq: float = center.distance_squared_to(world_pos)
+		if dist_sq < nearest_distance:
+			nearest_distance = dist_sq
+			nearest_room_id = room_id
+	
+	return nearest_room_id

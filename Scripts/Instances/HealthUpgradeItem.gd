@@ -20,9 +20,6 @@ func _on_body_entered(body):
 	if body.is_in_group("player"):
 		print("HealthUpgradeItem: 玩家接触道具")
 		
-		# 标记为已收集
-		Global.mark_item_collected(item_id)
-		
 		# 禁用碰撞（使用 deferred）
 		collision_shape.set_deferred("disabled", true)
 		
@@ -49,6 +46,9 @@ func _on_body_entered(body):
 						var health_unit = player_ui.health_units[i]
 						if is_instance_valid(health_unit) and health_unit.has_method("set_state"):
 							health_unit.set_state(HealthUnit.HealthState.ADD)
+		
+		# 在上限更新后再写入“已收集”状态，避免存档落入旧血量上限。
+		Global.mark_item_collected(item_id)
 		
 		# 播放收集动画
 		animated_sprite.play("COLLECT")

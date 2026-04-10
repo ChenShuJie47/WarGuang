@@ -85,3 +85,53 @@ func clear_all_checkpoints_on_death():
 	
 	# 同时清除 Global 的动态检查点记录
 	Global.clear_dynamic_checkpoints()
+
+## 获取指定房间内的所有动态检查点信息。
+func get_room_checkpoints(room_id: String) -> Array:
+	var result: Array = []
+	for checkpoint_id in checkpoints.keys():
+		if checkpoint_rooms.get(checkpoint_id, "") != room_id:
+			continue
+		result.append({
+			"id": checkpoint_id,
+			"position": checkpoints[checkpoint_id],
+			"room_id": room_id
+		})
+	return result
+
+## 选择最适合 Door 进入后的动态检查点：先按距离，再按玩家面向方向偏置。
+func get_best_checkpoint_for_room(room_id: String, origin_position: Vector2, facing_right: bool, tie_distance: float = 64.0) -> Dictionary:
+	var candidates := get_room_checkpoints(room_id)
+	if candidates.is_empty():
+		return {}
+
+	var best_candidate: Dictionary = {}
+	var best_distance_sq: float = INF
+	var best_facing_score: float = -INF
+	var facing_direction := Vector2.RIGHT if facing_right else Vector2.LEFT
+	var facing_tolerance_sq := tie_distance * tie_distance
+
+	for candidate in candidates:
+		var candidate_pos: Vector2 = candidate.get("position", Vector2.ZERO)
+		var delta: Vector2 = candidate_pos - origin_position
+		var distance_sq: float = delta.length_squared()
+		var facing_score: float = delta.normalized().dot(facing_direction) if delta.length_squared() > 0.0001 else 1.0
+
+		if best_candidate.is_empty():
+			best_candidate = candidate
+			best_distance_sq = distance_sq
+			best_facing_score = facing_score
+			continue
+
+		if distance_sq + 0.001 < best_distance_sq:
+			best_candidate = candidate
+			best_distance_sq = distance_sq
+			best_facing_score = facing_score
+			continue
+
+		if absf(distance_sq - best_distance_sq) <= facing_tolerance_sq and facing_score > best_facing_score:
+			best_candidate = candidate
+			best_distance_sq = distance_sq
+			best_facing_score = facing_score
+
+	return best_candidate
