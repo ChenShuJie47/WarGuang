@@ -1,8 +1,10 @@
 extends RefCounted
 class_name PlayerMovementService
 
+# 复用空气能力服务，避免移动状态和跳跃状态各自写一套切换逻辑。
 const PlayerAirAbilityServiceScript = preload("res://Scripts/Player/PlayerAirAbilityService.gd")
 
+# 处理冲刺计时结束后的状态回退。
 static func handle_dash_timers(player: Node, fixed_delta: float) -> void:
 	if player.current_state == player.PlayerState.DASH:
 		player.dash_duration_timer += fixed_delta
@@ -24,6 +26,7 @@ static func handle_dash_timers(player: Node, fixed_delta: float) -> void:
 				else:
 					player.change_state(player.PlayerState.DOWN)
 
+# 处理冲刺输入和冲刺进入条件。
 static func try_dash(player: Node, dash_just_pressed: bool) -> bool:
 	if dash_just_pressed and player.can_dash and player.dash_unlocked:
 		player.was_gliding_before_dash = (player.current_state == player.PlayerState.GLIDE)
@@ -49,6 +52,7 @@ static func try_dash(player: Node, dash_just_pressed: bool) -> bool:
 		print("冲刺能力尚未解锁！")
 	return false
 
+# 处理站立状态的派生状态切换。
 static func handle_idle_state(player: Node, _delta: float, move_input: float, jump_just_pressed: bool, dash_just_pressed: bool) -> void:
 	if player.sleep_timer >= player.idle_to_sleep_time:
 		player.change_state(player.PlayerState.SLEEP)
@@ -89,6 +93,7 @@ static func handle_idle_state(player: Node, _delta: float, move_input: float, ju
 		var target_speed = move_input * player.base_move_speed * player.effective_horizontal_multiplier
 		player.velocity.x = move_toward(player.velocity.x, target_speed, player.ground_acceleration * player.base_move_speed * player.effective_horizontal_multiplier)
 
+# 处理普通移动状态的地面逻辑。
 static func handle_move_state(player: Node, _delta: float, move_input: float, jump_just_pressed: bool, dash_just_pressed: bool) -> void:
 	if not player.is_on_floor() and not player.coyote_time_active:
 		if player.velocity.y < 0:
@@ -123,6 +128,7 @@ static func handle_move_state(player: Node, _delta: float, move_input: float, ju
 		var target_speed = move_input * player.base_move_speed * player.effective_horizontal_multiplier
 		player.velocity.x = move_toward(player.velocity.x, target_speed, player.ground_acceleration * player.base_move_speed * player.effective_horizontal_multiplier)
 
+# 处理跑步状态的地面逻辑。
 static func handle_run_state(player: Node, _delta: float, move_input: float, jump_just_pressed: bool, dash_just_pressed: bool) -> void:
 	if not player.is_on_floor() and not player.coyote_time_active:
 		if player.velocity.y < 0:
@@ -157,6 +163,7 @@ static func handle_run_state(player: Node, _delta: float, move_input: float, jum
 			var target_speed = move_input * player.run_move_speed * player.effective_horizontal_multiplier
 			player.velocity.x = move_toward(player.velocity.x, target_speed, player.ground_acceleration * player.run_move_speed * player.effective_horizontal_multiplier)
 
+# 处理基础冲刺状态的速度锁定。
 static func handle_dash_state(player: Node) -> void:
 	var dash_direction = 1 if player.is_facing_right else -1
 	player.velocity.x = dash_direction * player.dash_speed
@@ -170,6 +177,7 @@ static func handle_dash_state(player: Node) -> void:
 			player.jump_buffer_after_dash = true
 			player.jump_buffer_type = 1
 
+	# 处理攀墙状态的受力、减速和跳跃入口。
 static func handle_wallgrip_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, _jump_pressed: bool, _jump_just_released: bool, dash_just_pressed: bool) -> void:
 	if try_dash(player, dash_just_pressed):
 		return
@@ -217,6 +225,7 @@ static func handle_wallgrip_state(player: Node, fixed_delta: float, move_input: 
 	if PlayerAirAbilityServiceScript.try_double_jump(player, jump_just_pressed):
 		return
 
+# 处理墙跳后的过渡加速和重新附着判定。
 static func handle_walljump_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, jump_pressed: bool, _jump_just_released: bool, dash_just_pressed: bool) -> void:
 	if try_dash(player, dash_just_pressed):
 		return
@@ -247,6 +256,7 @@ static func handle_walljump_state(player: Node, fixed_delta: float, move_input: 
 		elif player.velocity.y >= 0:
 			player.change_state(player.PlayerState.DOWN)
 
+	# 处理撞墙后的反弹和相机反馈。
 static func handle_wall_bump(player: Node) -> void:
 	CameraShakeManager.shake("x_strong", player.phantom_camera)
 	player.velocity.x = player.wall_bump_rebound_x * (-1 if player.is_facing_right else 1)
@@ -254,6 +264,7 @@ static func handle_wall_bump(player: Node) -> void:
 	player.hurt_timer = player.hurt_stun_time
 	player.is_wall_bump_stun = true
 
+# 处理撞墙僵直期间的重力与恢复。
 static func handle_wall_bump_stun(player: Node, fixed_delta: float) -> void:
 	player.apply_gravity(fixed_delta)
 	player.velocity.x = move_toward(player.velocity.x, 0, player.dash_inertia_decay * player.base_move_speed * fixed_delta)
@@ -266,6 +277,7 @@ static func handle_wall_bump_stun(player: Node, fixed_delta: float) -> void:
 		else:
 			player.change_state(player.PlayerState.DOWN)
 
+# 尝试从空中直接进入攀墙状态。
 static func try_enter_wallgrip_from_air(player: Node, move_input: float) -> bool:
 	if player.is_on_floor() or not player.wall_grip_unlocked or not player.is_touching_wall:
 		return false

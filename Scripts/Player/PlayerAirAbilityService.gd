@@ -1,8 +1,10 @@
 extends RefCounted
 class_name PlayerAirAbilityService
 
+# 复用空气状态工具，保证跳跃、二段跳与滑翔状态切换一致。
 const PlayerAirStateServiceScript = preload("res://Scripts/Player/PlayerAirStateService.gd")
 
+# 尝试执行一段跳。
 static func try_jump(player: Node, jump_just_pressed: bool) -> bool:
 	if player.is_on_floor() or player.coyote_time_active:
 		if jump_just_pressed or player.jump_buffer_timer.time_left > 0:
@@ -21,6 +23,7 @@ static func try_jump(player: Node, jump_just_pressed: bool) -> bool:
 
 	return false
 
+	# 尝试执行二段跳或补偿跳。
 static func try_double_jump(player: Node, jump_just_pressed: bool) -> bool:
 	if not player.double_jump_unlocked:
 		return false
@@ -45,6 +48,7 @@ static func try_double_jump(player: Node, jump_just_pressed: bool) -> bool:
 
 	return false
 
+# 进入滑翔状态时清理移动计时和初速度。
 static func start_glide(player: Node) -> void:
 	player.is_gliding = true
 	player.glide_timer = 0.0
@@ -54,6 +58,7 @@ static func start_glide(player: Node) -> void:
 	player.velocity.y = 0
 	player.change_state(player.PlayerState.GLIDE)
 
+# 退出滑翔状态时回到跳跃或下落流程。
 static func exit_glide(player: Node) -> void:
 	player.is_gliding = false
 	player.glide_timer = 0.0

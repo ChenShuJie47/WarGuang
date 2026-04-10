@@ -1,20 +1,33 @@
 class_name PlayerCameraController
 extends Node
 
+# 相机限制在传送后会临时放开到极大范围，避免被边界夹回。
 const CAMERA_LIMIT_DISABLED: int = 10000000
+# 调试开关，用于追踪传送或抖动后的相机同步问题。
 const CAMERA_TELEPORT_DEBUG: bool = false
+# 复用玩家相机数学工具，统一处理中心点与边界裁剪。
 const PlayerCameraMathUtil = preload("res://Scripts/Player/PlayerCameraMath.gd")
 
+# 当前绑定的玩家节点。
 var player: Player = null
+# 当前绑定的 PhantomCamera 节点。
 var phantom_camera: Node = null
+# 传送后相机轴锁的临时保持计时器。
 var camera_transition_guard_timer: float = 0.0
+# 标记是否正在等待相机过渡恢复。
 var camera_transition_guard_active: bool = false
+# 传送前的 dead zone 备份值，用于恢复普通跟随范围。
 var camera_transition_dead_zone_backup: Vector2 = Vector2(0.125, 0.1)
+# 传送守卫已经持续了多久。
 var camera_transition_guard_elapsed: float = 0.0
+# 相机守卫至少保持的最短时间。
 var camera_transition_guard_min_duration: float = 0.12
+# 记录传送前的轴锁状态，结束后恢复。
 var camera_transition_axis_lock_backup: int = 0
+# 标记是否已经完成依赖注入。
 var setup_completed: bool = false
 
+# 初始化相机控制器的绑定对象。
 func setup(player_ref: Player) -> void:
 	player = player_ref
 	phantom_camera = player.get_node_or_null("PhantomCamera2D")
@@ -24,6 +37,7 @@ func setup(player_ref: Player) -> void:
 		camera_transition_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
 	setup_completed = true
 
+# 每帧检查传送守卫是否应该结束。
 func physics_process(fixed_delta: float) -> void:
 	if not setup_completed:
 		return
@@ -31,8 +45,11 @@ func physics_process(fixed_delta: float) -> void:
 		return
 	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
 		return
+	if not phantom_camera.global_position.is_finite():
+		_recover_from_invalid_camera_position()
 	_update_camera_transition_guard(fixed_delta)
 
+# 将相机 follow_offset 平滑回零。
 func reset_camera_position() -> void:
 	if not player or not phantom_camera:
 		return
@@ -41,6 +58,7 @@ func reset_camera_position() -> void:
 	tween.set_ease(player.camera_offset_ease_type)
 	tween.tween_property(phantom_camera, "follow_offset", Vector2.ZERO, player.camera_offset_transition_duration)
 
+# 开启传送后的临时守卫，避免相机立刻回落到错误 dead zone。
 func start_camera_transition_guard(duration: float = 0.18, max_duration: float = 1.0) -> void:
 	if not phantom_camera:
 		return
@@ -53,6 +71,7 @@ func start_camera_transition_guard(duration: float = 0.18, max_duration: float =
 	if CAMERA_TELEPORT_DEBUG:
 		print("[CameraGuard] lock begin min=", camera_transition_guard_min_duration, " max=", camera_transition_guard_timer)
 
+# 处理传送后相机轴锁恢复与回位时机。
 func _update_camera_transition_guard(fixed_delta: float) -> void:
 	if not camera_transition_guard_active:
 		return
@@ -71,6 +90,7 @@ func _update_camera_transition_guard(fixed_delta: float) -> void:
 	if CAMERA_TELEPORT_DEBUG:
 		print("[CameraGuard] lock end elapsed=", camera_transition_guard_elapsed, " timeout_left=", camera_transition_guard_timer)
 
+# 同步房间传送后的相机最终位置。
 func sync_camera_after_room_teleport() -> void:
 	if not setup_completed:
 		return
@@ -89,6 +109,8 @@ func sync_camera_after_room_teleport() -> void:
 
 	var desired_center: Vector2 = player.global_position + phantom_camera.follow_offset
 	var clamped_center := _clamp_camera_center_by_limits(desired_center, phantom_camera, camera)
+	if not clamped_center.is_finite():
+		clamped_center = desired_center if desired_center.is_finite() else player.global_position
 
 	phantom_camera.global_position = clamped_center
 	if phantom_camera.has_method("teleport_position"):
@@ -106,6 +128,7 @@ func sync_camera_after_room_teleport() -> void:
 
 	start_camera_transition_guard(0.10, 0.65)
 
+# 在极端情况下强制把 Camera2D 放到目标位置。
 func force_sync_camera_position_after_teleport() -> void:
 	if not setup_completed:
 		return
@@ -140,6 +163,7 @@ func force_sync_camera_position_after_teleport() -> void:
 	if CAMERA_TELEPORT_DEBUG:
 		print("DEBUG: 相机位置设置后:", camera.global_position)
 
+# 返回当前相机守卫和跟随状态的调试快照。
 func get_debug_snapshot() -> Dictionary:
 	return {
 		"setup_completed": setup_completed,
@@ -153,6 +177,7 @@ func get_debug_snapshot() -> Dictionary:
 		"follow_offset": phantom_camera.get_follow_offset() if phantom_camera and phantom_camera.has_method("get_follow_offset") else Vector2.ZERO
 	}
 
+# 通过限制范围把目标中心点夹回可用区域。
 func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: Camera2D) -> Vector2:
 	return PlayerCameraMathUtil.clamp_camera_center_by_limits(
 		target_center,
@@ -162,6 +187,7 @@ func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: 
 		CAMERA_LIMIT_DISABLED
 	)
 
+# 判断玩家是否已经回到正常 dead zone 内，允许守卫结束。
 func _is_player_inside_normal_camera_dead_zone() -> bool:
 	if not phantom_camera or not player:
 		return true
@@ -205,3 +231,26 @@ func _is_player_inside_normal_camera_dead_zone() -> bool:
 		print("[CameraGuard] target=", target_world, " cam=", camera_center, " dead=", half_dead_w, ",", half_dead_h, " freeX=", free_min_x, "..", free_max_x, " freeY=", free_min_y, "..", free_max_y, " inside=", inside_x and inside_y)
 
 	return inside_x and inside_y
+
+# 当相机坐标出现 NaN/Inf 时，立即重置到玩家附近并刷新相机同步。
+func _recover_from_invalid_camera_position() -> void:
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	var safe_center: Vector2 = player.global_position + phantom_camera.follow_offset
+	if not safe_center.is_finite():
+		safe_center = player.global_position if player.global_position.is_finite() else Vector2.ZERO
+	phantom_camera.global_position = safe_center
+	if phantom_camera.has_method("teleport_position"):
+		phantom_camera.teleport_position()
+	var camera := player.get_viewport().get_camera_2d()
+	if camera:
+		if not camera.offset.is_finite():
+			camera.offset = Vector2.ZERO
+		camera.global_position = safe_center
+		if camera.has_method("reset_smoothing"):
+			camera.reset_smoothing()
+		if camera.has_method("reset_physics_interpolation"):
+			camera.reset_physics_interpolation()
+	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
+		CameraShakeManager.stop_shake(phantom_camera)
+	start_camera_transition_guard(0.10, 0.65)

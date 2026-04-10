@@ -1,4 +1,4 @@
-[gd_scene load_steps=102 format=3 uid="uid://dwj2ydwabq3n0"]
+[gd_scene load_steps=104 format=3 uid="uid://dwj2ydwabq3n0"]
 
 [ext_resource type="Script" uid="uid://b641fcmvm5n4c" path="res://Scripts/Player/Player.gd" id="1_kyqiw"]
 [ext_resource type="Texture2D" uid="uid://8ywn2x6bd5v2" path="res://Assets/Textures/Warmas/1.png" id="2_4wape"]
@@ -10,6 +10,8 @@
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="4_jmcll"]
 [ext_resource type="Script" uid="uid://bw1fmebkjwy7o" path="res://Scripts/Components/AfterimageTrail.gd" id="5_afterimagetrail"]
 [ext_resource type="Script" uid="uid://c6igct05krujq" path="res://Scripts/Player/PlayerCameraController.gd" id="6_camera_controller"]
+[ext_resource type="Script" uid="uid://kd5yity3l62p" path="res://Scripts/Player/PlayerFXController.gd" id="7_fx_controller"]
+[ext_resource type="SpriteFrames" uid="uid://wjbyfthj2wul" path="res://Assets/Textures/FXs/PlayerFXs/PlayerFX001.tres" id="8_player_fx_frames"]
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_jmcll"]
 closed = false
@@ -776,6 +778,28 @@ script = ExtResource("5_afterimagetrail")
 [node name="PlayerCameraController" type="Node" parent="."]
 script = ExtResource("6_camera_controller")
 
+[node name="PlayerFXController" type="Node2D" parent="."]
+script = ExtResource("7_fx_controller")
+fx_frames = ExtResource("8_player_fx_frames")
+
+[node name="RunAnchor" type="Node2D" parent="PlayerFXController"]
+
+[node name="DashAnchor" type="Node2D" parent="PlayerFXController"]
+
+[node name="JumpAnchor" type="Node2D" parent="PlayerFXController"]
+
+[node name="LandAnchor" type="Node2D" parent="PlayerFXController"]
+
+[node name="WallJumpAnchor" type="Node2D" parent="PlayerFXController"]
+
+[node name="HurtAnchor" type="Node2D" parent="PlayerFXController"]
+
+[node name="SuperDashAnchor" type="Node2D" parent="PlayerFXController"]
+
+[node name="JumpBoxNormalAnchor" type="Node2D" parent="PlayerFXController"]
+
+[node name="JumpBoxPerfectAnchor" type="Node2D" parent="PlayerFXController"]
+
 [node name="PointLight2D" type="PointLight2D" parent="."]
 color = Color(0.92156863, 0.92156863, 0.8235294, 1)
 energy = 0.6
@@ -794,7 +818,7 @@ occluder_light_mask = 0
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, 5)
 sprite_frames = SubResource("SpriteFrames_jbabp")
-animation = &"JUMP2"
+animation = &"SUPERDASH"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visibility_layer = 63
