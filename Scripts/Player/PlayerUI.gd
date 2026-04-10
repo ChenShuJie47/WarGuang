@@ -260,6 +260,8 @@ func increase_max_health(amount: int = 1):
 	var old_max_health = max_health
 	max_health += amount
 	current_health += amount  # 增加上限时同时恢复血量
+	Global.player_max_health = max_health
+	Global.player_current_health = current_health
 	
 	# 重新创建血量显示
 	initialize_health_display()
@@ -274,6 +276,8 @@ func increase_max_health(amount: int = 1):
 	# 发出信号
 	max_health_changed.emit(max_health)
 	health_changed.emit(current_health)
+	Global.player_max_health_changed.emit(max_health)
+	Global.player_health_changed.emit(current_health)
 
 # 钱币系统相关函数
 func initialize_coin_display():

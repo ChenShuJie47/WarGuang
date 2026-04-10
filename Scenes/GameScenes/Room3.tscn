@@ -64,12 +64,12 @@ door_id = "2-3"
 [node name="DynamicCheckpoints" type="Node2D" parent="."]
 
 [node name="DynamicCheckpoint" parent="DynamicCheckpoints" instance=ExtResource("6_mjspf")]
-position = Vector2(672, -48)
+position = Vector2(619, -48)
 checkpoint_id = 301
 belongs_to_room = "Room3"
 
 [node name="DynamicCheckpoint2" parent="DynamicCheckpoints" instance=ExtResource("6_mjspf")]
-position = Vector2(32, -48)
+position = Vector2(91, -49)
 checkpoint_id = 302
 belongs_to_room = "Room3"
 
