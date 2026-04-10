@@ -87,7 +87,7 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 ## 滑翔目标水平速度
 @export var glide_target_h_speed: float = 160.0
 ## 滑翔水平加速度（越大越快进入目标速度）
-@export var glide_horizontal_acceleration: float = 900.0
+@export var glide_horizontal_acceleration: float = 1000.0
 ## 滑翔松开方向键时的水平减速（越小越“飘”）
 @export var glide_release_deceleration: float = 80.0
 ## 滑翔最大下落速度乘数
