@@ -1,6 +1,7 @@
 extends RefCounted
 class_name PlayerFeedbackService
 
+# 统一处理跑步、冲刺和 JumpBox 残影的节奏与池切换。
 static func handle_afterimages(player: Node, fixed_delta: float) -> void:
 	var current_fps = Engine.get_frames_per_second()
 	if current_fps < 45:

@@ -27,6 +27,8 @@ const PlayerAirAbilityServiceScript = preload("res://Scripts/Player/PlayerAirAbi
 const PlayerAirMotionServiceScript = preload("res://Scripts/Player/PlayerAirMotionService.gd")
 const PlayerMovementServiceScript = preload("res://Scripts/Player/PlayerMovementService.gd")
 const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedbackService.gd")
+## 独立的玩家 FX 控制器，用于状态单播与周期性特效。
+const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXController.gd")
 
 ## 节点引用
 @onready var right_wall_ray = $WallRays/RightWallRay
@@ -36,6 +38,8 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 @onready var point_light = $PointLight2D  
 @onready var timers = $Timers
 @onready var camera_controller = $PlayerCameraController
+## 统一管理跑步、冲刺、受伤、落地等一次性与周期性特效。
+@onready var fx_controller = $PlayerFXController
 @onready var canvas_modulate = get_tree().get_first_node_in_group("canvas_modulate")
 
 ##外部变量
@@ -51,11 +55,15 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 ## 奔跑移动速度（像素/秒）
 @export var run_move_speed: float = 240.0
 ## 地面加速度 (0-1，越大加速越快)
-@export var ground_acceleration: float = 0.8
+@export var ground_acceleration: float = 0.7
 ## 地面减速度 (0-1，越大减速越快)
 @export var ground_deceleration: float = 0.8
 ## 空中移动控制力 (0-1，越小控制力越弱)
 @export var air_control: float = 0.3
+## 空中无输入时 JUMP 状态的基础衰减倍率（越大停得越快）
+@export var air_no_input_deceleration_multiplier_jump: float = 1.2
+## 空中无输入时 DOWN 状态的基础衰减倍率（越大停得越快）
+@export var air_no_input_deceleration_multiplier_down: float = 1.8
 
 ## 跳跃设置
 @export_category("跳跃设置")
@@ -72,7 +80,7 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 ## 重力
 @export var gravity: float = 1300.0
 ## 最大下落速度
-@export var max_fall_speed: float = 450.0
+@export var max_fall_speed: float = 480.0
 ## 土狼时间（离开平台后仍可跳跃的时间）
 @export var coyote_time: float = 0.2
 ## 跳跃缓冲时间（提前按跳跃的有效时间）
@@ -86,14 +94,16 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 @export var glide_init_h_speed: float = 0.0
 ## 滑翔目标水平速度
 @export var glide_target_h_speed: float = 160.0
-## 滑翔水平加速度（越大越快进入目标速度）
-@export var glide_horizontal_acceleration: float = 1000.0
-## 滑翔松开方向键时的水平减速（越小越“飘”）
-@export var glide_release_deceleration: float = 80.0
+## 滑翔水平加速度（按住方向键时每秒逼近目标水平速度的最大变化率，单位近似 px/s^2）
+@export var glide_horizontal_acceleration: float = 1200.0
+## 滑翔松开方向键时的水平减速（松手后的缓慢衰减速率）
+@export var glide_release_deceleration: float = 60.0
 ## 滑翔最大下落速度乘数
-@export var glide_max_fall_multiplier: float = 0.2
-## 滑翔加速时间（秒）- 控制从初始到目标下落速度的过渡时间
-@export var glide_accel_time: float = 2
+@export var glide_max_fall_multiplier: float = 0.35
+## 滑翔水平加速过渡时间（秒）- 控制输入加速度从 0 到最大值的线性过渡
+@export var glide_horizontal_accel_time: float = 0.9
+## 滑翔下落倍率过渡时间（秒）- 进入滑翔后按 y=x^2 曲线增加
+@export var glide_fall_accel_time: float = 1.5
 
 ## 受伤设置
 @export_category("受伤设置")
@@ -104,11 +114,11 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 ## 受伤无敌时间（秒）
 @export var hurt_invincible_time: float = 1.5
 ## 传送伤害僵直淡化时间
-@export var warp_stun_and_teleport_time: float = 1 
+@export var warp_stun_and_teleport_time: float = 1.5
 ## 传送伤害后禁用时间（秒）- 传送伤害后及存档进入游戏开始时的禁用时间
 @export var warp_control_lock_time: float = 1
 ## 传送伤害后无敌时间（秒）
-@export var warp_invincible_time: float = 1.5
+@export var warp_invincible_time: float = 2
 
 ## 死亡设置
 @export_category("死亡设置")
@@ -162,9 +172,9 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 ## 奔跑跳跃水平速度加成
 @export var run_jump_boost_speed: float = 140.0
 ## 奔跑跳跃加成持续时间（秒）
-@export var run_jump_boost_duration: float = 0.4
+@export var run_jump_boost_duration: float = 0.5
 ## 奔跑跳跃衰减时间（秒）
-@export var run_jump_decay_time: float = 0.25
+@export var run_jump_decay_time: float = 0.3
 
 ## 二段跳旋转设置
 @export_category("二段跳旋转设置")
@@ -192,8 +202,6 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 @export var camera_damage_debug: bool = false
 
 @export_category("攀墙设置")
-## 墙体检测距离（像素）
-@export var wall_detection_distance: float = 15.0 #可能多余
 ## 攀墙下滑速度（像素/秒）
 @export var wall_slide_speed: float = 140.0
 ## 攀墙缓慢下滑速度（像素/秒）
@@ -223,13 +231,13 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 ## IDLE状态进入LOOKUP/LOOKDOWN状态的时间（秒）
 @export var idle_to_look_time: float = 0.8
 ## LOOKUP状态相机向上偏移距离
-@export var lookup_camera_offset: float = 180.0
+@export var lookup_camera_offset: float = 240.0
 ## LOOKDOWN状态相机向下偏移距离
-@export var lookdown_camera_offset: float = 210.0
+@export var lookdown_camera_offset: float = 270.0
 
 @export_category("相机观察设置")
 ## 相机偏移过渡时间（秒）
-@export var camera_offset_transition_duration: float = 0.2
+@export var camera_offset_transition_duration: float = 0.4
 ## 相机偏移过渡类型：Tween.TransitionType
 ## - TRANS_LINEAR: 线性过渡（匀速）
 ## - TRANS_SINE: 正弦曲线（平滑波动）
@@ -241,17 +249,13 @@ const PlayerFeedbackServiceScript = preload("res://Scripts/Player/PlayerFeedback
 ## - TRANS_CIRC: 圆形曲线
 ## - TRANS_BOUNCE: 弹跳效果（超过目标后反弹）
 ## - TRANS_BACK: 回弹效果（先反向移动再正向）
-@export var camera_offset_transition_type: Tween.TransitionType = Tween.TRANS_LINEAR
+@export var camera_offset_transition_type: Tween.TransitionType = Tween.TRANS_QUAD
 ## 相机偏移缓动类型：Tween.EaseType
 ## - EASE_IN: 开始慢，结束快（加速）
 ## - EASE_OUT: 开始快，结束慢（减速）
 ## - EASE_IN_OUT: 开始和结束都慢，中间快（先加速后减速）
 ## - EASE_OUT_IN: 开始和结束都快，中间慢（先减速后加速）
-@export var camera_offset_ease_type: Tween.EaseType = Tween.EASE_OUT_IN
-
-@export_category("残影全局设置")
-## 残影统一缩放倍数
-@export var afterimage_scale_multiplier: float = 1
+@export var camera_offset_ease_type: Tween.EaseType = Tween.EASE_IN_OUT
 
 @export_category("Hit Stop 设置")
 ## 是否启用Hit Stop
@@ -462,6 +466,7 @@ var low_health_tween: Tween                      # 低血量效果的Tween动画
 var canvas_original_color: Color = Color.WHITE   # 画布原始颜色，用于效果后恢复
 var is_hurt_visual_active: bool = false          # 标记受伤视觉效果是否激活
 var hurt_visual_timer: float = 0.0               # 受伤视觉效果计时器
+var camera_damage_debug_last_log_ms: int = -1000000  # 相机伤害调试日志节流时间戳
 
 #endregion
 
@@ -486,6 +491,8 @@ func _ready():
 		original_camera_position = phantom_camera.position
 	if camera_controller and camera_controller.has_method("setup"):
 		camera_controller.call_deferred("setup", self)
+	if fx_controller and fx_controller.has_method("setup"):
+		fx_controller.call_deferred("setup", self)
 	
 	# 查找VignetteEffect
 	find_vignette_effect()
@@ -743,6 +750,12 @@ func _physics_process(delta):
 	# ========== 阶段12：状态更新 ==========
 	# 更新当前帧的地面状态
 	was_on_floor = is_on_floor()
+	if not previous_was_on_floor and was_on_floor:
+		trigger_feedback_event(&"landed", {
+			"position": global_position,
+			"velocity": velocity,
+			"state": current_state
+		})
 	# 使用上一帧的状态检测土狼时间
 	if previous_was_on_floor and !was_on_floor and velocity.y >= 0 and !is_jumping:
 		coyote_time_active = true
@@ -1048,14 +1061,15 @@ func handle_glide_state(fixed_delta, move_input, jump_pressed, dash_just_pressed
 	
 	# 下落速度过渡始终从进入滑翔开始计算，不依赖方向输入。
 	glide_timer += fixed_delta
-	var fall_progress = min(glide_timer / glide_accel_time, 1.0)
+	var fall_progress = min(glide_timer / maxf(glide_fall_accel_time, 0.001), 1.0)
+	var fall_curve = fall_progress * fall_progress
 
 	# 仅在有移动输入时推进水平滑翔加速计时，避免“先不动后瞬间满速”。
 	if move_input != 0:
 		glide_move_timer += fixed_delta
-	var move_progress = min(glide_move_timer / glide_accel_time, 1.0)
-	# 二次曲线：先慢后快。
-	var curved_progress = move_progress * move_progress
+	var move_progress = min(glide_move_timer / maxf(glide_horizontal_accel_time, 0.001), 1.0)
+	# 线性曲线：按住期间均匀提速，松手后回到更可控的操作节奏。
+	var curved_progress = move_progress
 	
 	# 根据输入方向更新滑翔方向
 	if move_input != 0:
@@ -1074,7 +1088,7 @@ func handle_glide_state(fixed_delta, move_input, jump_pressed, dash_just_pressed
 		velocity.x = move_toward(velocity.x, 0.0, glide_release)
 	
 	# 只限制最大下落速度，不手动应用重力（由阶段 11 统一处理）
-	var current_max_fall = max_fall_speed * lerp(0.0, glide_max_fall_multiplier, fall_progress)
+	var current_max_fall = max_fall_speed * lerp(0.0, glide_max_fall_multiplier, fall_curve)
 	velocity.y = min(velocity.y, current_max_fall * effective_max_fall_multiplier)
 
 func handle_dash_state():
@@ -1420,6 +1434,7 @@ func change_state(new_state: PlayerState):
 		is_in_death_process = true
 	
 	# 状态进入逻辑
+	var previous_state = current_state
 	match new_state:
 		PlayerState.DOWN:
 			down_state_entry_time = 0.0  ## 重置为0，我们将在_physics_process中累计
@@ -1471,6 +1486,10 @@ func change_state(new_state: PlayerState):
 	
 	# 更新当前状态
 	current_state = new_state
+	trigger_feedback_event(&"state_changed", {
+		"from": previous_state,
+		"to": new_state
+	})
 
 ## 检查玩家是否处于死亡状态（供 Door.gd 调用）
 func is_in_death_state() -> bool:
@@ -1581,9 +1600,6 @@ func take_damage(damage_source_position: Vector2, damage: int = 1, damage_type: 
 	take_damage_with_type(damage_source_position, damage, actual_damage_type, knockback_force)
 
 func take_damage_with_type(damage_source_position: Vector2, damage: int = 1, damage_type: DamageType = DamageType.NORMAL, knockback_force: Vector2 = Vector2.ZERO):
-	if camera_damage_debug:
-		_debug_camera_damage_state("before_damage", damage_source_position, damage, damage_type, knockback_force)
-
 	# 死亡状态下不受伤害
 	if current_state == PlayerState.DIE:
 		return
@@ -1595,6 +1611,9 @@ func take_damage_with_type(damage_source_position: Vector2, damage: int = 1, dam
 	# 无敌状态下不受伤害
 	if is_invincible:
 		return
+
+	if camera_damage_debug:
+		_debug_camera_damage_state("before_damage", damage_source_position, damage, damage_type, knockback_force)
 	
 	# 如果当前是冲刺状态，强制退出冲刺
 	if current_state == PlayerState.DASH:
@@ -1944,6 +1963,8 @@ func handle_wall_bump_stun(fixed_delta):
 	PlayerMovementServiceScript.handle_wall_bump_stun(self, fixed_delta)
 
 func handle_run_jump(fixed_delta):
+	if current_state == PlayerState.DASH or current_state == PlayerState.SUPERDASH or current_state == PlayerState.SUPERDASHSTART:
+		return
 	if is_run_jumping:
 		run_jump_timer -= fixed_delta
 		var move_input = Input.get_axis("left", "right")
@@ -2666,6 +2687,10 @@ func start_warp_hurt_effect(is_shadow: bool):
 func _debug_camera_damage_state(stage: String, damage_source_position: Vector2, damage: int, damage_type: DamageType, knockback_force: Vector2) -> void:
 	if not camera_damage_debug:
 		return
+	var now_ms := Time.get_ticks_msec()
+	if stage == "before_damage" and now_ms - camera_damage_debug_last_log_ms < 250:
+		return
+	camera_damage_debug_last_log_ms = now_ms
 	var camera_pos := Vector2.ZERO
 	var follow_offset := Vector2.ZERO
 	var controller_snapshot = {}
@@ -2681,11 +2706,10 @@ func _debug_camera_damage_state(stage: String, damage_source_position: Vector2, 
 		" follow_offset=", follow_offset,
 		" state=", current_state,
 		" anim=", current_animation,
-		" damage_src=", damage_source_position,
-		" damage=", damage,
 		" type=", damage_type,
-		" kb=", knockback_force,
-		" controller=", controller_snapshot)
+		" src=", damage_source_position)
+	if not camera_pos.is_finite():
+		print("[CameraDamageDebug][invalid_camera] controller=", controller_snapshot, " kb=", knockback_force, " damage=", damage)
 
 func _debug_camera_jumpbox_state(stage: String, trigger_grade: String, jumpbox_position: Vector2) -> void:
 	if not camera_damage_debug:
