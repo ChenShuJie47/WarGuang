@@ -13,6 +13,25 @@ static func notify_warp_arrival(player: Node) -> void:
 static func sync_camera_after_room_teleport(player: Node) -> void:
 	PlayerCameraBridgeServiceScript.sync_camera_after_room_teleport(player)
 
+static func sync_camera_to_player_center(player: Node) -> void:
+	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player)
+
+static func sync_room_and_camera_for_respawn(player: Node) -> void:
+	if RoomManager and RoomManager.has_method("get_room_id_by_position") and RoomManager.has_method("load_room"):
+		var target_room_id: String = RoomManager.get_room_id_by_position(player.global_position)
+		if target_room_id != "":
+			if RoomManager.has_method("suppress_player_room_enter"):
+				RoomManager.suppress_player_room_enter(0.25)
+			if RoomManager.current_room != target_room_id:
+				RoomManager.load_room(target_room_id)
+			elif RoomManager.has_method("update_camera_limits"):
+				RoomManager.update_camera_limits()
+
+	# 等房间限制同步后再做居中相机同步。
+	if player and player.get_tree():
+		await player.get_tree().process_frame
+	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player)
+
 static func sync_phantom_camera_after_teleport(player: Node) -> void:
 	PlayerCameraBridgeServiceScript.sync_phantom_camera_after_teleport(player)
 

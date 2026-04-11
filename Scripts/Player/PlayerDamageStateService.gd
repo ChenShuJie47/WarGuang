@@ -20,13 +20,31 @@ static func apply_nonlethal_damage_state(player: Node, damage_type: int, new_hea
 static func play_hurt_visual(player: Node, damage_type: int) -> void:
 	match damage_type:
 		DAMAGE_NORMAL:
-			player.start_normal_hurt_effect()
+			start_normal_hurt_effect(player)
 		DAMAGE_SHADOW:
-			player.start_shadow_hurt_effect()
+			start_shadow_hurt_effect(player)
 		DAMAGE_WARP_NORMAL:
-			player.start_warp_hurt_effect(false)
+			start_warp_hurt_effect(player, false)
 		DAMAGE_WARP_SHADOW:
-			player.start_warp_hurt_effect(true)
+			start_warp_hurt_effect(player, true)
+
+static func start_normal_hurt_effect(player: Node) -> void:
+	player.PlayerHitStopServiceScript.start_hurt_hit_stop(player)
+	player.start_vignette_hurt()
+	CameraShakeManager.shake("general_weak", player.phantom_camera)
+
+static func start_shadow_hurt_effect(player: Node) -> void:
+	player.PlayerHitStopServiceScript.start_hurt_hit_stop(player)
+	player.start_vignette_shadow_hurt()
+	CameraShakeManager.shake("general_moderate", player.phantom_camera)
+
+static func start_warp_hurt_effect(player: Node, is_shadow: bool) -> void:
+	player.PlayerHitStopServiceScript.start_hurt_hit_stop(player)
+	if is_shadow:
+		player.start_vignette_shadow_hurt()
+	else:
+		player.start_vignette_hurt()
+	CameraShakeManager.shake("general_moderate", player.phantom_camera)
 
 # 传送伤害是否需要进入传送倒计时。
 static func should_start_warp_timer(damage_type: int) -> bool:

@@ -40,6 +40,12 @@ static func apply_enter_state(player: Node, to_state: int, from_state: int) -> v
 			player.sleep_timer = 0.0
 
 		player.PlayerState.DIE:
+			# 若之前进入过传送伤害追镜，死亡时强制恢复到正常跟随与 dead zone。
+			if player.camera_controller \
+				and player.camera_controller.has_method("has_pending_warp_camera_hold") \
+				and player.camera_controller.has_pending_warp_camera_hold() \
+				and player.camera_controller.has_method("notify_warp_player_teleported"):
+				player.camera_controller.notify_warp_player_teleported()
 			player.die_timer = player.die_animation_time
 			player.is_invincible = true
 			player.animated_sprite.rotation_degrees = 0

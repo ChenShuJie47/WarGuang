@@ -33,6 +33,7 @@ var invalid_camera_debug_last_log_ms: int = -1000000
 var warp_camera_catchup_active: bool = false
 # 传送伤害追镜前 dead zone 备份。
 var warp_camera_dead_zone_backup: Vector2 = Vector2.ZERO
+var warp_camera_dead_zone_backup_valid: bool = false
 var warp_camera_follow_target_backup: Node = null
 var warp_camera_anchor: Node2D = null
 var warp_camera_waiting_for_player_teleport: bool = false
@@ -155,6 +156,44 @@ func sync_camera_after_room_teleport() -> void:
 
 	start_camera_transition_guard(0.10, 0.65)
 
+# 黑屏期间用于重生/远距离回档点：优先让相机以玩家为中心（受房间限制时自动夹取）。
+func sync_camera_to_player_center() -> void:
+	if not setup_completed:
+		return
+	if not player or not phantom_camera:
+		return
+	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
+		return
+	if phantom_camera.follow_target == null:
+		phantom_camera.follow_target = player
+
+	# 重生场景不需要观察偏移，直接回归零偏移保证“尽量以玩家为中心”。
+	if phantom_camera.has_method("set_follow_offset"):
+		phantom_camera.set_follow_offset(Vector2.ZERO)
+	else:
+		phantom_camera.follow_offset = Vector2.ZERO
+
+	var camera := player.get_viewport().get_camera_2d()
+	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
+		CameraShakeManager.stop_shake(phantom_camera)
+	if camera:
+		camera.offset = Vector2.ZERO
+
+	var desired_center: Vector2 = player.global_position
+	var clamped_center := _clamp_camera_center_by_limits(desired_center, phantom_camera, camera)
+	if not clamped_center.is_finite():
+		clamped_center = desired_center if desired_center.is_finite() else player.global_position
+
+	phantom_camera.global_position = clamped_center
+	# 重生黑屏同步阶段不调用 teleport_position，避免越界对焦后再被限制拉回。
+
+	if camera:
+		camera.global_position = clamped_center
+		if camera.has_method("reset_smoothing"):
+			camera.reset_smoothing()
+		if camera.has_method("reset_physics_interpolation"):
+			camera.reset_physics_interpolation()
+
 # 在极端情况下强制把 Camera2D 放到目标位置。
 func force_sync_camera_position_after_teleport() -> void:
 	if not setup_completed:
@@ -192,7 +231,27 @@ func force_sync_camera_position_after_teleport() -> void:
 
 # 传送伤害后使用快速追镜，而不是瞬移相机。
 func start_warp_damage_camera_catchup(duration: float = 0.22) -> void:
-	start_warp_damage_camera_catchup_to_position(player.global_position, duration)
+	start_warp_damage_camera_follow(duration)
+
+# 传送伤害飞行期间：压缩 dead zone 并持续跟随玩家。
+func start_warp_damage_camera_follow(duration: float = 0.22) -> void:
+	if not setup_completed:
+		return
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+
+	warp_camera_waiting_for_player_teleport = false
+	warp_camera_wait_timeout = 0.0
+	warp_camera_catchup_active = false
+	warp_camera_follow_target_backup = phantom_camera.follow_target
+	warp_camera_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
+	warp_camera_dead_zone_backup_valid = true
+
+	phantom_camera.follow_target = player
+	phantom_camera.dead_zone_width = 0.02
+	phantom_camera.dead_zone_height = 0.02
+	start_camera_transition_guard(0.06, maxf(duration + 0.25, 0.3))
+	_safe_teleport_phantom_camera()
 
 func start_warp_damage_camera_catchup_to_position(target_position: Vector2, duration: float = 0.22) -> void:
 	if not setup_completed:
@@ -244,7 +303,12 @@ func start_warp_damage_camera_catchup_to_position(target_position: Vector2, dura
 
 # 玩家实际完成传送后调用，恢复正常跟随。
 func notify_warp_player_teleported() -> void:
+	if not has_pending_warp_camera_hold():
+		return
 	_release_warp_camera_hold(true)
+
+func has_pending_warp_camera_hold() -> bool:
+	return warp_camera_dead_zone_backup_valid or warp_camera_catchup_active or warp_camera_waiting_for_player_teleport
 
 func _set_warp_camera_center(center: Vector2) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
@@ -276,8 +340,10 @@ func _release_warp_camera_hold(follow_player: bool) -> void:
 	warp_camera_wait_timeout = 0.0
 	if not is_instance_valid(phantom_camera):
 		return
-	phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x
-	phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y
+	if warp_camera_dead_zone_backup_valid:
+		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x
+		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y
+		warp_camera_dead_zone_backup_valid = false
 	if follow_player and is_instance_valid(player):
 		phantom_camera.follow_target = player
 		_safe_teleport_phantom_camera()

@@ -259,6 +259,10 @@ static func sync_camera_after_room_teleport(player: Node) -> void:
 	if player.camera_controller and player.camera_controller.has_method("sync_camera_after_room_teleport"):
 		player.camera_controller.sync_camera_after_room_teleport()
 
+static func sync_camera_to_player_center(player: Node) -> void:
+	if player.camera_controller and player.camera_controller.has_method("sync_camera_to_player_center"):
+		player.camera_controller.sync_camera_to_player_center()
+
 static func sync_phantom_camera_after_teleport(player: Node) -> void:
 	sync_camera_after_room_teleport(player)
 

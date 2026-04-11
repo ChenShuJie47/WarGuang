@@ -6,8 +6,8 @@ static func begin_warp_damage_flow(player: Node) -> void:
 	player.is_warp_damage = true
 	var pre_target_info := PlayerDamageService.resolve_warp_safe_spot()
 	player.warp_precomputed_target_position = pre_target_info.get("position", Vector2.ZERO)
-	if player.camera_controller and player.camera_controller.has_method("start_warp_damage_camera_catchup"):
-		player.camera_controller.start_warp_damage_camera_catchup()
+	if player.camera_controller and player.camera_controller.has_method("start_warp_damage_camera_follow"):
+		player.camera_controller.start_warp_damage_camera_follow()
 
 # 解析本次传送的安全点与来源。
 static func resolve_warp_safe_spot(player: Node) -> Dictionary:
