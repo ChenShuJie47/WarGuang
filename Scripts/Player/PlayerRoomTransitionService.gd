@@ -27,9 +27,12 @@ static func sync_room_and_camera_for_respawn(player: Node) -> void:
 			elif RoomManager.has_method("update_camera_limits"):
 				RoomManager.update_camera_limits()
 
-	# 等房间限制同步后再做居中相机同步。
+	# 等房间限制同步后再做居中相机同步；双帧确认避免时序导致镜头不更新。
 	if player and player.get_tree():
 		await player.get_tree().process_frame
+		await player.get_tree().process_frame
+	if RoomManager and RoomManager.has_method("update_camera_limits"):
+		RoomManager.update_camera_limits()
 	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player)
 
 static func sync_phantom_camera_after_teleport(player: Node) -> void:

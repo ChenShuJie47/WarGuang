@@ -1,7 +1,7 @@
 extends RefCounted
 class_name PlayerVisualStateService
 
-static func on_hurt_duration_end(player: Node, is_shadow_hurt: bool) -> void:
+static func on_hurt_duration_end(player: Node, _is_shadow_hurt: bool) -> void:
 	if not player.vignette_effect:
 		return
 	if player.player_ui and player.player_ui.get_health() <= 1:
