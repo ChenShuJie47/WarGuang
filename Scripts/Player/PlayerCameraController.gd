@@ -7,6 +7,7 @@ const CAMERA_LIMIT_DISABLED: int = 10000000
 const CAMERA_TELEPORT_DEBUG: bool = false
 # 复用玩家相机数学工具，统一处理中心点与边界裁剪。
 const PlayerCameraMathUtil = preload("res://Scripts/Player/PlayerCameraMath.gd")
+const DEFAULT_WARP_CAMERA_HOLD_TIMEOUT: float = 6.0
 
 # 当前绑定的玩家节点。
 var player: Player = null
@@ -36,6 +37,7 @@ var warp_camera_follow_target_backup: Node = null
 var warp_camera_anchor: Node2D = null
 var warp_camera_waiting_for_player_teleport: bool = false
 var warp_camera_wait_timeout: float = 0.0
+@export var warp_camera_hold_timeout: float = DEFAULT_WARP_CAMERA_HOLD_TIMEOUT
 # Door 传送测试追镜是否生效。
 var door_camera_catchup_active: bool = false
 # Door 追镜前 dead zone 备份。
@@ -236,7 +238,7 @@ func start_warp_damage_camera_catchup_to_position(target_position: Vector2, dura
 		if is_instance_valid(warp_camera_anchor):
 			phantom_camera.follow_target = warp_camera_anchor
 		warp_camera_waiting_for_player_teleport = true
-		warp_camera_wait_timeout = 1.2
+		warp_camera_wait_timeout = maxf(warp_camera_hold_timeout, 0.5)
 		warp_camera_catchup_active = false
 	)
 
