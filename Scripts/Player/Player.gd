@@ -48,9 +48,12 @@ const PlayerAnimationServiceScript = preload("res://Scripts/Player/PlayerAnimati
 const PlayerGlideStateServiceScript = preload("res://Scripts/Player/PlayerGlideStateService.gd")
 const PlayerRuntimeTickServiceScript = preload("res://Scripts/Player/PlayerRuntimeTickService.gd")
 const PlayerRuntimeFlowServiceScript = preload("res://Scripts/Player/PlayerRuntimeFlowService.gd")
+const PlayerBootstrapServiceScript = preload("res://Scripts/Player/PlayerBootstrapService.gd")
+const PlayerAbilityServiceScript = preload("res://Scripts/Player/PlayerAbilityService.gd")
 const PlayerWarpFlowServiceScript = preload("res://Scripts/Player/PlayerWarpFlowService.gd")
 const PlayerWarpFlightServiceScript = preload("res://Scripts/Player/PlayerWarpFlightService.gd")
 const PlayerWarpResetServiceScript = preload("res://Scripts/Player/PlayerWarpResetService.gd")
+const PlayerVisualStateServiceScript = preload("res://Scripts/Player/PlayerVisualStateService.gd")
 const PlayerCameraDebugServiceScript = preload("res://Scripts/Player/PlayerCameraDebugService.gd")
 const DEFAULT_HURT_HIT_STOP_DURATION: float = 0.1
 const DEFAULT_HURT_HIT_STOP_INTENSITY: float = 1.2
@@ -141,7 +144,7 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 受伤僵直时间（秒）
 @export var hurt_stun_time: float = 0.5
 ## 受伤无敌时间（秒）
-@export var hurt_invincible_time: float = 1.5
+@export var hurt_invincible_time: float = 1.2
 ## 进入游戏开始时的禁用时间（秒）
 @export var warp_control_lock_time: float = 1.0
 ## 传送伤害飞行峰值速度（像素/秒）
@@ -519,162 +522,32 @@ var camera_damage_debug_last_log_ms: int = -1000000  # 相机伤害调试日志�
 #region Signals
 ## 场景初始化，设置玩家节点、能力状态、计时器和各种效果引用
 func _ready():
-	# 确保在 "player" 组中
-	if not is_in_group("player"):
-		add_to_group("player")
-	
-	# 从Global初始化能力状态 - 这是关键修复！
-	dash_unlocked = Global.unlocked_abilities.get("dash", false)
-	double_jump_unlocked = Global.unlocked_abilities.get("double_jump", false)
-	glide_unlocked = Global.unlocked_abilities.get("glide", false)
-	black_dash_unlocked = Global.unlocked_abilities.get("black_dash", false)
-	wall_grip_unlocked = Global.unlocked_abilities.get("wall_grip", false)
-	super_dash_unlocked = Global.unlocked_abilities.get("super_dash", false)
-	
-	if camera_controller and camera_controller.has_method("setup"):
-		camera_controller.call_deferred("setup", self)
-	if fx_controller and fx_controller.has_method("setup"):
-		fx_controller.call_deferred("setup", self)
-	
-	# 查找VignetteEffect
-	find_vignette_effect()
-	
-	# 初始化计时器
-	initialize_timers()
-	
-	# 初始化墙体检测
-	initialize_wall_detection()
-	
-	call_deferred("initialize_player_ui")
-	
-	initialize_afterimage_pool()
-	
-	DialogueSystem.dialogue_started.connect(_on_dialogue_started)
-	DialogueSystem.dialogue_ended.connect(_on_dialogue_ended)
-	
-	# 连接RoomManager的低血量效果设置
-	if RoomManager.has_method("set_low_health_effect"):
-		print("Player: 已连接RoomManager颜色管理")
-	
-	# 连接能力解锁信号
-	if EventBus and EventBus.instance:
-		# 修复重复连接问题
-		if EventBus.instance.dash_unlocked.is_connected(_on_dash_unlocked):
-			EventBus.instance.dash_unlocked.disconnect(_on_dash_unlocked)
-		EventBus.instance.dash_unlocked.connect(_on_dash_unlocked)
-		
-		if EventBus.instance.double_jump_unlocked.is_connected(_on_double_jump_unlocked):
-			EventBus.instance.double_jump_unlocked.disconnect(_on_double_jump_unlocked)
-		EventBus.instance.double_jump_unlocked.connect(_on_double_jump_unlocked)
-		
-		if EventBus.instance.glide_unlocked.is_connected(_on_glide_unlocked):
-			EventBus.instance.glide_unlocked.disconnect(_on_glide_unlocked)
-		EventBus.instance.glide_unlocked.connect(_on_glide_unlocked)
-		
-		if EventBus.instance.black_dash_unlocked.is_connected(_on_black_dash_unlocked):
-			EventBus.instance.black_dash_unlocked.disconnect(_on_black_dash_unlocked)
-		EventBus.instance.black_dash_unlocked.connect(_on_black_dash_unlocked)
-		
-		if EventBus.instance.super_dash_unlocked.is_connected(_on_super_dash_unlocked):
-			EventBus.instance.super_dash_unlocked.disconnect(_on_super_dash_unlocked)
-		EventBus.instance.super_dash_unlocked.connect(_on_super_dash_unlocked)
-		
-		if EventBus.instance.wall_grip_unlocked.is_connected(_on_wall_grip_unlocked):
-			EventBus.instance.wall_grip_unlocked.disconnect(_on_wall_grip_unlocked)
-		EventBus.instance.wall_grip_unlocked.connect(_on_wall_grip_unlocked)
+	PlayerBootstrapServiceScript.initialize_on_ready(self)
 
 ## 初始化所有计时器节点，包括土狼时间、跳跃缓冲、冲刺等计时器
 func initialize_timers():
-	# 土狼时间计时器
-	coyote_timer = Timer.new()
-	coyote_timer.name = "CoyoteTimer"
-	coyote_timer.one_shot = true
-	timers.add_child(coyote_timer)
-	coyote_timer.timeout.connect(_on_coyote_timeout)
-	
-	# 跳跃缓冲计时器
-	jump_buffer_timer = Timer.new()
-	jump_buffer_timer.name = "JumpBufferTimer"
-	jump_buffer_timer.one_shot = true
-	timers.add_child(jump_buffer_timer)
-	jump_buffer_timer.timeout.connect(_on_jump_buffer_timeout)
-	
-	# 冲刺持续时间计时器
-	dash_duration_timer_node = Timer.new()
-	dash_duration_timer_node.name = "DashDurationTimer"
-	dash_duration_timer_node.one_shot = true
-	timers.add_child(dash_duration_timer_node)
-	dash_duration_timer_node.timeout.connect(_on_dash_duration_timeout)
-	
-	# 冲刺冷却计时器
-	dash_cooldown_timer_node = Timer.new()
-	dash_cooldown_timer_node.name = "DashCooldownTimer"
-	dash_cooldown_timer_node.one_shot = true
-	timers.add_child(dash_cooldown_timer_node)
-	dash_cooldown_timer_node.timeout.connect(_on_dash_cooldown_timeout)
-	
-	# 攀墙反方向跳跃缓冲计时器
-	wall_grip_reverse_timer_node = Timer.new()
-	wall_grip_reverse_timer_node.name = "WallGripReverseTimer"
-	wall_grip_reverse_timer_node.one_shot = true
-	timers.add_child(wall_grip_reverse_timer_node)
-	wall_grip_reverse_timer_node.timeout.connect(_on_wall_grip_reverse_timeout)
+	PlayerBootstrapServiceScript.initialize_timers(self)
 
 ## 初始化玩家UI引用，连接相关信号
 func initialize_player_ui():
-	var ui_nodes = get_tree().get_nodes_in_group("player_ui")
-	if ui_nodes.size() > 0:
-		player_ui = ui_nodes[0]
-	# 最终检查
-	if player_ui:
-		# 连接信号 - 修复重复连接问题
-		if player_ui.has_signal("player_died"):
-			# 先断开可能存在的连接
-			if player_ui.player_died.is_connected(_on_player_died):
-				player_ui.player_died.disconnect(_on_player_died)
-			# 然后重新连接
-			player_ui.player_died.connect(_on_player_died)
-		else:
-			print("警告: PlayerUI没有player_died信号")
-	else:
-		print("=== PlayerUI查找失败 ===")
+	PlayerBootstrapServiceScript.initialize_player_ui(self)
 
 ## 初始化残影对象池，预创建一定数量的残影实例以提高性能
 func initialize_afterimage_pool():
-	_ensure_afterimage_trail()
-	if afterimage_trail == null:
-		push_error("[Player] 未找到本地 AfterimageTrail")
+	PlayerBootstrapServiceScript.initialize_afterimage_pool(self)
 
 func _ensure_afterimage_trail():
-	if is_instance_valid(afterimage_trail):
-		return
-	afterimage_trail = get_node_or_null("AfterimageTrail")
-	if afterimage_trail == null:
-		var trail_script = load("res://Scripts/Components/AfterimageTrail.gd")
-		afterimage_trail = trail_script.new()
-		afterimage_trail.name = "AfterimageTrail"
-		add_child(afterimage_trail)
-	_sync_afterimage_trail_config_defaults()
+	PlayerBootstrapServiceScript._ensure_afterimage_trail(self)
 
 func _sync_afterimage_trail_config_defaults():
-	# 本地组件参数直接由自身导出字段驱动；此处保留为后续可选初始化入口
-	if afterimage_trail == null:
-		return
+	PlayerBootstrapServiceScript._sync_afterimage_trail_config_defaults(self)
 
 func _get_afterimage_interval(type_name: String) -> float:
-	if afterimage_trail != null and afterimage_trail.has_method("get_interval"):
-		return afterimage_trail.get_interval(type_name)
-	return 0.05
+	return PlayerBootstrapServiceScript.get_afterimage_interval(self, type_name)
 
 ## 初始化墙体检测系统，配置左右墙体检测射线
 func initialize_wall_detection():
-	# 只需要配置基础墙体检测射线
-	if left_wall_ray and right_wall_ray:
-		left_wall_ray.enabled = true
-		right_wall_ray.enabled = true
-		# 删除厚度检测相关代码
-		left_wall_ray.collision_mask = 1 << 2
-		right_wall_ray.collision_mask = 1 << 2
+	PlayerBootstrapServiceScript.initialize_wall_detection(self)
 #endregion
 
 ## 主物理处理函数：每帧调用，处理玩家所有物理逻辑、状态更新和输入响应
@@ -1284,6 +1157,9 @@ func _update_camera_transition_guard(fixed_delta: float) -> void:
 func sync_camera_after_room_teleport() -> void:
 	PlayerRoomTransitionServiceScript.sync_camera_after_room_teleport(self)
 
+func sync_camera_to_player_center() -> void:
+	PlayerRoomTransitionServiceScript.sync_camera_to_player_center(self)
+
 ## 门传送等瞬移后调用：同步 PhantomCamera2D 与 Camera2D，修复 FRAMED 死区与视口坐标一帧不一致
 func sync_phantom_camera_after_teleport() -> void:
 	PlayerRoomTransitionServiceScript.sync_phantom_camera_after_teleport(self)
@@ -1343,27 +1219,6 @@ func find_vignette_effect():
 		if not vignette_effect:
 			print("Player: 警告：未找到VignetteEffect节点")
 
-## 开始普通受伤视觉效果
-func start_normal_hurt_effect():
-	start_hurt_hit_stop()
-	start_vignette_hurt()
-	CameraShakeManager.shake("general_weak", phantom_camera)
-
-## 开始阴影受伤视觉效果
-func start_shadow_hurt_effect():
-	start_hurt_hit_stop()
-	start_vignette_shadow_hurt()
-	CameraShakeManager.shake("general_moderate", phantom_camera)
-
-## 开始传送伤害视觉效果
-func start_warp_hurt_effect(is_shadow: bool):
-	start_hurt_hit_stop()
-	if is_shadow:
-		start_vignette_shadow_hurt()
-	else:
-		start_vignette_hurt()
-	CameraShakeManager.shake("general_moderate", phantom_camera)
-
 func _debug_camera_damage_state(stage: String, damage_source_position: Vector2, damage: int, damage_type: DamageType, knockback_force: Vector2) -> void:
 	camera_damage_debug_last_log_ms = PlayerCameraDebugServiceScript.log_damage_state(
 		self,
@@ -1407,64 +1262,15 @@ func start_vignette_shadow_hurt():
 
 ## 受伤效果持续时间结束后的处理
 func _on_hurt_duration_end(_is_shadow_hurt: bool):
-	if not vignette_effect:
-		return
-	# 检查血量状态
-	if player_ui and player_ui.get_health() <= 1:
-		# 血量≤1：从受伤效果过渡到低血量效果
-		if vignette_effect.has_method("transition_hurt_to_low_health"):
-			var transition_time = vignette_effect.hurt_to_low_health_transition
-			
-			# 关键修复：确保当前是受伤效果
-			if vignette_effect.current_effect == "hurt":
-				vignette_effect.transition_hurt_to_low_health(transition_time)
-				is_low_health_effect_active = true
-			else:
-				_trigger_low_health_effect()
-		else:
-			# 回退到原来的方法
-			if vignette_effect.has_method("transition_to_low_health"):
-				var transition_time = vignette_effect.hurt_to_low_health_transition
-				vignette_effect.transition_to_low_health(transition_time)
-				is_low_health_effect_active = true
-	else:
-		# 血量>1：过渡到无效果
-		if vignette_effect.has_method("transition_to_normal"):
-			var transition_time = vignette_effect.hurt_to_normal_transition
-			vignette_effect.transition_to_normal(transition_time)
-	
-	is_hurt_visual_active = false
+	PlayerVisualStateServiceScript.on_hurt_duration_end(self, _is_shadow_hurt)
 
 ## 触发低血量视觉效果
 func _trigger_low_health_effect():
-	if is_hurt_visual_active:
-		# 如果正在显示受伤效果，等待受伤效果结束后再处理
-		return
-		
-	if is_low_health_effect_active:
-		return
-	
-	is_low_health_effect_active = true
-	
-	# 如果VignetteEffect已经有其他效果，先清除
-	if vignette_effect and vignette_effect.has_method("clear_all_effects"):
-		vignette_effect.clear_all_effects()
-		await get_tree().process_frame
-	
-	# 开始低血量效果
-	if vignette_effect and vignette_effect.has_method("start_low_health_effect"):
-		vignette_effect.start_low_health_effect()
+	PlayerVisualStateServiceScript.trigger_low_health_effect(self)
 
 ## 清除低血量视觉效果
 func _clear_low_health_effect():
-	if not is_low_health_effect_active:
-		return
-	
-	is_low_health_effect_active = false
-	
-	if vignette_effect and vignette_effect.has_method("transition_low_health_to_normal"):
-		var transition_time = vignette_effect.low_health_to_normal_transition
-		vignette_effect.transition_low_health_to_normal(transition_time)
+	PlayerVisualStateServiceScript.clear_low_health_effect(self)
 
 #endregion
 
@@ -1516,118 +1322,65 @@ func force_interactive_state() -> void:
 
 ## 检查是否可被交互打断
 func can_be_interrupted() -> bool:
-	return current_state != PlayerState.DASH and current_state != PlayerState.HURT and current_state != PlayerState.DIE
+	return PlayerAbilityServiceScript.can_be_interrupted(self)
 
 ## 获取能力解锁状态
 func get_ability_status() -> Dictionary:
-	return {
-		"dash": dash_unlocked,
-		"double_jump": double_jump_unlocked,
-		"glide": glide_unlocked,
-		"black_dash": black_dash_unlocked,
-		"wall_grip": wall_grip_unlocked
-	}
+	return PlayerAbilityServiceScript.get_ability_status(self)
 
 ## 设置能力解锁状态（用于存档加载）
 func set_abilities_from_save(abilities: Dictionary) -> void:
-	dash_unlocked = abilities.get("dash", false)
-	double_jump_unlocked = abilities.get("double_jump", false)
-	glide_unlocked = abilities.get("glide", false)
-	black_dash_unlocked = abilities.get("black_dash", false)
-	wall_grip_unlocked = abilities.get("wall_grip", false)
+	PlayerAbilityServiceScript.set_abilities_from_save(self, abilities)
 
 ## 进入睡眠状态（供外部调用）
 func enter_sleep_state() -> void:
-	velocity = Vector2.ZERO
-	change_state(PlayerState.SLEEP)
+	PlayerAbilityServiceScript.enter_sleep_state(self)
 
 ## 退出睡眠状态（供外部调用）
 func exit_sleep_state() -> void:
-	if current_state == PlayerState.SLEEP:
-		change_state(PlayerState.IDLE)
+	PlayerAbilityServiceScript.exit_sleep_state(self)
 
 ## 检查是否在睡眠状态
 func is_sleeping() -> bool:
-	return current_state == PlayerState.SLEEP
+	return PlayerAbilityServiceScript.is_sleeping(self)
 
 ## 设置玩家控制状态
 func set_player_control(enabled: bool) -> void:
-	set_process_input(enabled)
+	PlayerAbilityServiceScript.set_player_control(self, enabled)
 
 ## 立即传送到位置
 func teleport_to(target_position: Vector2) -> void: 
-	global_position = target_position
-	velocity = Vector2.ZERO
+	PlayerAbilityServiceScript.teleport_to(self, target_position)
 
 ## 由JumpBox调用的函数
 func refresh_air_dash():
-	has_dashed_in_air = false
+	PlayerAbilityServiceScript.refresh_air_dash(self)
 
 ## 由水面触碰触发的能力刷新（单次触碰只刷新一次）
 func refresh_jump():
-	# 重置跳跃次数，允许再次跳跃
-	jump_count = 0
+	PlayerAbilityServiceScript.refresh_jump(self)
 
 func refresh_dash():
-	# 重置冲刺状态，允许再次冲刺
-	can_dash = true
-	has_dashed_in_air = false
+	PlayerAbilityServiceScript.refresh_dash(self)
 
 ## 更新所有有效乘数（在_physics_process 中调用）
 func update_effective_multipliers():
-	# 关键修复：先重置为默认值
-	effective_horizontal_multiplier = env_horizontal_multiplier
-	effective_vertical_multiplier = env_vertical_multiplier
-	effective_gravity_multiplier = env_gravity_multiplier
-	effective_max_fall_multiplier = env_max_fall_multiplier
-	effective_acceleration_multiplier = env_acceleration_multiplier
-	
-	# 关键修复：最大下落速度直接使用基础值，不受 JumpBox 影响
-	effective_max_fall_speed = max_fall_speed * effective_max_fall_multiplier
+	PlayerAbilityServiceScript.update_effective_multipliers(self)
 
 ## 由 EnvironmentManager 调用，设置环境乘数
 func set_environment_multipliers(horizontal: float, vertical: float, p_gravity: float, max_fall: float, acceleration: float):
-	env_horizontal_multiplier = horizontal
-	env_vertical_multiplier = vertical
-	env_gravity_multiplier = p_gravity
-	env_max_fall_multiplier = max_fall
-	env_acceleration_multiplier = acceleration
+	PlayerAbilityServiceScript.set_environment_multipliers(self, horizontal, vertical, p_gravity, max_fall, acceleration)
 
 ## 更新低血量效果（供PlayerUI调用）
 func update_low_health_effect():
-	if not player_ui:
-		return
-	
-	var current_health = player_ui.get_health()
-	var is_low_health = current_health <= 1
-	
-	# 关键修复：如果即将受到伤害或正在受伤，推迟低血量效果的触发
-	if is_about_to_be_hurt or is_hurt_visual_active:
-		return
-	
-	if is_low_health and not is_low_health_effect_active:
-		_trigger_low_health_effect()
-	elif not is_low_health and is_low_health_effect_active:
-		_clear_low_health_effect()
+	PlayerVisualStateServiceScript.update_low_health_effect(self)
 
 ## 中断受伤视觉效果（供Door调用）
 func interrupt_hurt_visual_effect():
-	# 清除受伤视觉效果状态
-	is_hurt_visual_active = false
-	hurt_visual_timer = 0
-	
-	# 清除VignetteEffect中的所有效果
-	if vignette_effect and vignette_effect.has_method("clear_all_effects"):
-		vignette_effect.clear_all_effects()
+	PlayerVisualStateServiceScript.interrupt_hurt_visual_effect(self)
 
 ## 只中断受伤视觉效果（不清除低血量效果）（供Door调用）
 func interrupt_hurt_visual_only():
-	# 只清除受伤效果相关状态
-	is_hurt_visual_active = false
-	hurt_visual_timer = 0
-	
-	# 如果VignetteEffect当前是受伤效果，清除它
-	if vignette_effect and vignette_effect.has_method("clear_hurt_effect_only"):
-		vignette_effect.clear_hurt_effect_only()
+	PlayerVisualStateServiceScript.interrupt_hurt_visual_only(self)
 
 #endregion
