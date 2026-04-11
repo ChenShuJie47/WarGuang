@@ -19,7 +19,6 @@ static func handle_locked_physics(player: Node, fixed_delta: float) -> bool:
 		PlayerDoorTraversalService.update_autowalk(player, fixed_delta)
 	else:
 		player.apply_gravity(fixed_delta)
-		PlayerPixelStabilityService.apply_test_velocity_snap(player, 0.0, true)
 		player.move_and_slide()
 	player.update_animation()
 	return true

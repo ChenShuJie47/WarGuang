@@ -771,9 +771,6 @@ collision_mask = 63
 script = ExtResource("1_kyqiw")
 afterimage_scene = ExtResource("2_t26db")
 camera_damage_debug = true
-pixel_stability_only_when_no_input = false
-pixel_stability_only_on_floor = false
-pixel_stability_snap_vertical = true
 
 [node name="AfterimageTrail" type="Node2D" parent="."]
 script = ExtResource("5_afterimagetrail")
@@ -836,8 +833,9 @@ zoom = Vector2(2, 2)
 tween_resource = SubResource("Resource_ude3g")
 follow_damping = true
 follow_damping_value = Vector2(0.15, 0.1)
-dead_zone_width = 0.2
-dead_zone_height = 0.15
+dead_zone_width = 0.15
+dead_zone_height = 0.2
+show_viewfinder_in_play = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="Timers" type="Node2D" parent="."]

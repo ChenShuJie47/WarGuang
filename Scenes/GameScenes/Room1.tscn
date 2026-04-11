@@ -279,8 +279,8 @@ position = Vector2(553.99994, -135)
 scale = Vector2(20, 1.5)
 
 [node name="HurtBox2" parent="HurtBoxs" instance=ExtResource("9_4it2x")]
-position = Vector2(432, -15)
-scale = Vector2(8, 3)
+position = Vector2(483, -15)
+scale = Vector2(13.8, 3)
 damage_type = 1
 
 [node name="HurtBox3" parent="HurtBoxs" instance=ExtResource("9_4it2x")]
@@ -358,7 +358,7 @@ checkpoint_id = 102
 belongs_to_room = "Room1"
 
 [node name="DynamicCheckpoint3" parent="DynamicCheckpoints" instance=ExtResource("5_5m2yc")]
-position = Vector2(633, -45)
+position = Vector2(670, -45)
 checkpoint_id = 103
 belongs_to_room = "Room1"
 
