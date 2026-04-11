@@ -56,6 +56,7 @@
 - 奔跑输入判定与奔跑跳速度窗口已下沉到 `PlayerMovementService`（`detect_run_input`、`handle_run_jump`）。
 - 相机观察回零新增“基准中心等待收敛”阶段（带超时），用于抑制多次 LOOKUP/LOOKDOWN 后镜头逐次偏移到死区边界的问题，同时保留 dead zone 恢复。
 - 超级冲刺入口 `start_super_dash` 已下沉到 `PlayerMovementService`。
+- JumpBox/二段跳中断整组空气能力逻辑已并入 `PlayerAirAbilityService`（含 bounce、boost、interrupt、clear），Player 主脚本改为分发调用。
 
 ## 下一步拆分顺序
 1. Door 传送入口与自动走位参数构建继续下沉到 DoorTraversalService。

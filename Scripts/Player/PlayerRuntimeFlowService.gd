@@ -1,6 +1,8 @@
 extends RefCounted
 class_name PlayerRuntimeFlowService
 
+const PlayerDieStateServiceScript = preload("res://Scripts/Player/PlayerDieStateService.gd")
+
 # 处理 _physics_process 的前置阶段（0~5）。
 # 返回值：{"handled": bool, "previous_was_on_floor": bool}
 static func handle_pre_input_pipeline(player: Node, fixed_delta: float) -> Dictionary:
@@ -10,7 +12,7 @@ static func handle_pre_input_pipeline(player: Node, fixed_delta: float) -> Dicti
 	# DIE 状态独占处理。
 	if player.current_state == player.PlayerState.DIE:
 		PlayerRuntimeTickService.tick_hurt_visual(player, fixed_delta)
-		player.handle_die_state(fixed_delta)
+		PlayerDieStateServiceScript.handle_die_state(player, fixed_delta)
 		player.move_and_slide()
 		return {
 			"handled": true,

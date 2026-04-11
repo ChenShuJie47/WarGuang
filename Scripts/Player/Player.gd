@@ -32,6 +32,7 @@ const PlayerDamageOrchestratorServiceScript = preload("res://Scripts/Player/Play
 const PlayerDamageStateServiceScript = preload("res://Scripts/Player/PlayerDamageStateService.gd")
 const PlayerDamageFlowServiceScript = preload("res://Scripts/Player/PlayerDamageFlowService.gd")
 const PlayerDoorTraversalServiceScript = preload("res://Scripts/Player/PlayerDoorTraversalService.gd")
+const PlayerRoomTransitionServiceScript = preload("res://Scripts/Player/PlayerRoomTransitionService.gd")
 const PlayerControlLockServiceScript = preload("res://Scripts/Player/PlayerControlLockService.gd")
 const PlayerDialogueStateServiceScript = preload("res://Scripts/Player/PlayerDialogueStateService.gd")
 const PlayerCameraBridgeServiceScript = preload("res://Scripts/Player/PlayerCameraBridgeService.gd")
@@ -41,6 +42,7 @@ const PlayerHurtStateServiceScript = preload("res://Scripts/Player/PlayerHurtSta
 const PlayerDieStateServiceScript = preload("res://Scripts/Player/PlayerDieStateService.gd")
 const PlayerSpecialStateTimerServiceScript = preload("res://Scripts/Player/PlayerSpecialStateTimerService.gd")
 const PlayerDeathFlowServiceScript = preload("res://Scripts/Player/PlayerDeathFlowService.gd")
+const PlayerStateFlowServiceScript = preload("res://Scripts/Player/PlayerStateFlowService.gd")
 const PlayerStateTransitionServiceScript = preload("res://Scripts/Player/PlayerStateTransitionService.gd")
 const PlayerAnimationServiceScript = preload("res://Scripts/Player/PlayerAnimationService.gd")
 const PlayerGlideStateServiceScript = preload("res://Scripts/Player/PlayerGlideStateService.gd")
@@ -122,13 +124,13 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 滑翔目标水平速度
 @export var glide_target_h_speed: float = 160.0
 ## 滑翔水平加速度（按住方向键时每秒逼近目标水平速度的最大变化率，单位近似 px/s^2）
-@export var glide_horizontal_acceleration: float = 400.0
+@export var glide_horizontal_acceleration: float = 500.0
 ## 滑翔松开方向键时的水平减速（松手后的缓慢衰减速率）
 @export var glide_release_deceleration: float = 80.0
 ## 滑翔最大下落速度乘数
 @export var glide_max_fall_multiplier: float = 0.25
 ## 进入滑翔后的滞空时间（秒）- 期间下落速度上限为 0
-@export var glide_hover_time: float = 0.2
+@export var glide_hover_time: float = 0.3
 ## 滑翔下落倍率过渡时间（秒）- 进入滑翔后线性增加
 @export var glide_fall_accel_time: float = 0.9
 
@@ -821,293 +823,7 @@ func handle_dash_timers(fixed_delta):
 #region Signals
 
 func handle_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed):
-	# 统一空中转墙附着入口，避免 JUMP/DOWN/GLIDE/WALLJUMP 判定分散。
-	if _try_enter_wallgrip_from_air(move_input):
-		return
-	
-	if wall_grip_reverse_timer_node.time_left > 0 and jump_just_pressed:
-		# 在缓冲时间内按跳跃键，触发普通完整二段跳
-		start_normal_jump_from_wall()
-		wall_grip_reverse_timer_node.stop()  # 使用后立即停止
-		return
-	
-	match current_state:
-		PlayerState.IDLE:
-			handle_idle_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-		PlayerState.MOVE:
-			handle_move_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-		PlayerState.RUN:
-			handle_run_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-		PlayerState.JUMP:
-			handle_jump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
-		PlayerState.GLIDE:
-			handle_glide_state(fixed_delta, move_input, jump_pressed, dash_just_pressed)
-		PlayerState.DOWN:
-			handle_down_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
-		PlayerState.DASH:
-			handle_dash_state()
-		PlayerState.SUPERDASHSTART:
-			handle_super_dash_start_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-		PlayerState.SUPERDASH:
-			handle_super_dash_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-		PlayerState.HURT:
-			handle_hurt_state(fixed_delta)
-		PlayerState.DIE:
-			handle_die_state(fixed_delta)
-		PlayerState.SLEEP:
-			handle_sleep_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-		PlayerState.LOOKUP:
-			handle_lookup_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-		PlayerState.LOOKDOWN:
-			handle_lookdown_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-		PlayerState.INTERACTIVE:
-			handle_interactive_state(fixed_delta)
-		PlayerState.WALLGRIP:
-			handle_wallgrip_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
-		PlayerState.WALLJUMP:
-			handle_walljump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
-
-func _try_enter_wallgrip_from_air(move_input: float) -> bool:
-	return PlayerMovementServiceScript.try_enter_wallgrip_from_air(self, move_input)
-
-func handle_idle_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
-	PlayerMovementServiceScript.handle_idle_state(self, _delta, move_input, jump_just_pressed, dash_just_pressed)
-
-func handle_move_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
-	PlayerMovementServiceScript.handle_move_state(self, _delta, move_input, jump_just_pressed, dash_just_pressed)
-
-func handle_run_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
-	PlayerMovementServiceScript.handle_run_state(self, _delta, move_input, jump_just_pressed, dash_just_pressed)
-
-func handle_jump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed):
-	# 首先检查落地
-	if is_on_floor():
-		handle_landing()
-		return
-	
-	# JumpBox触发状态下，不处理跳跃键释放（保持JUMP2动画）
-	if jump_just_released and is_double_jump_holding and !is_jumpbox_triggered:
-		is_double_jump_holding = false
-	
-	# 简化：按下跳跃键时立即打断JumpBox持续二段跳
-	if is_jumpbox_continuous_jump and jump2_interrupt_enabled and jump_just_pressed:
-		
-		start_jump_interrupt()
-		return
-	
-	# 首先检查是否可以进入攀墙状态
-	if is_touching_wall and wall_grip_unlocked and move_input != 0 and sign(move_input) == wall_direction:
-		start_wallgrip()
-		return
-	
-	# 冲刺检测（最高优先级）
-	if try_dash(dash_just_pressed):
-		return
-	
-	# 二段跳检测
-	if try_double_jump(jump_just_pressed):
-		return
-	
-	# 滑翔检测：二段跳后，任何跳跃键按下都进入滑翔
-	if can_glide and !is_gliding and jump_just_pressed and !is_double_jump_holding and glide_unlocked:
-		start_glide()
-		return
-	
-	# 跳跃保持逻辑
-	if jump_pressed and jump_hold_timer < max_jump_hold_time:
-		velocity.y += jump_hold_boost
-		jump_hold_timer += fixed_delta
-	
-	# 空中水平控制（含无输入快速减速）
-	PlayerAirMotionServiceScript.apply_air_horizontal_motion(self, move_input)
-	
-	# 状态转换条件：垂直速度>=0且不在滑翔状态时切换到DOWN
-	if velocity.y >= 0 and !is_gliding:
-		change_state(PlayerState.DOWN)
-
-func handle_down_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed):
-	# 首先检查落地
-	if is_on_floor():
-		handle_landing()
-		return
-	
-	# JumpBox触发状态下，不处理跳跃键释放
-	if jump_just_released and is_double_jump_holding and !is_jumpbox_triggered:
-		is_double_jump_holding = false
-	
-	# 简化：按下跳跃键时立即打断JumpBox持续二段跳
-	if is_jumpbox_continuous_jump and jump2_interrupt_enabled and jump_just_pressed:
-		
-		start_jump_interrupt()
-		return
-	
-	# 首先检查是否可以进入攀墙状态
-	if is_touching_wall and wall_grip_unlocked and move_input != 0 and sign(move_input) == wall_direction:
-		start_wallgrip()
-		return
-	
-	# 冲刺检测（最高优先级）
-	if try_dash(dash_just_pressed):
-		return
-	
-	# 处理二段跳按键释放
-	if has_double_jumped and jump_just_released and !is_jumpbox_triggered:
-		is_double_jump_holding = false
-	
-	# 二段跳检测
-	if try_double_jump(jump_just_pressed):
-		return
-	
-	# 滑翔检测：二段跳后，任何跳跃键按下都进入滑翔
-	if can_glide and !is_gliding and jump_just_pressed and !is_double_jump_holding and glide_unlocked:
-		start_glide()
-		return
-	
-	# 跳跃保持逻辑（二段跳也可以长按）
-	if jump_pressed and jump_hold_timer < max_jump_hold_time and has_double_jumped:
-		velocity.y += jump_hold_boost
-		jump_hold_timer += fixed_delta
-	
-	# 空中水平控制（含无输入快速减速）
-	PlayerAirMotionServiceScript.apply_air_horizontal_motion(self, move_input)
-
-func handle_glide_state(fixed_delta, move_input, jump_pressed, dash_just_pressed):
-	PlayerGlideStateServiceScript.handle_state(self, fixed_delta, move_input, jump_pressed, dash_just_pressed)
-
-func handle_dash_state():
-	PlayerMovementServiceScript.handle_dash_state(self)
-
-func handle_super_dash_start_state(fixed_delta, _move_input, _jump_just_pressed, _dash_just_pressed):
-	# 检查是否松开 O 键
-	var super_dash_pressed = Input.is_action_pressed("super_dash")
-	
-	# 关键修复：在超级冲刺充电期间禁用交互
-	is_in_special_state = true
-	
-	# 修改：充电完成后等待松开按键
-	if super_dash_charge_timer >= super_dash_charge_time:
-		# 充电完成，等待松开 O 键
-		if not super_dash_pressed:
-			start_super_dash()
-			return
-	else:
-		# 充电未完成
-		if not super_dash_pressed:
-			# 打断充电
-			is_super_dash_charging = false
-			super_dash_charge_timer = 0.0
-			is_in_special_state = false  # 恢复交互能力
-			change_state(PlayerState.IDLE)
-			return
-	
-	# 更新充电计时器
-	super_dash_charge_timer += fixed_delta
-	
-	# 充电期间水平速度归零，但应用重力
-	# 关键修改：应用加速度乘数
-	velocity.x = move_toward(velocity.x, 0, ground_deceleration * base_move_speed * effective_acceleration_multiplier)
-	apply_gravity(fixed_delta)
-
-func handle_super_dash_state(fixed_delta, _move_input, jump_just_pressed, dash_just_pressed):
-	# 更新持续时间计时器
-	super_dash_duration_timer += fixed_delta
-	if super_dash_duration_timer >= super_dash_max_duration:
-		is_in_special_state = false
-		# 关键修复：正确重置跳跃状态
-		is_jumping = false
-		jump_count = 0
-		has_double_jumped = false
-		can_double_jump = true
-		can_glide = false  # 重置滑翔状态
-		change_state(PlayerState.DOWN)
-		return
-	
-	# 更新输入锁定计时器
-	if super_dash_input_lock_timer > 0:
-		super_dash_input_lock_timer -= fixed_delta
-	
-	# 更新加速计时器
-	if super_dash_accel_timer < super_dash_accel_time:
-		super_dash_accel_timer += fixed_delta
-		var progress = super_dash_accel_timer / super_dash_accel_time
-		# 修复：将 0 改为 0.0，确保是浮点数
-		var current_speed = lerp(0.0, super_dash_speed, progress)
-		
-		# 计算 45 度角方向
-		var dash_direction = Vector2(1 if is_facing_right else -1, -1).normalized()
-		# 关键修改：应用水平速度乘数
-		velocity = dash_direction * current_speed * effective_horizontal_multiplier
-	else:
-		# 达到最大速度
-		var dash_direction = Vector2(1 if is_facing_right else -1, -1).normalized()
-		# 关键修改：应用水平速度乘数
-		velocity = dash_direction * super_dash_speed * effective_horizontal_multiplier
-	
-	# 处理残影
-	super_dash_afterimage_timer += fixed_delta
-	if super_dash_afterimage_timer >= _get_afterimage_interval("super_dash"):
-		super_dash_afterimage_timer = 0
-		create_afterimage(PlayerState.SUPERDASH)
-	
-	# 检查碰撞
-	if is_on_wall() or is_on_ceiling():
-		# 撞到碰撞体，触发抖动并切换到 DOWN 状态
-		CameraShakeManager.shake("x_strong", phantom_camera)
-		is_in_special_state = false
-		# 重置二段跳状态，允许后续跳跃
-		has_double_jumped = false
-		can_double_jump = true
-		change_state(PlayerState.DOWN)
-		return
-	
-	# 输入锁定结束后可以接受跳跃和冲刺输入
-	if super_dash_input_lock_timer <= 0:
-		if jump_just_pressed:
-			is_in_special_state = false
-			# 关键修复：正确重置跳跃状态
-			is_jumping = false
-			jump_count = 0
-			has_double_jumped = false
-			can_double_jump = true
-			can_glide = false
-			change_state(PlayerState.JUMP)
-			return
-		if dash_just_pressed:
-			is_in_special_state = false
-			is_jumping = false
-			jump_count = 0
-			has_double_jumped = false
-			can_double_jump = true
-			can_glide = false
-			# 关键修复：超级冲刺打断后使用冲刺，应该消耗空中冲刺次数
-			if not is_on_floor() and not coyote_time_active:
-				has_dashed_in_air = true
-			change_state(PlayerState.DASH)
-			return
-
-func handle_hurt_state(fixed_delta):
-	PlayerHurtStateServiceScript.handle_hurt_state(self, fixed_delta)
-
-func handle_die_state(fixed_delta):
-	PlayerDieStateServiceScript.handle_die_state(self, fixed_delta)
-
-func handle_interactive_state(fixed_delta):
-	PlayerSleepStateServiceScript.handle_interactive_state(self, fixed_delta)
-
-func handle_sleep_state(fixed_delta, move_input, jump_just_pressed, dash_just_pressed):
-	PlayerSleepStateServiceScript.handle_sleep_state(self, fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
-
-func handle_lookup_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
-	PlayerObserveStateServiceScript.handle_lookup_state(self, _delta, move_input, jump_just_pressed, dash_just_pressed)
-
-func handle_lookdown_state(_delta, move_input, jump_just_pressed, dash_just_pressed):
-	PlayerObserveStateServiceScript.handle_lookdown_state(self, _delta, move_input, jump_just_pressed, dash_just_pressed)
-
-func handle_wallgrip_state(fixed_delta, move_input, jump_just_pressed, _jump_pressed, _jump_just_released, dash_just_pressed):
-	PlayerMovementServiceScript.handle_wallgrip_state(self, fixed_delta, move_input, jump_just_pressed, _jump_pressed, _jump_just_released, dash_just_pressed)
-
-func handle_walljump_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, _jump_just_released, dash_just_pressed):
-	PlayerMovementServiceScript.handle_walljump_state(self, fixed_delta, move_input, jump_just_pressed, jump_pressed, _jump_just_released, dash_just_pressed)
+	PlayerStateFlowServiceScript.handle_state(self, fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
 
 func change_state(new_state: PlayerState):
 	# 如果状态相同，不进行切换
@@ -1236,191 +952,25 @@ func is_recent_double_jump_start(window_sec: float = 0.12) -> bool:
 	return now_ms - last_double_jump_started_time_ms <= int(window_sec * 1000.0)
 
 func _apply_jumpbox_horizontal_speed(base_speed: float, direction: int) -> void:
-	var signed_speed = base_speed * effective_horizontal_multiplier * direction
-	velocity.x = clamp(signed_speed, -jumpbox_max_horizontal_speed, jumpbox_max_horizontal_speed)
+	PlayerAirAbilityServiceScript._apply_jumpbox_horizontal_speed(self, base_speed, direction)
 ## 由JumpBox触发的弹跳，进入持续二段跳状态并获得水平速度加成
 func start_jumpbox_bounce(vertical_force: float, trigger_grade: String = "normal", effect_overrides: Dictionary = {}):
-	if not can_accept_jumpbox_bounce():
-		return
-
-	jumpbox_last_bounce_time_ms = Time.get_ticks_msec()
-	jumpbox_trigger_grade = "perfect" if trigger_grade == "perfect" else "normal"
-	jumpbox_afterimage_type = "jumpbox_perfect" if jumpbox_trigger_grade == "perfect" else "jumpbox_normal"
-	jumpbox_horizontal_boost_multiplier = float(effect_overrides.get("horizontal_boost_multiplier", 1.0))
-	jumpbox_boost_duration_multiplier = float(effect_overrides.get("boost_duration_multiplier", 1.0))
-	jumpbox_max_vertical_force_multiplier = float(effect_overrides.get("max_vertical_force_multiplier", 1.0))
-	trigger_feedback_event(&"jumpbox_bounce_started", {
-		"grade": jumpbox_trigger_grade,
-		"afterimage_type": jumpbox_afterimage_type,
-		"vertical_force": vertical_force,
-		"effect_overrides": effect_overrides
-	})
-
-	# JumpBox 弹跳后不再额外叠加 JUMP 按住增高，避免高度异常峰值。
-	jump_hold_timer = max_jump_hold_time
-
-	# 原有的弹跳处理逻辑保持不变
-	var max_vertical_cap = jumpbox_max_vertical_force * jumpbox_max_vertical_force_multiplier
-	velocity.y = -clamp(vertical_force, 0.0, max_vertical_cap)
-	
-	# 刷新空中冲刺限制
-	has_dashed_in_air = false
-	can_dash = true
-	
-	# 设置 JumpBox 触发标记
-	is_jumpbox_triggered = true
-	jumpbox_force_applied = true
-	
-	# 强制设置二段跳状态
-	has_double_jumped = true
-	is_double_jump_holding = true
-	
-	# 设置 JumpBox 持续二段跳状态
-	is_jumpbox_continuous_jump = true
-	is_jump_interrupt_decaying = false
-	
-	# 激活速度加成系统
-	is_jump2_boost_active = true
-	jump2_boost_timer = 0.0
-	
-	# 立即应用初始速度（如果有输入）
-	var move_input = Input.get_axis("left", "right")
-	jump2_boost_direction = 1 if move_input > 0 else -1 if move_input < 0 else (1 if is_facing_right else -1)
-	if move_input != 0:
-		# 关键修改：JumpBox 水平速度保持加法，并增加速度上限钳制
-		var boosted = jump2_horizontal_boost * jumpbox_horizontal_boost_multiplier
-		_apply_jumpbox_horizontal_speed(jump_move_speed + boosted, jump2_boost_direction)
-	
-	# 激活残影效果
-	has_jumpbox_afterimage = true
-	
-	# 确保在 JUMP 状态
-	change_state(PlayerState.JUMP)
+	PlayerAirAbilityServiceScript.start_jumpbox_bounce(self, vertical_force, trigger_grade, effect_overrides)
 ## 处理JumpBox触发的二段跳水平速度加成，包括持续和衰减阶段
 func handle_jump2_boost(fixed_delta):
-	if not is_jump2_boost_active:
-		return
-	
-	# 关键修复：只在JUMP2动画期间保持速度加成
-	if current_animation == "JUMP2":
-		# 更新计时器
-		jump2_boost_timer += fixed_delta
-		var boosted = jump2_horizontal_boost * jumpbox_horizontal_boost_multiplier
-		var boost_duration_scaled = jump2_boost_duration * jumpbox_boost_duration_multiplier
-		
-		var move_input = Input.get_axis("left", "right")
-		var current_direction = 1 if move_input > 0 else -1 if move_input < 0 else jump2_boost_direction
-		
-		# 只在有移动输入时更新方向
-		if move_input != 0:
-			jump2_boost_direction = current_direction
-		
-		var total_duration = boost_duration_scaled + jump2_boost_decrease_time
-		
-		if jump2_boost_timer <= boost_duration_scaled:
-			# 持续阶段：保持最大加成速度
-			if move_input != 0:
-				# 关键修改：应用环境乘数，并增加速度上限钳制
-				_apply_jumpbox_horizontal_speed(jump_move_speed + boosted, jump2_boost_direction)
-			else:
-				# 无输入时自然减速（关键修改：应用加速度乘数）
-				velocity.x = move_toward(velocity.x, 0, air_control * ground_deceleration * (jump_move_speed + boosted) * effective_acceleration_multiplier)
-			
-		elif jump2_boost_timer <= total_duration:
-			# 衰减阶段：线性衰减到基础跳跃速度
-			var progress = (jump2_boost_timer - boost_duration_scaled) / jump2_boost_decrease_time
-			var current_boost = boosted * (1.0 - progress)
-			
-			if move_input != 0:
-				# 应用环境乘数，并增加速度上限钳制
-				_apply_jumpbox_horizontal_speed(jump_move_speed + current_boost, jump2_boost_direction)
-			else:
-				# 无输入时自然减速（应用加速度乘数）
-				velocity.x = move_toward(velocity.x, 0, air_control * ground_deceleration * (jump_move_speed + current_boost) * effective_acceleration_multiplier)
-			
-		else:
-			# 加成结束
-			is_jump2_boost_active = false
-	else:
-		# 不在JUMP2动画时，立即结束速度加成
-		is_jump2_boost_active = false
+	PlayerAirAbilityServiceScript.handle_jump2_boost(self, fixed_delta)
 ## 开始打断JumpBox持续二段跳，进入垂直速度衰减状态
 func start_jump_interrupt():
-	# 清除JumpBox持续二段跳状态
-	is_jumpbox_continuous_jump = false
-	
-	# 停止旋转
-	is_double_jump_holding = false
-	animated_sprite.rotation_degrees = 0
-	jump2_rotation = 0
-	
-	# 停止速度加成
-	is_jump2_boost_active = false
-	
-	# 停止残影效果
-	has_jumpbox_afterimage = false
-	
-	# 设置衰减状态
-	is_jump_interrupt_decaying = true
-	jump_interrupt_decay_timer = 0.0
-	
-	# 重置二段跳状态，允许再次二段跳
-	has_double_jumped = false
-	can_double_jump = true
-	
-	# 刷新空中冲刺限制
-	has_dashed_in_air = false
-	can_dash = true
+	PlayerAirAbilityServiceScript.start_jump_interrupt(self)
 ## 处理打断后的垂直速度衰减，在指定时间内将垂直速度降为0
 func handle_jump_interrupt_decay(fixed_delta):
-	if not is_jump_interrupt_decaying:
-		return
-	
-	# 如果在衰减期间被其他状态中断，立即退出
-	if current_state == PlayerState.DASH or current_state == PlayerState.HURT or current_state == PlayerState.DIE:
-		is_jump_interrupt_decaying = false
-		return
-	
-	# 更新计时器
-	jump_interrupt_decay_timer += fixed_delta
-	
-	# 计算衰减进度
-	var progress = min(jump_interrupt_decay_timer / jump2_interrupt_decay_time, 1.0)
-	
-	# 垂直速度衰减到0
-	velocity.y = lerp(velocity.y, 0.0, progress)
-	
-	# 检测是否衰减完成
-	if jump_interrupt_decay_timer >= jump2_interrupt_decay_time:
-		is_jump_interrupt_decaying = false
+	PlayerAirAbilityServiceScript.handle_jump_interrupt_decay(self, fixed_delta)
 ## 在 JumpBox 二段跳结束时调用
 func end_jumpbox_continuous_jump():
-	is_jumpbox_continuous_jump = false
-	is_jumpbox_triggered = false
-	jumpbox_horizontal_boost_multiplier = 1.0
-	jumpbox_boost_duration_multiplier = 1.0
+	PlayerAirAbilityServiceScript.end_jumpbox_continuous_jump(self)
 ## 清除JumpBox触发的所有效果（包括速度加成、残影、旋转等）
 func clear_jumpbox_effect():
-	if is_jumpbox_triggered:
-		# 关键修复：彻底刷新二段跳状态
-		has_double_jumped = false
-		can_double_jump = true
-		jump_count = 1  # 重置跳跃计数
-		
-		
-		is_jumpbox_triggered = false
-		jumpbox_trigger_grade = "normal"
-		jumpbox_afterimage_type = "jumpbox_perfect"
-		jumpbox_horizontal_boost_multiplier = 1.0
-		jumpbox_boost_duration_multiplier = 1.0
-		jumpbox_max_vertical_force_multiplier = 1.0
-		is_jump2_boost_active = false
-		has_jumpbox_afterimage = false
-		is_double_jump_holding = false
-		
-		# 重置JumpBox持续二段跳状态
-		is_jumpbox_continuous_jump = false
-		is_jump_interrupt_decaying = false  # 注意：这里也需要重置
+	PlayerAirAbilityServiceScript.clear_jumpbox_effect(self)
 ## 进入滑翔状态，需要满足二段跳后且滑翔能力解锁
 func start_glide():
 	PlayerAirAbilityServiceScript.start_glide(self)
@@ -1732,64 +1282,31 @@ func _update_camera_transition_guard(fixed_delta: float) -> void:
 
 
 func sync_camera_after_room_teleport() -> void:
-	PlayerCameraBridgeServiceScript.sync_camera_after_room_teleport(self)
+	PlayerRoomTransitionServiceScript.sync_camera_after_room_teleport(self)
 
 ## 门传送等瞬移后调用：同步 PhantomCamera2D 与 Camera2D，修复 FRAMED 死区与视口坐标一帧不一致
 func sync_phantom_camera_after_teleport() -> void:
-	PlayerCameraBridgeServiceScript.sync_phantom_camera_after_teleport(self)
+	PlayerRoomTransitionServiceScript.sync_phantom_camera_after_teleport(self)
 
 ## 强制同步相机位置到玩家位置，忽略限制用于传送后
 func force_sync_camera_position_after_teleport() -> void:
-	await PlayerCameraBridgeServiceScript.force_sync_camera_position_after_teleport(self)
+	await PlayerRoomTransitionServiceScript.force_sync_camera_position_after_teleport(self)
 
 ## Door 传送测试路径：先解限再快速追镜，最后恢复目标房间限制。
 func start_door_camera_catchup_after_teleport(catchup_duration: float = 0.20, unlock_duration: float = 0.32) -> void:
-	PlayerCameraBridgeServiceScript.start_door_camera_catchup_after_teleport(self, catchup_duration, unlock_duration)
+	PlayerRoomTransitionServiceScript.start_door_camera_catchup_after_teleport(self, catchup_duration, unlock_duration)
 
 ## Door 传送后的自动走位：锁定输入，只由脚本移动/跳跃到最近动态检查点。
 func start_door_autowalk_to_dynamic_checkpoint(room_id: String, door_position: Vector2, facing_right: bool, allow_jump: bool = true, timeout: float = 1.4) -> bool:
-	return PlayerDoorTraversalServiceScript.begin_autowalk(self, room_id, door_position, facing_right, allow_jump, timeout)
+	return PlayerRoomTransitionServiceScript.start_door_autowalk_to_dynamic_checkpoint(self, room_id, door_position, facing_right, allow_jump, timeout)
 
 #endregion
 
 ##Hit Stop 相关函数集
 #region Signals
-# Hit Stop函数
-func start_hit_stop(duration: float, intensity: float = 1.0):
-	if not hit_stop_enabled or is_hit_stop:
-		return
-	
-	# 设置持续时间
-	var actual_duration = duration * intensity
-	
-	# 开始Hit Stop
-	is_hit_stop = true
-	saved_time_scale = Engine.time_scale
-	Engine.time_scale = 0.0
-	
-	# 使用真实时间计算Hit Stop结束
-	var start_time = Time.get_ticks_msec()
-	
-	# 创建一个处理Hit Stop结束的函数
-	var check_hit_stop_end = func():
-		while is_hit_stop:
-			var current_time = Time.get_ticks_msec()
-			var elapsed = (current_time - start_time) / 1000.0  # 转换为秒
-			
-			if elapsed >= actual_duration:
-				Engine.time_scale = saved_time_scale
-				is_hit_stop = false
-				break
-			
-			# 每帧检查一次
-			await get_tree().process_frame
-	
-	# 启动检查协程
-	check_hit_stop_end.call()
-
 # 受伤专用的Hit Stop
 func start_hurt_hit_stop():
-	PlayerHitStopServiceScript.trigger_hurt(self)
+	PlayerHitStopServiceScript.start_hurt_hit_stop(self)
 
 func _trigger_tier2_hit_stop_with_fallback(duration_fallback: float, intensity_fallback: float) -> void:
 	PlayerHitStopServiceScript.trigger_tier2_with_fallback(self, duration_fallback, intensity_fallback)
@@ -1799,7 +1316,7 @@ func _trigger_tier3_hit_stop_with_fallback(duration_fallback: float, intensity_f
 
 # JumpBox 专用的 Hit Stop（使用 tier2 档位）
 func start_jumpbox_hit_stop(trigger_grade: String = "normal"):
-	PlayerHitStopServiceScript.trigger_jumpbox(self, trigger_grade)
+	PlayerHitStopServiceScript.start_jumpbox_hit_stop(self, trigger_grade)
 
 #endregion
 
