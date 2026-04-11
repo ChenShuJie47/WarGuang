@@ -31,6 +31,12 @@ const PlayerDamageServiceScript = preload("res://Scripts/Player/PlayerDamageServ
 const PlayerDamageStateServiceScript = preload("res://Scripts/Player/PlayerDamageStateService.gd")
 const PlayerDamageFlowServiceScript = preload("res://Scripts/Player/PlayerDamageFlowService.gd")
 const PlayerDoorTraversalServiceScript = preload("res://Scripts/Player/PlayerDoorTraversalService.gd")
+const PlayerControlLockServiceScript = preload("res://Scripts/Player/PlayerControlLockService.gd")
+const PlayerPixelStabilityServiceScript = preload("res://Scripts/Player/PlayerPixelStabilityService.gd")
+const PlayerWarpFlowServiceScript = preload("res://Scripts/Player/PlayerWarpFlowService.gd")
+const PlayerWarpFlightServiceScript = preload("res://Scripts/Player/PlayerWarpFlightService.gd")
+const PlayerWarpResetServiceScript = preload("res://Scripts/Player/PlayerWarpResetService.gd")
+const PlayerCameraDebugServiceScript = preload("res://Scripts/Player/PlayerCameraDebugService.gd")
 ## 独立的玩家 FX 控制器，用于状态单播与周期性特效。
 const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXController.gd")
 
@@ -99,15 +105,15 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 滑翔目标水平速度
 @export var glide_target_h_speed: float = 160.0
 ## 滑翔水平加速度（按住方向键时每秒逼近目标水平速度的最大变化率，单位近似 px/s^2）
-@export var glide_horizontal_acceleration: float = 800.0
+@export var glide_horizontal_acceleration: float = 900.0
 ## 滑翔松开方向键时的水平减速（松手后的缓慢衰减速率）
 @export var glide_release_deceleration: float = 60.0
 ## 滑翔最大下落速度乘数
-@export var glide_max_fall_multiplier: float = 0.3
+@export var glide_max_fall_multiplier: float = 0.25
 ## 滑翔水平加速过渡时间（秒）- 控制输入加速度从 0 到最大值的线性过渡
-@export var glide_horizontal_accel_time: float = 1.2
+@export var glide_horizontal_accel_time: float = 0.6
 ## 滑翔下落倍率过渡时间（秒）- 进入滑翔后按 y=x^2 曲线增加
-@export var glide_fall_accel_time: float = 2.2
+@export var glide_fall_accel_time: float = 1.6
 
 ## 受伤设置
 @export_category("受伤设置")
@@ -117,12 +123,22 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 @export var hurt_stun_time: float = 0.5
 ## 受伤无敌时间（秒）
 @export var hurt_invincible_time: float = 1.5
-## 传送伤害僵直淡化时间
-@export var warp_stun_and_teleport_time: float = 1.5
-## 传送伤害后禁用时间（秒）- 传送伤害后及存档进入游戏开始时的禁用时间
-@export var warp_control_lock_time: float = 1
-## 传送伤害后无敌时间（秒）
-@export var warp_invincible_time: float = 2
+## 进入游戏开始时的禁用时间（秒）
+@export var warp_control_lock_time: float = 1.0
+## 传送伤害飞行峰值速度（像素/秒）
+@export var warp_flight_peak_speed: float = 900.0
+## 传送伤害飞行最低速度（像素/秒）
+@export var warp_flight_min_speed: float = 50.0
+## 传送伤害飞行第一段上升距离（像素）
+@export var warp_flight_lift_distance: float = 60.0
+## 传送伤害飞行第一段上升速度（像素/秒）
+@export var warp_flight_lift_speed: float = 150.0
+## 传送伤害分段停滞时间（秒）
+@export var warp_flight_phase_pause_time: float = 0.5
+## 传送伤害飞行目标点向上偏移（像素）
+@export var warp_flight_target_height_offset: float = 50.0
+## 传送伤害飞行抵达判定距离（像素）
+@export var warp_flight_arrive_epsilon: float = 2.0
 
 ## 死亡设置
 @export_category("死亡设置")
@@ -189,9 +205,9 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 水平速度加成（增加到基础移动速度上）
 @export var jump2_horizontal_boost: float = 260.0
 ## 水平速度加成持续时间（秒）
-@export var jump2_boost_duration: float = 0.3
+@export var jump2_boost_duration: float = 0.5
 ## 水平速度加成减少过渡时间（秒）
-@export var jump2_boost_decrease_time: float = 0.3
+@export var jump2_boost_decrease_time: float = 0.4
 ## 打断 JumpBox 持续二段跳后的垂直速度衰减时间（秒）
 @export var jump2_interrupt_decay_time: float = 0.1
 ## JumpBox 重新触发锁定时间（毫秒）
@@ -204,6 +220,24 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 @export_category("调试")
 ## 记录受伤后相机跳位相关状态
 @export var camera_damage_debug: bool = false
+
+@export_category("像素稳定测试")
+## 像素抖动测试开关（默认关闭，便于随时回撤）
+@export var pixel_stability_test_enabled: bool = false
+## 低速水平速度阈值（小于该值时吸附为 0）
+@export var pixel_stability_min_x_speed: float = 8.0
+## 低速垂直速度阈值（仅在开启垂直吸附时生效）
+@export var pixel_stability_min_y_speed: float = 8.0
+## 仅在无输入时启用吸附，降低对手感的影响
+@export var pixel_stability_only_when_no_input: bool = true
+## 仅在地面启用吸附，避免影响空中运动
+@export var pixel_stability_only_on_floor: bool = true
+## 是否吸附垂直速度（建议默认关闭）
+@export var pixel_stability_snap_vertical: bool = false
+## 传送伤害飞行期间跳过像素稳定吸附
+@export var pixel_stability_skip_when_warp_flight: bool = true
+## 控制锁定分支（如 Door 自动走位）是否跳过吸附
+@export var pixel_stability_skip_when_locked: bool = true
 
 @export_category("攀墙设置")
 ## 攀墙下滑速度（像素/秒）
@@ -235,9 +269,9 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## IDLE状态进入LOOKUP/LOOKDOWN状态的时间（秒）
 @export var idle_to_look_time: float = 0.8
 ## LOOKUP状态相机向上偏移距离
-@export var lookup_camera_offset: float = 240.0
+@export var lookup_camera_offset: float = 270.0
 ## LOOKDOWN状态相机向下偏移距离
-@export var lookdown_camera_offset: float = 270.0
+@export var lookdown_camera_offset: float = 300.0
 
 @export_category("相机观察设置")
 ## 相机偏移过渡时间（秒）
@@ -253,7 +287,7 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## - TRANS_CIRC: 圆形曲线
 ## - TRANS_BOUNCE: 弹跳效果（超过目标后反弹）
 ## - TRANS_BACK: 回弹效果（先反向移动再正向）
-@export var camera_offset_transition_type: Tween.TransitionType = Tween.TRANS_QUAD
+@export var camera_offset_transition_type: Tween.TransitionType = Tween.TRANS_LINEAR
 ## 相机偏移缓动类型：Tween.EaseType
 ## - EASE_IN: 开始慢，结束快（加速）
 ## - EASE_OUT: 开始快，结束慢（减速）
@@ -337,8 +371,17 @@ var hurt_timer: float = 0.0                     # 受伤僵直计时器
 var invincible_timer: float = 0.0               # 无敌状态计时器
 var hurt_direction: Vector2 = Vector2.ZERO      # 受伤击退方向
 var is_warp_damage: bool = false                # 标记是否为传送伤害
-var warp_damage_timer: float = 0.0              # 传送伤害计时器
 var warp_precomputed_target_position: Vector2 = Vector2.ZERO  # 传送伤害预计算相机/传送目标
+var warp_flight_active: bool = false            # 传送伤害飞行是否激活
+var warp_flight_target_position: Vector2 = Vector2.ZERO  # 传送伤害飞行目标点
+var warp_flight_target_source: String = "unknown"      # 目标点来源
+var warp_flight_prev_collision_layer: int = 0   # 飞行前碰撞层备份
+var warp_flight_prev_collision_mask: int = 0    # 飞行前碰撞掩码备份
+var warp_flight_collision_backup_valid: bool = false  # 飞行前碰撞备份是否有效
+var warp_flight_phase: int = 0                  # 飞行阶段：0上升 1停滞 2巡航 3停滞
+var warp_flight_phase_timer: float = 0.0        # 分段停滞计时器
+var warp_flight_lift_target_position: Vector2 = Vector2.ZERO  # 第一段上升目标点
+var warp_flight_hover_target_position: Vector2 = Vector2.ZERO # 巡航目标点（检查点上方）
 var is_about_to_be_hurt: bool = false           # 标记即将受到伤害
 
 ## 死亡重生相关
@@ -678,12 +721,7 @@ func _physics_process(delta):
 	# 保存上一帧的地面状态
 	var previous_was_on_floor = was_on_floor
 	# 更新控制锁定计时器
-	if is_control_locked:
-		if not door_autowalk_active:
-			control_lock_timer -= fixed_delta
-			if control_lock_timer <= 0:
-				is_control_locked = false
-				set_process_input(true)
+	PlayerControlLockServiceScript.tick_lock_timer(self, fixed_delta)
 	# ========== 阶段3：特殊系统处理 ==========
 	# Hit Stop期间跳过物理处理
 	if is_hit_stop:
@@ -702,16 +740,7 @@ func _physics_process(delta):
 		return
 	# ========== 阶段5：控制锁定处理 ==========
 	# 如果控制被锁定，只处理物理不处理输入
-	if is_control_locked:
-		if door_autowalk_active:
-			_handle_door_autowalk(fixed_delta)
-		else:
-			# 应用重力
-			apply_gravity(fixed_delta)
-			# 移动玩家
-			move_and_slide()
-		# 更新动画
-		update_animation()
+	if PlayerControlLockServiceScript.handle_locked_physics(self, fixed_delta):
 		return
 	# ========== 阶段6：获取输入 ==========
 	var move_input = Input.get_axis("left", "right")
@@ -759,6 +788,8 @@ func _physics_process(delta):
 	# 应用重力（除了冲刺和受伤状态）
 	if current_state != PlayerState.DASH and current_state != PlayerState.HURT:
 		apply_gravity(fixed_delta)
+	# 可回撤测试：低速吸附，降低像素风下边界抖动。
+	PlayerPixelStabilityServiceScript.apply_test_velocity_snap(self, move_input, false)
 	# 移动玩家
 	move_and_slide()
 	# ========== 阶段12：状态更新 ==========
@@ -1217,9 +1248,15 @@ func handle_super_dash_state(fixed_delta, _move_input, jump_just_pressed, dash_j
 			return
 
 func handle_hurt_state(fixed_delta):
-	# 基础半透明设置
-	if !is_warp_damage:  # 只有非传送伤害才设置半透明
-		animated_sprite.modulate.a = 0.5
+	if warp_flight_active:
+		if current_animation != "JUMP2":
+			current_animation = "JUMP2"
+			animated_sprite.play("JUMP2")
+		PlayerWarpFlightServiceScript.update_flight(self, fixed_delta)
+		return
+
+	# 受伤阶段统一半透明
+	animated_sprite.modulate.a = 0.5
 	
 	# 受伤期间应用重力
 	# 关键修改：应用重力乘数和最大下落乘数
@@ -1234,31 +1271,12 @@ func handle_hurt_state(fixed_delta):
 		current_animation = "HURT"
 		animated_sprite.play("HURT")
 	
-	# 处理传送伤害淡化效果和计时
-	if is_warp_damage and not is_in_death_process:
-		warp_damage_timer -= fixed_delta
-		
-		# 计算淡化进度
-		var fade_progress = 1.0 - (warp_damage_timer / warp_stun_and_teleport_time)
-		
-		# 从0.5线性淡化到0
-		var target_alpha = 0.5 * (1.0 - fade_progress)
-		animated_sprite.modulate.a = target_alpha
-		
-		# 同时淡化灯光
-		if point_light:
-			point_light.energy = 1.0 * (1.0 - fade_progress)
-		
-		# 传送伤害时间结束，执行传送
-		if warp_damage_timer <= 0:
-			perform_warp_teleport()
-			return
-	
 	# 受伤僵直时间处理
 	hurt_timer -= fixed_delta
-	
-	# 普通伤害僵直时间结束
-	if hurt_timer <= 0 and not is_warp_damage:
+	if hurt_timer <= 0:
+		if is_warp_damage and not is_in_death_process:
+			PlayerWarpFlightServiceScript.begin_flight(self)
+			return
 		# 僵直结束，开始无敌时间
 		is_invincible = true
 		invincible_timer = hurt_invincible_time
@@ -1564,7 +1582,10 @@ func update_animation():
 		PlayerState.GLIDE:
 			target_animation_val = "GLIDE"
 		PlayerState.HURT:
-			target_animation_val = "HURT"
+			if warp_flight_active:
+				target_animation_val = "JUMP2"
+			else:
+				target_animation_val = "HURT"
 		PlayerState.DIE:
 			target_animation_val = "DIE"
 		PlayerState.SLEEP:
@@ -1659,66 +1680,10 @@ func take_damage_with_type(damage_source_position: Vector2, damage: int = 1, dam
 		is_in_death_process = true
 	elif PlayerDamageStateServiceScript.should_start_warp_timer(int(damage_type)):
 		# 非致命传送伤害启动传送流程
-		is_warp_damage = true
-		warp_damage_timer = warp_stun_and_teleport_time
-		var pre_target_info := PlayerDamageServiceScript.resolve_warp_safe_spot()
-		warp_precomputed_target_position = pre_target_info.get("position", Vector2.ZERO)
-		if camera_controller and camera_controller.has_method("start_warp_damage_camera_catchup_to_position") and warp_precomputed_target_position != Vector2.ZERO:
-			var preview_duration := clampf(warp_stun_and_teleport_time * 0.6, 0.25, 0.8)
-			camera_controller.start_warp_damage_camera_catchup_to_position(warp_precomputed_target_position, preview_duration)
+		PlayerWarpFlowServiceScript.begin_warp_damage_flow(self)
 
 	if camera_damage_debug:
 		_debug_camera_damage_state("after_damage", damage_source_position, damage, damage_type, knockback_force)
-
-func perform_warp_teleport():
-	var safe_spot_info := PlayerDamageServiceScript.resolve_warp_safe_spot()
-	var safe_spot: Vector2 = warp_precomputed_target_position if warp_precomputed_target_position != Vector2.ZERO else safe_spot_info.get("position", Vector2.ZERO)
-	var safe_spot_source: String = safe_spot_info.get("source", "unknown")
-	var warp_visual_restore_delay: float = 0.22
-		
-	if animated_sprite:
-		animated_sprite.visible = false
-	if point_light:
-		point_light.visible = false
-
-	# 传送到安全位置
-	global_position = safe_spot
-	velocity = Vector2.ZERO
-	if camera_controller and camera_controller.has_method("notify_warp_player_teleported"):
-		camera_controller.notify_warp_player_teleported()
-	if RoomManager and RoomManager.has_method("update_camera_limits"):
-		RoomManager.update_camera_limits()
-	get_tree().create_timer(warp_visual_restore_delay).timeout.connect(func():
-		if animated_sprite:
-			animated_sprite.visible = true
-			animated_sprite.modulate.a = 0.5
-		if point_light:
-			point_light.visible = true
-			point_light.energy = 0.5
-	)
-	
-	# 重置角色状态
-	reset_after_warp()
-	
-	# 传送后设置为半透明
-	if animated_sprite:
-		animated_sprite.modulate.a = 0.5
-	if point_light:
-		point_light.energy = 0.5
-	warp_precomputed_target_position = Vector2.ZERO
-	
-	# 设置无敌和控制锁定
-	is_invincible = true
-	invincible_timer = warp_invincible_time
-	
-	control_lock_timer = warp_control_lock_time
-	is_control_locked = true
-	
-	print("传送伤害处理完成：位置=", safe_spot,
-		" 来源=", safe_spot_source,
-		" 房间=", RoomManager.current_room if RoomManager else "",
-		" 无敌时间=", warp_invincible_time,
-		" 控制锁定=", warp_control_lock_time)
 
 ## 传送后状态重置
 func reset_after_warp():
@@ -1733,8 +1698,7 @@ func reset_after_warp():
 	can_dash = true
 	
 	# 重置传送伤害状态
-	is_warp_damage = false
-	warp_damage_timer = 0.0
+	PlayerWarpResetServiceScript.reset_warp_runtime_state(self)
 	
 	# 重置其他临时状态
 	is_run_jumping = false
@@ -1842,8 +1806,7 @@ func reset_player_for_respawn():
 	can_dash = true
 	
 	# 关键修复：重置传送伤害状态
-	is_warp_damage = false
-	warp_damage_timer = 0.0
+	PlayerWarpResetServiceScript.reset_warp_runtime_state(self)
 	is_about_to_be_hurt = false  # 同时重置即将受伤标记
 	
 	# 关键修复：使用重生无敌标记，避免半透明
@@ -1971,6 +1934,8 @@ func try_double_jump(jump_just_pressed: bool) -> bool:
 	return PlayerAirAbilityServiceScript.try_double_jump(self, jump_just_pressed)
 ## 处理二段跳期间按住跳跃键时的角色旋转效果
 func handle_jump2_rotation(fixed_delta):
+	if warp_flight_active:
+		return
 	# 二段跳期间按住跳跃键保持旋转，但在冲刺、受伤或死亡时停止旋转
 	if current_state != PlayerState.DASH and current_state != PlayerState.HURT and current_state != PlayerState.DIE and has_double_jumped and is_double_jump_holding:
 		# 在二段跳状态下旋转角色
@@ -2490,14 +2455,11 @@ func _on_dialogue_ended():
 
 # 锁定控制
 func lock_control(duration: float, lock_type: String = "general"):
-	is_control_locked = true
-	control_lock_timer = duration
-	set_process_input(false)
-	print("玩家控制锁定: 类型=", lock_type, " 持续时间=", duration, "秒")
+	PlayerControlLockServiceScript.lock_control(self, duration, lock_type)
 
 #锁定控制回调
 func _on_control_lock_timeout():
-	set_process_input(true)
+	PlayerControlLockServiceScript.unlock_control(self)
 
 #endregion
 
@@ -2538,12 +2500,6 @@ func start_door_camera_catchup_after_teleport(catchup_duration: float = 0.20, un
 ## Door 传送后的自动走位：锁定输入，只由脚本移动/跳跃到最近动态检查点。
 func start_door_autowalk_to_dynamic_checkpoint(room_id: String, door_position: Vector2, facing_right: bool, allow_jump: bool = true, timeout: float = 1.4) -> bool:
 	return PlayerDoorTraversalServiceScript.begin_autowalk(self, room_id, door_position, facing_right, allow_jump, timeout)
-
-func _handle_door_autowalk(fixed_delta: float) -> void:
-	PlayerDoorTraversalServiceScript.update_autowalk(self, fixed_delta)
-
-func _finish_door_autowalk() -> void:
-	PlayerDoorTraversalServiceScript.finish_autowalk(self)
 
 #endregion
 
@@ -2666,77 +2622,18 @@ func start_warp_hurt_effect(is_shadow: bool):
 	CameraShakeManager.shake("general_moderate", phantom_camera)
 
 func _debug_camera_damage_state(stage: String, damage_source_position: Vector2, damage: int, damage_type: DamageType, knockback_force: Vector2) -> void:
-	if not camera_damage_debug:
-		return
-	var now_ms := Time.get_ticks_msec()
-	if stage == "before_damage" and now_ms - camera_damage_debug_last_log_ms < 250:
-		return
-	camera_damage_debug_last_log_ms = now_ms
-	var camera_pos := Vector2.ZERO
-	var viewport_camera_pos := Vector2.ZERO
-	var viewport_camera_offset := Vector2.ZERO
-	var follow_offset := Vector2.ZERO
-	var controller_snapshot = {}
-	if phantom_camera:
-		camera_pos = phantom_camera.global_position
-		if phantom_camera.has_method("get_follow_offset"):
-			follow_offset = phantom_camera.get_follow_offset()
-	var viewport_camera := get_viewport().get_camera_2d() if get_viewport() else null
-	if viewport_camera:
-		viewport_camera_pos = viewport_camera.global_position
-		viewport_camera_offset = viewport_camera.offset
-	if camera_controller and camera_controller.has_method("get_debug_snapshot"):
-		controller_snapshot = camera_controller.get_debug_snapshot()
-	var room_name := RoomManager.current_room if RoomManager else ""
-	print("[CameraDamageDebug] stage=", stage,
-		" player_pos=", global_position,
-		" cam_pos=", camera_pos,
-		" vcam_pos=", viewport_camera_pos,
-		" vcam_offset=", viewport_camera_offset,
-		" follow_offset=", follow_offset,
-		" room=", room_name,
-		" state=", current_state,
-		" anim=", current_animation,
-		" type=", damage_type,
-		" src=", damage_source_position)
-	if stage == "after_damage" and PlayerDamageServiceScript.is_warp_damage_type(int(damage_type)):
-		var checkpoint_pos := Global.get_last_checkpoint_position()
-		var checkpoint_room := PlayerDamageServiceScript.resolve_room_for_position(checkpoint_pos, room_name)
-		print("[CameraDamageDebug][warp_target] checkpoint_pos=", checkpoint_pos,
-			" checkpoint_room=", checkpoint_room,
-			" save_pos=", Global.get_save_point_position())
-	if not camera_pos.is_finite():
-		print("[CameraDamageDebug][invalid_camera] controller=", controller_snapshot, " kb=", knockback_force, " damage=", damage)
-	elif viewport_camera and (not viewport_camera_pos.is_finite() or not viewport_camera_offset.is_finite()):
-		print("[CameraDamageDebug][invalid_viewport_camera] controller=", controller_snapshot, " kb=", knockback_force, " damage=", damage)
+	camera_damage_debug_last_log_ms = PlayerCameraDebugServiceScript.log_damage_state(
+		self,
+		stage,
+		damage_source_position,
+		damage,
+		int(damage_type),
+		knockback_force,
+		camera_damage_debug_last_log_ms
+	)
 
 func _debug_camera_jumpbox_state(stage: String, trigger_grade: String, jumpbox_position: Vector2) -> void:
-	if not camera_damage_debug:
-		return
-	var camera_pos := Vector2.ZERO
-	var camera_offset := Vector2.ZERO
-	var follow_offset := Vector2.ZERO
-	var controller_snapshot = {}
-	if phantom_camera:
-		camera_pos = phantom_camera.global_position
-		if phantom_camera.has_method("get_follow_offset"):
-			follow_offset = phantom_camera.get_follow_offset()
-	var viewport_camera := get_viewport().get_camera_2d() if get_viewport() else null
-	if viewport_camera:
-		camera_offset = viewport_camera.offset
-	if camera_controller and camera_controller.has_method("get_debug_snapshot"):
-		controller_snapshot = camera_controller.get_debug_snapshot()
-	print("[CameraJumpBoxDebug] stage=", stage,
-		" grade=", trigger_grade,
-		" jumpbox_pos=", jumpbox_position,
-		" player_pos=", global_position,
-		" cam_pos=", camera_pos,
-		" cam_offset=", camera_offset,
-		" follow_offset=", follow_offset,
-		" state=", current_state,
-		" anim=", current_animation,
-		" vel=", velocity,
-		" controller=", controller_snapshot)
+	PlayerCameraDebugServiceScript.log_jumpbox_state(self, stage, trigger_grade, jumpbox_position)
 
 ## 启动Vignette普通受伤效果
 func start_vignette_hurt():

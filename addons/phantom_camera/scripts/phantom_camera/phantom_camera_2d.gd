@@ -818,6 +818,10 @@ func _set_rotation_velocity(index: int, value: float):
 	_rotation_velocity_ref = value
 
 func _interpolate_position(target_position: Vector2, delta: float) -> void:
+	if delta <= 0.0 or not is_finite(delta) or not target_position.is_finite():
+		global_position = target_position if target_position.is_finite() else global_position
+		_transform_output = Transform2D(global_transform.get_rotation(), global_position)
+		return
 	var output_rotation: float = global_transform.get_rotation()
 	if rotate_with_target:
 		if rotation_damping and not Engine.is_editor_hint():
@@ -856,27 +860,33 @@ func _interpolate_position(target_position: Vector2, delta: float) -> void:
 
 
 func _smooth_damp(target_axis: float, self_axis: float, index: int, current_velocity: float, set_velocity: Callable, damping_time: float, delta: float) -> float:
-		damping_time = maxf(0.0001, damping_time)
-		var omega: float = 2 / damping_time
-		var x: float = omega * delta
-		var exponential: float = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x)
-		var diff: float = self_axis - target_axis
-		var _target_axis: float = target_axis
+	if delta <= 0.0 or not is_finite(delta) or not is_finite(target_axis) or not is_finite(self_axis) or not is_finite(current_velocity):
+		set_velocity.call(index, 0.0)
+		return target_axis
+	damping_time = maxf(0.0001, damping_time)
+	var omega: float = 2 / damping_time
+	var x: float = omega * delta
+	var exponential: float = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x)
+	var diff: float = self_axis - target_axis
+	var _target_axis: float = target_axis
 
-		var max_change: float = INF * damping_time
-		diff = clampf(diff, -max_change, max_change)
-		target_axis = self_axis - diff
+	var max_change: float = INF * damping_time
+	diff = clampf(diff, -max_change, max_change)
+	target_axis = self_axis - diff
 
-		var temp: float = (current_velocity + omega * diff) * delta
-		set_velocity.call(index, (current_velocity - omega * temp) * exponential)
-		var output: float = target_axis + (diff + temp) * exponential
+	var temp: float = (current_velocity + omega * diff) * delta
+	set_velocity.call(index, (current_velocity - omega * temp) * exponential)
+	var output: float = target_axis + (diff + temp) * exponential
 
-		## To prevent overshooting
-		if (_target_axis - self_axis > 0.0) == (output > _target_axis):
-			output = _target_axis
+	## To prevent overshooting
+	if (_target_axis - self_axis > 0.0) == (output > _target_axis):
+		output = _target_axis
+		if delta > 0.0:
 			set_velocity.call(index, (output - _target_axis) / delta)
+		else:
+			set_velocity.call(index, 0.0)
 
-		return output
+	return output
 
 
 func _set_limit_clamp_position(value: Vector2) -> Vector2:

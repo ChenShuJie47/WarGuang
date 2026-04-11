@@ -771,6 +771,9 @@ collision_mask = 63
 script = ExtResource("1_kyqiw")
 afterimage_scene = ExtResource("2_t26db")
 camera_damage_debug = true
+pixel_stability_only_when_no_input = false
+pixel_stability_only_on_floor = false
+pixel_stability_snap_vertical = true
 
 [node name="AfterimageTrail" type="Node2D" parent="."]
 script = ExtResource("5_afterimagetrail")
@@ -801,28 +804,27 @@ fx_frames = ExtResource("8_player_fx_frames")
 [node name="JumpBoxPerfectAnchor" type="Node2D" parent="PlayerFXController"]
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-color = Color(0.92156863, 0.92156863, 0.8235294, 1)
+color = Color(0.84313726, 0.84313726, 0.6666667, 0.74509805)
 energy = 0.6
-range_layer_max = 10
+range_layer_max = 5
 range_item_cull_mask = 11
 shadow_enabled = true
-shadow_color = Color(0.1764706, 0.1764706, 0.1764706, 0.85490197)
 shadow_item_cull_mask = 15
 texture = ExtResource("3_fk5o5")
-texture_scale = 0.8
+texture_scale = 0.6
 
 [node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+position = Vector2(0, -4)
 occluder = SubResource("OccluderPolygon2D_jmcll")
 occluder_light_mask = 0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, 5)
 sprite_frames = SubResource("SpriteFrames_jbabp")
-animation = &"SUPERDASH"
+animation = &"IDLE"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visibility_layer = 63
-position = Vector2(0, 7)
+position = Vector2(0, 3)
 shape = SubResource("RectangleShape2D_fa4gl")
 
 [node name="PhantomCamera2D" type="Node2D" parent="." node_paths=PackedStringArray("follow_target")]
@@ -833,9 +835,9 @@ follow_target = NodePath("..")
 zoom = Vector2(2, 2)
 tween_resource = SubResource("Resource_ude3g")
 follow_damping = true
-follow_damping_value = Vector2(0.1, 0.09)
-dead_zone_width = 0.14
-dead_zone_height = 0.12
+follow_damping_value = Vector2(0.15, 0.1)
+dead_zone_width = 0.2
+dead_zone_height = 0.15
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="Timers" type="Node2D" parent="."]
