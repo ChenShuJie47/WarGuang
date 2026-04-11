@@ -164,8 +164,16 @@ func sync_camera_to_player_center() -> void:
 		return
 	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
 		return
-	if phantom_camera.follow_target == null:
-		phantom_camera.follow_target = player
+
+	# 重生同步时强制退出 warp 追镜模式，避免 follow_target 残留在锚点导致镜头静止。
+	warp_camera_catchup_active = false
+	warp_camera_waiting_for_player_teleport = false
+	warp_camera_wait_timeout = 0.0
+	if warp_camera_dead_zone_backup_valid:
+		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x
+		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y
+		warp_camera_dead_zone_backup_valid = false
+	phantom_camera.follow_target = player
 
 	# 重生场景不需要观察偏移，直接回归零偏移保证“尽量以玩家为中心”。
 	if phantom_camera.has_method("set_follow_offset"):
@@ -248,8 +256,12 @@ func start_warp_damage_camera_follow(duration: float = 0.22) -> void:
 	warp_camera_dead_zone_backup_valid = true
 
 	phantom_camera.follow_target = player
-	phantom_camera.dead_zone_width = 0.02
-	phantom_camera.dead_zone_height = 0.02
+	# 用短时插值收缩 dead zone，避免受伤瞬间因死区突变造成镜头瞬移。
+	var dead_zone_tween := player.create_tween()
+	dead_zone_tween.set_trans(Tween.TRANS_QUAD)
+	dead_zone_tween.set_ease(Tween.EASE_OUT)
+	dead_zone_tween.tween_property(phantom_camera, "dead_zone_width", 0.02, 0.12)
+	dead_zone_tween.parallel().tween_property(phantom_camera, "dead_zone_height", 0.02, 0.12)
 	start_camera_transition_guard(0.06, maxf(duration + 0.25, 0.3))
 	_safe_teleport_phantom_camera()
 
