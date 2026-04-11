@@ -50,19 +50,19 @@ extends Node
 
 @export_category("Slow Motion 预设 （light）")
 ## 轻度慢动作 - 持续时间（秒）
-@export var slow_light_duration: float = 0.3
+@export var slow_light_duration: float = 0.4
 ## 轻度慢动作 - 时间缩放（0.0-1.0，越小越慢）
-@export var slow_light_time_scale: float = 0.7
+@export var slow_light_time_scale: float = 0.75
 ## 轻度慢动作 - 过渡时间（秒）
 @export var slow_light_transition: float = 0.1
 
 @export_category("Slow Motion 预设 （medium）")
 ## 中度慢动作 - 持续时间（秒）
-@export var slow_medium_duration: float = 0.6
+@export var slow_medium_duration: float = 0.8
 ## 中度慢动作 - 时间缩放（0.0-1.0，越小越慢）
 @export var slow_medium_time_scale: float = 0.5
 ## 中度慢动作 - 过渡时间（秒）
-@export var slow_medium_transition: float = 0.2
+@export var slow_medium_transition: float = 0.25
 
 @export_category("Slow Motion 预设 （heavy）")
 ## 重度慢动作 - 持续时间（秒）

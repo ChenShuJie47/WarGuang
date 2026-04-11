@@ -1040,7 +1040,7 @@ func _check_physics_body(target: Node2D) -> void:
 			return
 			## NOTE - Only supported in Godot 4.3 or above
 		elif not physics_interpolation_enabled and show_jitter_tips == null: # Default value is null when referencing custom Project Setting
-			printerr("Physics Interpolation is disabled in the Project Settings, recommend enabling it to smooth out physics-based camera movement")
+			push_warning("Physics Interpolation is disabled in the Project Settings, recommend enabling it to smooth out physics-based camera movement")
 			print_rich("This tip can be disabled from within [code]Project Settings / Phantom Camera / Tips / Show Jitter Tips[/code]")
 		_follow_target_physics_based = true
 	else:

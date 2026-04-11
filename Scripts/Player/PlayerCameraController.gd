@@ -83,8 +83,8 @@ func reset_camera_position() -> void:
 	if not player or not phantom_camera:
 		return
 	var tween = player.create_tween()
-	tween.set_trans(player.camera_offset_transition_type)
-	tween.set_ease(player.camera_offset_ease_type)
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(phantom_camera, "follow_offset", Vector2.ZERO, player.camera_offset_transition_duration)
 
 # 开启传送后的临时守卫，避免相机立刻回落到错误 dead zone。

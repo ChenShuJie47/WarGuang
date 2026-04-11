@@ -1,8 +1,8 @@
-# WarGuang 整合开发规划（2026-04-09）
+# WarGuang 整合开发规划（持续更新）
 
 ## 0. 当前状态快照
 - JumpBox 已进入分层结构：`BaseJumpBox` + `JumpBox` + `ChallengeJumpBox` + `MovingJumpBox` + `ChallengeMoveJumpBox` + `OneShotJumpBox`。
-- Player 已完成中期拆分：Camera / HitStop / AirState / AirAbility / Movement 已分离；仍有反馈与受伤死亡流程待拆。
+- Player 已进入后期拆分：核心状态机仍在 `Player.gd`，运行流/计时/滑翔/相机桥接/门传送/伤害链路已下沉到服务层。
 - 完美/普通触发与残影分流已建立，后续可按类型覆盖触发效果。
 
 ## 1. 已确认的 JumpBox 规则（最新）
@@ -26,17 +26,22 @@
 - 通过重写 `_apply_trigger_effect(player, trigger_grade)` 即可实现各类型独立触发效果。
 - 通过 Player 的 `effect_overrides` 通道可按触发传入临时参数，不污染全局导出值。
 
-## 2. Player 拆分后续计划（优先）
-### 阶段 A：反馈层拆分（最高优先）
-- 目标：抽离残影、命中特效、白闪、相机抖动触发到 `PlayerFeedbackService`。
-- 收益：后续动作特效接入不再污染 `Player.gd`。
+## 2. Player 拆分进度与收口目标
+### 2.1 已落地服务域
+- 运行流与计时：`PlayerRuntimeFlowService`、`PlayerRuntimeTickService`
+- 空中/滑翔：`PlayerAirStateService`、`PlayerAirAbilityService`、`PlayerAirMotionService`、`PlayerGlideStateService`
+- 伤害与传送：`PlayerDamageService`、`PlayerDamageStateService`、`PlayerDamageFlowService`、`PlayerWarpFlowService`、`PlayerWarpFlightService`、`PlayerWarpResetService`
+- 交互与控制：`PlayerControlLockService`、`PlayerDialogueStateService`、`PlayerDoorTraversalService`
+- 相机与调试：`PlayerCameraBridgeService`、`PlayerRoomTransitionService`、`PlayerCameraDebugService`
 
-### 阶段 B：受伤/死亡流程拆分
-- 目标：把 `HURT/DIE` 相关流程（视觉、计时、恢复、传送伤害）抽到 `PlayerDamageService`。
-- 收益：状态机主文件进一步瘦身，回归风险降低。
+### 2.2 仍需收敛的部分
+- Door 传送入口参数构建与调用组织（继续下沉到 DoorTraversalService）。
+- `_physics_process` 余下输入/后置阶段进一步收敛到 RuntimeFlowService。
 
-### 阶段 C：状态编排收口
-- 目标：`Player.gd` 保留状态分发、输入读取、服务组装；业务逻辑下沉服务。
+### 2.3 拆分完成判据
+- `Player.gd` 仅保留：节点引用、导出参数、状态分发、服务编排入口。
+- 业务逻辑（状态细节、流程步骤、计时更新）不再直接驻留 `Player.gd`。
+- 服务文件按“职责域”组织，避免过碎小文件泛滥。
 
 ## 3. 特效系统实施方案（先设计，不改代码）
 ## 3.1 触发模式（常规预设）
@@ -85,3 +90,8 @@
 - 触发视觉白闪目前是 `modulate` 快闪，后续可升级为统一 Shader 命中闪。
 - ChallengeConfig 历史资源若仍含旧字段（cooldown/jump_force），需要逐步清理资源文件以减少混淆。
 - `ChallengeMoveJumpBox` 当前有自定义 `_process`，后续建议改成 `_update_custom` 风格，与基类流程统一。
+
+## 6. 文档维护约定
+- 本文档保持“通用方向 + 当前阶段状态”，避免记录过细实现细节。
+- 具体拆分步骤、每轮变更与短期待办写入 `PLAYER_SPLIT_PLAN.md`。
+- 每完成一个职责域拆分，至少同步一次“已落地服务域”和“剩余收敛项”。

@@ -4,6 +4,72 @@ class_name PlayerMovementService
 # 复用空气能力服务，避免移动状态和跳跃状态各自写一套切换逻辑。
 const PlayerAirAbilityServiceScript = preload("res://Scripts/Player/PlayerAirAbilityService.gd")
 
+# 处理地面快速双击奔跑检测。
+static func detect_run_input(player: Node, move_input: float) -> void:
+	if move_input != 0 and (player.is_on_floor() or player.coyote_time_active):
+		var current_time: float = Time.get_unix_time_from_system()
+		var move_direction: int = 1 if move_input > 0 else -1
+
+		if Input.is_action_just_pressed("right") or Input.is_action_just_pressed("left"):
+			if move_direction == player.last_move_direction:
+				var time_since_last_input: float = current_time - player.last_move_input_time
+				if time_since_last_input < player.quick_tap_time_window:
+					player.is_run_ready = true
+					player.run_direction = move_direction
+			else:
+				player.is_run_ready = false
+
+			player.last_move_input_time = current_time
+			player.last_move_direction = move_direction
+
+		if player.is_run_ready and player.run_direction == move_direction:
+			player.is_running = true
+			if player.is_on_floor():
+				player.was_running_before_coyote = true
+		else:
+			player.is_running = false
+	else:
+		player.is_running = false
+		player.is_run_ready = false
+
+	if player.is_on_floor():
+		player.was_running_before_coyote = player.is_running
+
+# 处理奔跑跳速度窗口。
+static func handle_run_jump(player: Node, fixed_delta: float) -> void:
+	if player.current_state == player.PlayerState.DASH or player.current_state == player.PlayerState.SUPERDASH or player.current_state == player.PlayerState.SUPERDASHSTART:
+		return
+	if not player.is_run_jumping:
+		return
+
+	player.run_jump_timer -= fixed_delta
+	var move_input: float = Input.get_axis("left", "right")
+	if move_input == 0:
+		player.is_run_jumping = false
+		return
+	if sign(move_input) != player.run_jump_original_direction:
+		player.is_run_jumping = false
+		return
+
+	if player.run_jump_timer > 0:
+		player.velocity.x = player.run_jump_original_direction * (player.base_move_speed + player.run_jump_boost_speed) * player.effective_horizontal_multiplier
+		return
+
+	var target_speed: float = player.run_jump_original_direction * player.base_move_speed
+	player.velocity.x = move_toward(player.velocity.x, target_speed, player.run_jump_boost_speed * fixed_delta / player.run_jump_decay_time)
+	if abs(player.velocity.x) <= player.base_move_speed:
+		player.is_run_jumping = false
+
+# 进入超级冲刺状态。
+static func start_super_dash(player: Node) -> void:
+	player.is_super_dash_charging = false
+	player.super_dash_charge_timer = 0.0
+	player.super_dash_accel_timer = 0.0
+	player.super_dash_input_lock_timer = player.super_dash_input_lock_time
+	player.super_dash_duration_timer = 0.0
+	player.is_in_special_state = true
+	player.change_state(player.PlayerState.SUPERDASH)
+
 # 处理冲刺计时结束后的状态回退。
 static func handle_dash_timers(player: Node, fixed_delta: float) -> void:
 	if player.current_state == player.PlayerState.DASH:
