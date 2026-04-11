@@ -9,7 +9,7 @@ const DAMAGE_WARP_SHADOW := 3
 # 非致命受伤的通用状态设置：无敌、Hit Stop、僵直与低血量延迟检查。
 static func apply_nonlethal_damage_state(player: Node, damage_type: int, new_health: int) -> void:
 	player.is_invincible = true
-	player.start_hurt_hit_stop()
+	player.PlayerHitStopServiceScript.start_hurt_hit_stop(player)
 	player.hurt_timer = player.hurt_stun_time
 	player.invincible_timer = player.hurt_invincible_time
 	
