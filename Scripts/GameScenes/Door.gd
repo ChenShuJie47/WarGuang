@@ -96,6 +96,8 @@ func teleport_player(player):
 	player.velocity = Vector2.ZERO
 	# 玩家已落到目标门后再次刷新房间相机限制，避免边界门首帧限制滞后
 	RoomManager.update_camera_limits()
+	if player.has_method("sync_camera_to_player_center"):
+		player.sync_camera_to_player_center(true)
 	# 等场景树与物理一帧，使房间显隐、相机限制与变换就绪后再同步相机（仍处在全黑中）
 	await get_tree().process_frame
 	await get_tree().physics_frame

@@ -13,27 +13,61 @@ static func notify_warp_arrival(player: Node) -> void:
 static func sync_camera_after_room_teleport(player: Node) -> void:
 	PlayerCameraBridgeServiceScript.sync_camera_after_room_teleport(player)
 
-static func sync_camera_to_player_center(player: Node) -> void:
-	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player)
+static func sync_camera_to_player_center(player: Node, immediate: bool = false) -> void:
+	if player and player.camera_controller and player.camera_controller.has_method("end_death_camera_freeze"):
+		player.camera_controller.end_death_camera_freeze()
+	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player, immediate)
 
-static func sync_room_and_camera_for_respawn(player: Node) -> void:
+static func sync_room_and_camera_for_respawn(player: Node, preferred_room_id: String = "", immediate: bool = false) -> void:
 	if RoomManager and RoomManager.has_method("get_room_id_by_position") and RoomManager.has_method("load_room"):
-		var target_room_id: String = RoomManager.get_room_id_by_position(player.global_position)
+		var target_room_id: String = preferred_room_id
+		if target_room_id == "":
+			target_room_id = RoomManager.get_room_id_by_position(player.global_position)
+		if target_room_id == "" and Global and typeof(Global.last_save_room) == TYPE_STRING and Global.last_save_room != "":
+			target_room_id = Global.last_save_room
 		if target_room_id != "":
 			if RoomManager.has_method("suppress_player_room_enter"):
-				RoomManager.suppress_player_room_enter(0.25)
-			if RoomManager.current_room != target_room_id:
+				RoomManager.suppress_player_room_enter(1.25)
+			if player:
+				PlayerCameraBridgeServiceScript.clear_observe_offset_runtime(player)
+			if player and player.camera_controller and player.camera_controller.has_method("begin_blackout_camera_transition"):
+				player.camera_controller.begin_blackout_camera_transition()
+			if RoomManager.has_method("ensure_room_loaded"):
+				RoomManager.ensure_room_loaded(target_room_id)
+			elif RoomManager.current_room != target_room_id:
 				RoomManager.load_room(target_room_id)
 			elif RoomManager.has_method("update_camera_limits"):
 				RoomManager.update_camera_limits()
 
-	# 等房间限制同步后再做居中相机同步；双帧确认避免时序导致镜头不更新。
+	await _await_camera_controller_ready(player)
+
+	# 等房间限制同步后再做居中相机同步；跨房间时额外等待物理帧，避免旧限制残留。
 	if player and player.get_tree():
 		await player.get_tree().process_frame
 		await player.get_tree().process_frame
+		await player.get_tree().physics_frame
 	if RoomManager and RoomManager.has_method("update_camera_limits"):
 		RoomManager.update_camera_limits()
-	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player)
+	if player and player.has_method("sync_camera_after_room_teleport"):
+		player.sync_camera_after_room_teleport()
+	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player, immediate)
+	if player and player.get_tree():
+		await player.get_tree().physics_frame
+	if RoomManager and RoomManager.has_method("update_camera_limits"):
+		RoomManager.update_camera_limits()
+	if player and player.camera_controller and player.camera_controller.has_method("restore_blackout_camera_transition"):
+		player.camera_controller.restore_blackout_camera_transition()
+	if RoomManager and RoomManager.has_method("update_camera_limits"):
+		RoomManager.update_camera_limits()
+	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player, true)
+
+static func _await_camera_controller_ready(player: Node) -> void:
+	if not player or not player.get_tree():
+		return
+	for _i in range(8):
+		if player.camera_controller and player.camera_controller.setup_completed:
+			return
+		await player.get_tree().process_frame
 
 static func sync_phantom_camera_after_teleport(player: Node) -> void:
 	PlayerCameraBridgeServiceScript.sync_phantom_camera_after_teleport(player)

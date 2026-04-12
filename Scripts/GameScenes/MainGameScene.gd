@@ -1,10 +1,18 @@
 # MainGameScene.gd
 extends Node2D
 
+signal boot_visual_ready
+
+var _boot_visual_ready: bool = false
+
 @onready var room_container = $RoomContainer
 @onready var player = $Player
 
 func _ready():
+	_cleanup_runtime_camera_viewfinder_overlays()
+	if RoomManager and RoomManager.has_method("reset_runtime_state"):
+		RoomManager.reset_runtime_state()
+
 	# 初始化房间系统
 	initialize_room_system()
 	
@@ -12,9 +20,6 @@ func _ready():
 	RoomManager.set_player(player)
 	if Global.current_save_slot >= 0:
 		_preposition_player_and_camera_for_save()
-	# 存档进入时先把主相机瞬时对齐到玩家，避免从场景默认点滑动过来
-	if Global.current_save_slot >= 0:
-		_snap_camera_to_player_immediately(player)
 	
 	# 确保 CanvasModulate 节点正确引用
 	var global_canvas = $GlobalCanvasModulate
@@ -45,6 +50,32 @@ func _ready():
 	if player_ui:
 		player_ui.player_died.connect(_on_player_died)
 
+	_boot_visual_ready = true
+	boot_visual_ready.emit()
+
+func _exit_tree() -> void:
+	_cleanup_runtime_camera_viewfinder_overlays()
+	if Engine.has_singleton("PhantomCameraManager"):
+		var manager = Engine.get_singleton("PhantomCameraManager")
+		if manager and manager.has_method("scene_changed"):
+			manager.scene_changed()
+
+func _cleanup_runtime_camera_viewfinder_overlays() -> void:
+	var root := get_tree().root
+	if root == null:
+		return
+	for child in root.get_children():
+		if child is CanvasLayer:
+			for grand in child.get_children():
+				if grand is Control and grand.name == "ViewfinderPanel":
+					child.queue_free()
+					break
+
+func wait_until_boot_visual_ready() -> void:
+	if _boot_visual_ready:
+		return
+	await boot_visual_ready
+
 func initialize_room_system():
 	# 自动注册所有房间
 	for room_node in room_container.get_children():
@@ -59,13 +90,20 @@ func _load_from_save():
 	# 设置玩家位置
 	var the_player = get_tree().get_first_node_in_group("player")
 	if the_player:
-		# 保险：再同步一次相机，避免首帧竞态
+		# 复用死亡重生同款：先切到存档房间再做黑屏居中，避免边界回拉暴露。
 		await get_tree().process_frame
-		if the_player.has_method("sync_camera_after_room_teleport"):
-			the_player.sync_camera_after_room_teleport()
-		elif the_player.has_method("sync_phantom_camera_after_teleport"):
-			the_player.sync_phantom_camera_after_teleport()
-		_snap_camera_to_player_immediately(the_player)
+		var target_room_id := Global.last_save_room
+		if target_room_id == "":
+			target_room_id = "Room1"
+		if the_player.has_method("sync_room_and_camera_for_respawn"):
+			await the_player.sync_room_and_camera_for_respawn(target_room_id, true)
+			await get_tree().process_frame
+			if the_player.has_method("sync_camera_to_player_center"):
+				the_player.sync_camera_to_player_center(true)
+		else:
+			RoomManager.load_room(target_room_id)
+			RoomManager.update_camera_limits()
+			_snap_camera_to_player_immediately(the_player)
 		await get_tree().physics_frame
 		
 		# 使用传送伤害的禁用时间，也是存档进入游戏开始时的禁用时间
@@ -118,11 +156,7 @@ func _preposition_player_and_camera_for_save() -> void:
 	if player == null:
 		return
 	player.global_position = Global.get_save_point_position()
-	var target_room = Global.last_save_room
-	if target_room == "":
-		target_room = "Room1"
-	RoomManager.load_room(target_room)
-	_snap_camera_to_player_immediately(player)
+	# 房间加载与相机同步交给 _load_from_save，保持单路径，避免双重同步竞争。
 
 func _on_player_died():
 	# 关键修复：死亡时清除动态检查点记录

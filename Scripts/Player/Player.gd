@@ -5,7 +5,7 @@ extends CharacterBody2D
 enum PlayerState {
 	IDLE, MOVE, RUN, JUMP, DOWN, DASH, GLIDE, HURT, DIE, 
 	SLEEP, LOOKUP, LOOKDOWN, INTERACTIVE, WALLGRIP, WALLJUMP,
-	SUPERDASHSTART, SUPERDASH  # 新增超级冲刺状态
+	SUPERDASHSTART, SUPERDASH 
 }
 ## 伤害类型枚举
 enum DamageType {
@@ -403,6 +403,7 @@ var can_dash: bool = true                       # 标记当前是否可以冲刺
 var has_dashed_in_air: bool = false             # 标记是否已在空中冲刺过
 var dash_duration_timer: float = 0.0            # 冲刺持续时间计时器
 var dash_cooldown_timer: float = 0.0            # 冲刺冷却计时器
+var dash_locked_direction: int = 1              # 冲刺锁定方向（冲刺期间不允许改向）
 
 ## 超级冲刺相关
 var super_dash_charge_timer: float = 0.0        # 超级冲刺充电计时器
@@ -552,7 +553,7 @@ func initialize_wall_detection():
 
 ## 主物理处理函数：每帧调用，处理玩家所有物理逻辑、状态更新和输入响应
 func _physics_process(delta):
-	# 关键修复：限制最大 delta 值，确保不同帧率下行为一致
+	## 关键修复：限制最大 delta 值，确保不同帧率下行为一致
 	var fixed_delta = min(delta, MAX_FRAME_TIME)
 	if camera_controller and camera_controller.has_method("physics_process"):
 		camera_controller.physics_process(fixed_delta)
@@ -563,127 +564,68 @@ func _physics_process(delta):
 	var previous_was_on_floor: bool = pre_input_result.get("previous_was_on_floor", was_on_floor)
 	if pre_input_result.get("handled", false):
 		return
-	# ========== 阶段6：获取输入 ==========
+	## ========== 阶段6：获取输入 ==========
 	var input_snapshot := PlayerRuntimeFlowServiceScript.collect_input_snapshot(self)
 	var move_input: float = input_snapshot.get("move_input", 0.0)
 	var jump_just_pressed: bool = input_snapshot.get("jump_just_pressed", false)
 	var jump_pressed: bool = input_snapshot.get("jump_pressed", false)
 	var jump_just_released: bool = input_snapshot.get("jump_just_released", false)
 	var dash_just_pressed: bool = input_snapshot.get("dash_just_pressed", false)
-	# ========== 阶段7：物理状态更新 ==========
-	# 更新墙体检测
+	## ========== 阶段7：物理状态更新 ==========
+	## 更新墙体检测
 	update_wall_detection()
-	# 更新无敌状态计时
+	## 更新无敌状态计时
 	PlayerRuntimeTickServiceScript.tick_invincible(self, fixed_delta)
-	# 更新水中效果和乘数（新增）
+	## 更新水中效果和乘数（新增）
 	update_effective_multipliers()
-	# ========== 阶段8：状态处理前的逻辑 ==========
-	# 检测奔跑输入
+	## ========== 阶段8：状态处理前的逻辑 ==========
+	## 检测奔跑输入
 	detect_run_input(move_input)
-	# 处理撞墙僵直
+	## 处理撞墙僵直
 	if is_wall_bump_stun:
 		handle_wall_bump_stun(fixed_delta)
-	# 处理二段跳水平速度加成
+	## 处理二段跳水平速度加成
 	handle_jump2_boost(fixed_delta)
-	# 处理跳跃缓冲
+	## 处理跳跃缓冲
 	if jump_just_pressed:
 		jump_buffer_timer.start(jump_buffer_time)
-	# 处理 DOWN 状态时间累计（放在状态处理之前，游戏暂停时不累计）
+	## 处理 DOWN 状态时间累计（放在状态处理之前，游戏暂停时不累计）
 	if current_state == PlayerState.DOWN and abs(velocity.y) >= abs(max_fall_speed * 0.9) and not is_game_paused:
 			down_state_entry_time += fixed_delta
-	# 处理特殊状态计时器（放在状态处理之前）
+	## 处理特殊状态计时器（放在状态处理之前）
 	handle_special_state_timers(fixed_delta, move_input)
-	# ========== 阶段9：主状态处理 ==========
+	## ========== 阶段9：主状态处理 ==========
 	handle_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
-	# ========== 阶段10：状态处理后的逻辑 ==========
-	# 处理奔跑跳跃
+	## ========== 阶段10：状态处理后的逻辑 ==========
+	## 处理奔跑跳跃
 	handle_run_jump(fixed_delta)
-	# 处理冲刺计时器
+	## 处理冲刺计时器
 	handle_dash_timers(fixed_delta)
-	# ========== 阶段11：物理模拟 ==========
-	# 应用重力（除了冲刺和受伤状态）
+	## ========== 阶段11：物理模拟 ==========
+	## 应用重力（除了冲刺和受伤状态）
 	if current_state != PlayerState.DASH and current_state != PlayerState.HURT:
 		apply_gravity(fixed_delta)
-	# 移动玩家
+	## 移动玩家
 	move_and_slide()
 	PlayerRuntimeFlowServiceScript.finalize_post_physics(self, fixed_delta, move_input, previous_was_on_floor)
 
 ## 检测游戏暂停状态
 func _check_game_pause_state():
-	# 检查是否在对话中
-	if is_in_dialogue:
-		return true
-	
-	# 检查是否在GameSettingScene中
-	var game_setting_nodes = get_tree().get_nodes_in_group("game_setting_scene")
-	if game_setting_nodes.size() > 0:
-		for node in game_setting_nodes:
-			if node.visible:
-				return true
-	
-	# 检查游戏是否暂停
-	if get_tree().paused:
-		return true
-	
-	return false
+	return PlayerMovementServiceScript._check_game_pause_state(self)
 
 ## 统一的计时器更新函数（自动处理暂停）
 func update_timer_with_pause(timer_ref: float, fixed_delta: float, is_paused: bool = false) -> float:
-	## 如果游戏暂停，不更新时间
-	if is_paused:
-		return timer_ref
-	
-	## 否则正常更新时间
-	return timer_ref + fixed_delta
+	return PlayerMovementServiceScript.update_timer_with_pause(self, timer_ref, fixed_delta, is_paused)
 
 ## 重力应用函数
 func apply_gravity(fixed_delta):
-	# 关键修复：攀墙状态下不应用重力
-	if current_state == PlayerState.WALLGRIP:
-		return
-	# 滑翔起始滞空期间不施加重力，确保垂直速度保持为 0。
-	if current_state == PlayerState.GLIDE and glide_timer <= glide_hover_time:
-		velocity.y = min(velocity.y, 0.0)
-		return
-	
-	# 关键：打断衰减期间也不应用重力
-	if is_jump_interrupt_decaying:
-		return
-		
-	# 修改：使用有效重力乘数
-	velocity.y += gravity * effective_gravity_multiplier * fixed_delta
-	velocity.y = min(velocity.y, effective_max_fall_speed)
+	PlayerMovementServiceScript.apply_gravity(self, fixed_delta)
 
 ##时间控制函数集
 #region Signals
 ## 更新土狼时间状态，检测地面状态变化，重置跳跃相关状态
 func update_coyote_time():
-	# 检查是否刚刚离开平台
-	if was_on_floor and !is_on_floor() and velocity.y >= 0 and !is_jumping:
-		coyote_time_active = true
-		coyote_timer.start(coyote_time)
-		# 离开平台时允许补偿跳跃
-		if !is_jumping:
-			can_compensation_jump = true
-			compensation_jump_used = false
-	# 如果接触到地面，重置所有状态
-	if is_on_floor():
-		coyote_time_active = false
-		has_double_jumped = false
-		can_double_jump = false
-		can_compensation_jump = false
-		compensation_jump_used = false
-		is_jumping = false
-		is_run_jumping = false
-		has_dashed_in_air = false
-		can_glide = false
-		is_double_jump_holding = false
-		was_gliding_before_dash = false
-		wall_grip_reverse_timer_node.stop()
-		jump_buffer_after_dash = false
-		jump_buffer_type = 0
-	# 更新地面状态
-	was_on_floor = is_on_floor()
+	PlayerMovementServiceScript.update_coyote_time(self)
 ## 处理特殊状态（睡眠、观察）的计时器，只在IDLE状态下更新
 func handle_special_state_timers(fixed_delta, _move_input):
 	PlayerSpecialStateTimerServiceScript.handle_special_state_timers(self, fixed_delta)
@@ -699,25 +641,7 @@ func handle_state(fixed_delta, move_input, jump_just_pressed, jump_pressed, jump
 	PlayerStateFlowServiceScript.handle_state(self, fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
 
 func change_state(new_state: PlayerState):
-	# 如果状态相同，不进行切换
-	if current_state == new_state:
-		return
-	PlayerStateTransitionServiceScript.apply_exit_state(self, int(current_state))
-	
-	# 关键新增：提供死亡状态检查方法（供 Door.gd 使用）
-	if new_state == PlayerState.DIE:
-		is_in_death_process = true
-	
-	# 状态进入逻辑
-	var previous_state = current_state
-	PlayerStateTransitionServiceScript.apply_enter_state(self, int(new_state), int(current_state))
-	
-	# 更新当前状态
-	current_state = new_state
-	trigger_feedback_event(&"state_changed", {
-		"from": previous_state,
-		"to": new_state
-	})
+	PlayerStateTransitionServiceScript.change_state(self, int(new_state))
 
 ## 检查玩家是否处于死亡状态（供 Door.gd 调用）
 func is_in_death_state() -> bool:
@@ -797,32 +721,16 @@ func try_double_jump(jump_just_pressed: bool) -> bool:
 	return PlayerAirAbilityServiceScript.try_double_jump(self, jump_just_pressed)
 ## 处理二段跳期间按住跳跃键时的角色旋转效果
 func handle_jump2_rotation(fixed_delta):
-	if warp_flight_active:
-		return
-	# 二段跳期间按住跳跃键保持旋转，但在冲刺、受伤或死亡时停止旋转
-	if current_state != PlayerState.DASH and current_state != PlayerState.HURT and current_state != PlayerState.DIE and has_double_jumped and is_double_jump_holding:
-		# 在二段跳状态下旋转角色
-		jump2_rotation += jump2_rotation_speed * fixed_delta
-		animated_sprite.rotation_degrees = fmod(jump2_rotation, 360)
-	else:
-		# 不在二段跳按住状态时重置旋转
-		if animated_sprite.rotation_degrees != 0:
-			animated_sprite.rotation_degrees = 0
-			jump2_rotation = 0
+	PlayerAirAbilityServiceScript.handle_jump2_rotation(self, fixed_delta)
 
 func can_accept_jumpbox_bounce() -> bool:
-	if is_dying or current_state == PlayerState.DIE:
-		return false
-
-	var now_ms = Time.get_ticks_msec()
-	return now_ms - jumpbox_last_bounce_time_ms >= jumpbox_retrigger_lock_ms
+	return PlayerAirAbilityServiceScript.can_accept_jumpbox_bounce(self)
 
 func mark_double_jump_started() -> void:
-	last_double_jump_started_time_ms = Time.get_ticks_msec()
+	PlayerAirAbilityServiceScript.mark_double_jump_started(self)
 
 func is_recent_double_jump_start(window_sec: float = 0.12) -> bool:
-	var now_ms = Time.get_ticks_msec()
-	return now_ms - last_double_jump_started_time_ms <= int(window_sec * 1000.0)
+	return PlayerAirAbilityServiceScript.is_recent_double_jump_start(self, window_sec)
 
 func _apply_jumpbox_horizontal_speed(base_speed: float, direction: int) -> void:
 	PlayerAirAbilityServiceScript._apply_jumpbox_horizontal_speed(self, base_speed, direction)
@@ -852,86 +760,25 @@ func exit_glide():
 	PlayerAirAbilityServiceScript.exit_glide(self)
 ## 处理角色落地逻辑，重置跳跃、滑翔、冲刺等状态
 func handle_landing():
-	PlayerAirStateServiceScript.apply_landing_state(self)
-	
-	# 检查是否在 DOWN 状态下落地且持续时间足够，使用累计的游戏时间而不是系统时间
-	if current_state == PlayerState.DOWN:
-		if down_state_entry_time >= land_shake_min_down_time:
-			CameraShakeManager.shake("y_strong", phantom_camera)
-	
-	var move_input_ground = Input.get_axis("left", "right")
-	if move_input_ground == 0:
-		change_state(PlayerState.IDLE)
-	else:
-		if is_running:
-			change_state(PlayerState.RUN)
-		else:
-			change_state(PlayerState.MOVE)
+	PlayerAirAbilityServiceScript.handle_landing(self)
 #endregion
 
 ##攀墙墙跳相关函数集
 #region Signals
 func start_normal_jump_from_wall():
-	# 从墙上进行普通跳跃
-	velocity.y = jump_velocity
-	jump_hold_timer = 0.0
-	PlayerAirStateServiceScript.apply_wall_jump_ready_state(self)
-	
-	# 退出攀墙状态
-	exit_wallgrip()
-	change_state(PlayerState.JUMP)
+	PlayerAirAbilityServiceScript.start_normal_jump_from_wall(self)
 
 func start_wall_jump():
-	velocity.y = wall_jump_v_speed
-	velocity.x = wall_jump_h_speed * -wall_direction
-	
-	wall_jump_timer = 0.0
-	wall_jump_hold_timer = 0.0
-	can_reattach_to_wall = false
-	
-	# 重置跳跃状态
-	PlayerAirStateServiceScript.apply_wall_jump_ready_state(self)
-	
-	change_state(PlayerState.WALLJUMP)
+	PlayerAirAbilityServiceScript.start_wall_jump(self)
 
 func update_wall_detection():
-	is_touching_wall = false
-	wall_direction = 0
-	
-	if !can_reattach_to_wall:
-		return
-	# 简化检测：只需要两个射线
-	if left_wall_ray.is_colliding():
-		is_touching_wall = true
-		wall_direction = -1
-	elif right_wall_ray.is_colliding():
-		is_touching_wall = true
-		wall_direction = 1
+	PlayerAirAbilityServiceScript.update_wall_detection(self)
 
 func start_wallgrip():
-	if wall_grip_unlocked and is_touching_wall and !is_on_floor() and can_reattach_to_wall:
-		# 停止反方向跳跃缓冲计时器
-		wall_grip_reverse_timer_node.stop()
-		# 进入攀墙时同步清理滑翔标记，防止状态残留阻塞后续转移。
-		is_gliding = false
-		glide_timer = 0.0
-		# 立即切换状态和动画
-		change_state(PlayerState.WALLGRIP)
-		velocity.y = 0
-		velocity.x = 0
-		has_double_jumped = false
-		can_double_jump = true
-		has_dashed_in_air = false
-		can_glide = false
-		is_double_jump_holding = false
-		was_gliding_before_dash = false
+	PlayerAirAbilityServiceScript.start_wallgrip(self)
 
 func exit_wallgrip():
-	if current_state == PlayerState.WALLGRIP:
-		if velocity.y >= 0:
-			change_state(PlayerState.DOWN)
-		else:
-			change_state(PlayerState.JUMP)
+	PlayerAirAbilityServiceScript.exit_wallgrip(self)
 
 #endregion
 
@@ -941,131 +788,32 @@ func handle_afterimages(fixed_delta):
 	PlayerFeedbackServiceScript.handle_afterimages(self, fixed_delta)
 
 func register_feedback_hook(event_name: StringName, callback: Callable) -> void:
-	if not callback.is_valid():
-		return
-	if not feedback_hooks.has(event_name):
-		feedback_hooks[event_name] = []
-	var callbacks: Array = feedback_hooks[event_name]
-	for existing in callbacks:
-		if existing == callback:
-			return
-	callbacks.append(callback)
-	feedback_hooks[event_name] = callbacks
+	PlayerFeedbackServiceScript.register_feedback_hook(self, event_name, callback)
 
 func unregister_feedback_hook(event_name: StringName, callback: Callable) -> void:
-	if not feedback_hooks.has(event_name):
-		return
-	var callbacks: Array = feedback_hooks[event_name]
-	callbacks = callbacks.filter(func(existing): return existing != callback)
-	if callbacks.is_empty():
-		feedback_hooks.erase(event_name)
-	else:
-		feedback_hooks[event_name] = callbacks
+	PlayerFeedbackServiceScript.unregister_feedback_hook(self, event_name, callback)
 
 func trigger_feedback_event(event_name: StringName, payload: Dictionary = {}) -> void:
-	if not feedback_hooks.has(event_name):
-		return
-	for callback in feedback_hooks[event_name]:
-		if callback is Callable and callback.is_valid():
-			callback.call(payload)
+	PlayerFeedbackServiceScript.trigger_feedback_event(self, event_name, payload)
 
 func return_afterimage(afterimage: Node, _type_name: String = "dash"):
-	if is_instance_valid(afterimage) and afterimage.has_method("return_to_pool"):
-		afterimage.return_to_pool()
+	PlayerFeedbackServiceScript.return_afterimage(self, afterimage, _type_name)
 
 # 新增：根据状态判断残影类型
 func _get_afterimage_type_name(state: PlayerState, is_jumpbox: bool = false) -> String:
-	match state:
-		PlayerState.DASH:
-			return "dash"
-		PlayerState.SUPERDASH:
-			return "super_dash"
-		PlayerState.JUMP:
-			return jumpbox_afterimage_type if is_jumpbox else "dash"
-		_:
-			return "dash"
+	return PlayerFeedbackServiceScript.get_afterimage_type_name(self, state, is_jumpbox)
 
 func create_afterimage(state: PlayerState, is_jumpbox: bool = false, custom_type: String = ""):
-	if Engine.get_frames_per_second() < 45:
-		return
-	
-	if afterimage_trail == null:
-		_ensure_afterimage_trail()
-	if afterimage_trail != null:
-		_create_afterimage_new(state, is_jumpbox, custom_type)
-		trigger_feedback_event(&"afterimage_spawned", {
-			"state": state,
-			"is_jumpbox": is_jumpbox,
-			"custom_type": custom_type
-		})
-	else:
-		push_warning("[Player] 残影系统不可用，跳过残影生成")
+	PlayerFeedbackServiceScript.create_afterimage(self, int(state), is_jumpbox, custom_type)
 
 func _create_afterimage_new(state: PlayerState, is_jumpbox: bool = false, custom_type: String = ""):
-	# ⭐ 确定类型（支持自定义类型）
-	var type_name = custom_type if custom_type != "" else _get_afterimage_type_name(state, is_jumpbox)
-	
-	# ⭐ 关键修复：严格控制残影生成位置（必须是 AnimatedSprite2D 位置）
-	# ⭐ 额外验证：确保位置有效性
-	var spawn_position = global_position
-	if is_instance_valid(animated_sprite):
-		spawn_position = animated_sprite.global_position
-	else:
-		push_warning("[Player] animated_sprite 节点无效，使用 Player 根节点位置")
-	if not spawn_position.is_finite():
-		spawn_position = global_position
-	
-	var current_texture = get_current_frame_texture()
-	if not current_texture:
-		push_error("[Player] 纹理为空！跳过生成")
-		return
-	
-	# ⭐ 关键修复：计算残影移动方向和距离（统一：生成瞬间速度的反方向）
-	var move_direction = Vector2.ZERO
-	# ⭐ 获取玩家当前速度（用于计算残影方向）
-	var player_velocity = get_velocity() if has_method("get_velocity") else Vector2.ZERO
-	
-	# ⭐ 统一规则：所有残影都沿当前速度的反方向漂移
-	if player_velocity != Vector2.ZERO:
-		move_direction = -player_velocity.normalized()
-	else:
-		move_direction = Vector2(-1 if is_facing_right else 1, 0)
-	if not move_direction.is_finite() or move_direction.length_squared() < 0.0001:
-		move_direction = Vector2(-1 if is_facing_right else 1, 0)
-	
-	# ⭐ 生成残影（传递移动参数）
-	var afterimage = null
-	if afterimage_trail != null and afterimage_trail.has_method("spawn"):
-		afterimage = afterimage_trail.spawn(
-			type_name,
-			spawn_position,
-			current_texture,
-			animated_sprite.flip_h,
-			Vector2.ONE * 0.8 if not is_jumpbox else Vector2.ONE,
-			move_direction,
-			-1.0,
-			z_index
-		)
-	else:
-		return
-	
-	if afterimage:
-		afterimage.player_ref = self
-		# ⭐ 关键修复：无需重复设置 Shader 参数（initialize 已设置）
+	PlayerFeedbackServiceScript.create_afterimage(self, int(state), is_jumpbox, custom_type)
 
 func clear_jumpbox_afterimage_pool():
-	# 本地池由 AfterimageTrail 统一管理，这里只重置状态标记。
-	has_jumpbox_afterimage = false
+	PlayerFeedbackServiceScript.clear_jumpbox_afterimage_pool(self)
 
 func get_current_frame_texture() -> Texture2D:
-	if animated_sprite.sprite_frames != null and animated_sprite.animation != "":
-		var frame_count = animated_sprite.sprite_frames.get_frame_count(animated_sprite.animation)
-		if frame_count > 0 and animated_sprite.frame < frame_count:
-			return animated_sprite.sprite_frames.get_frame_texture(
-				animated_sprite.animation, 
-				animated_sprite.frame
-			)
-	return null
+	return PlayerFeedbackServiceScript.get_current_frame_texture(self)
 
 #endregion
 
@@ -1157,8 +905,11 @@ func _update_camera_transition_guard(fixed_delta: float) -> void:
 func sync_camera_after_room_teleport() -> void:
 	PlayerRoomTransitionServiceScript.sync_camera_after_room_teleport(self)
 
-func sync_camera_to_player_center() -> void:
-	PlayerRoomTransitionServiceScript.sync_camera_to_player_center(self)
+func sync_camera_to_player_center(immediate: bool = false) -> void:
+	PlayerRoomTransitionServiceScript.sync_camera_to_player_center(self, immediate)
+
+func sync_room_and_camera_for_respawn(preferred_room_id: String = "", immediate: bool = false) -> void:
+	await PlayerRoomTransitionServiceScript.sync_room_and_camera_for_respawn(self, preferred_room_id, immediate)
 
 ## 门传送等瞬移后调用：同步 PhantomCamera2D 与 Camera2D，修复 FRAMED 死区与视口坐标一帧不一致
 func sync_phantom_camera_after_teleport() -> void:
@@ -1201,23 +952,7 @@ func start_jumpbox_hit_stop(trigger_grade: String = "normal"):
 
 ## 查找VignetteEffect节点
 func find_vignette_effect():
-	# 等待一帧确保所有节点都加载完成
-	await get_tree().process_frame
-	
-	# 通过路径直接获取
-	var vignette = get_node_or_null("/root/MainGameScene/VignetteEffect")
-	if vignette:
-		vignette_effect = vignette
-	else:
-		# 或者通过遍历子节点查找
-		var main_scene = get_tree().current_scene
-		if main_scene:
-			for child in main_scene.get_children():
-				if child.name == "VignetteEffect" or child.is_in_group("vignette_effect"):
-					vignette_effect = child
-					break
-		if not vignette_effect:
-			print("Player: 警告：未找到VignetteEffect节点")
+	await PlayerVisualStateServiceScript.find_vignette_effect(self)
 
 func _debug_camera_damage_state(stage: String, damage_source_position: Vector2, damage: int, damage_type: DamageType, knockback_force: Vector2) -> void:
 	camera_damage_debug_last_log_ms = PlayerCameraDebugServiceScript.log_damage_state(
@@ -1235,30 +970,11 @@ func _debug_camera_jumpbox_state(stage: String, trigger_grade: String, jumpbox_p
 
 ## 启动Vignette普通受伤效果
 func start_vignette_hurt():
-	if vignette_effect and vignette_effect.has_method("start_hurt_effect"):
-		is_hurt_visual_active = true
-		
-		# 从VignetteEffect获取持续时间
-		var duration = vignette_effect.hurt_darkness_duration
-		vignette_effect.start_hurt_effect(duration)
-		# 设置定时器，在受伤效果持续时间结束后处理
-		get_tree().create_timer(duration).timeout.connect(
-			func():
-				# 清除即将受伤标记
-				is_about_to_be_hurt = false
-				_on_hurt_duration_end(false)
-		)
+	PlayerVisualStateServiceScript.start_vignette_hurt(self)
 
 ## 启动Vignette阴影受伤效果
 func start_vignette_shadow_hurt():
-	if vignette_effect and vignette_effect.has_method("start_shadow_hurt_effect"):
-		var duration = vignette_effect.hurt_shadow_darkness_duration
-		vignette_effect.start_shadow_hurt_effect(duration)
-		
-		get_tree().create_timer(duration).timeout.connect(
-			func():
-				_on_hurt_duration_end(true)
-		)
+	PlayerVisualStateServiceScript.start_vignette_shadow_hurt(self)
 
 ## 受伤效果持续时间结束后的处理
 func _on_hurt_duration_end(_is_shadow_hurt: bool):

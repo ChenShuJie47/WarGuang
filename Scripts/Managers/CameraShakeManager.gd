@@ -107,6 +107,7 @@ extends Node
 
 var _active_shakes: Dictionary = {}  # target_pcam -> Array[shake_data]
 var _noise_time: float = 0.0  # 噪声时间累加器
+var _shake_trace_last_ms: int = -1000000
 
 class ShakePreset extends Resource:
 	## 抖动效果预设类
@@ -161,8 +162,11 @@ func shake_custom(params: Dictionary, target_pcam: Node2D) -> void:
 func stop_shake(target_pcam: Node2D) -> void:
 	if _active_shakes.has(target_pcam):
 		_active_shakes.erase(target_pcam)
-		if is_instance_valid(target_pcam) and target_pcam.has_node("PhantomCamera2D"):
-			target_pcam.get_node("PhantomCamera2D").follow_offset = Vector2.ZERO
+		if is_instance_valid(target_pcam):
+			var camera := _get_target_camera(target_pcam)
+			if camera:
+				camera.offset = Vector2.ZERO
+		_debug_shake_trace("stop_shake", target_pcam, {"reason": "explicit_stop"})
 
 # ==================== 内部实现 ====================
 
@@ -268,6 +272,12 @@ func _start_shake(target_pcam: Node2D, params: Dictionary) -> void:
 		"noise_offset_x": randf() * 1000,  # 随机噪声起始点
 		"noise_offset_y": randf() * 1000
 	})
+	_debug_shake_trace("start_shake", target_pcam, {
+		"x_intensity": x_intensity,
+		"y_intensity": y_intensity,
+		"duration": duration,
+		"speed": speed
+	})
 
 func _process_active_shakes(delta):
 	_noise_time += delta  # 累加噪声时间
@@ -319,9 +329,17 @@ func _process_active_shakes(delta):
 			if camera:
 				if not total_offset.is_finite():
 					total_offset = Vector2.ZERO
+				var requested_offset: Vector2 = total_offset
+				total_offset = _clamp_offset_to_camera_limits(camera, total_offset)
 				camera.offset = total_offset
 				if not camera.offset.is_finite():
 					camera.offset = Vector2.ZERO
+				if requested_offset.distance_squared_to(total_offset) > 0.25:
+					_debug_shake_trace("shake_offset_clamped", target_pcam, {
+						"requested": requested_offset,
+						"clamped": total_offset,
+						"camera_pos": camera.global_position
+					})
 				# print("[CameraShake] 应用 viewport Camera2D offset:", total_offset)
 		
 		# 如果没有任何活跃抖动，清理这个 target
@@ -331,6 +349,7 @@ func _process_active_shakes(delta):
 			var camera = _get_target_camera(target_pcam)
 			if camera:
 				camera.offset = Vector2.ZERO
+			_debug_shake_trace("shake_finished", target_pcam)
 
 func _get_falloff_factor(falloff_type: int, progress: float) -> float:
 	## 衰减类型：0=线性，1=快速（二次方），2=缓慢（平方根）
@@ -359,3 +378,68 @@ func _get_target_camera(target_pcam: Node2D) -> Camera2D:
 	if viewport == null:
 		return null
 	return viewport.get_camera_2d()
+
+func _clamp_offset_to_camera_limits(camera: Camera2D, raw_offset: Vector2) -> Vector2:
+	if camera == null:
+		return raw_offset
+	var limit_left: int = camera.limit_left
+	var limit_top: int = camera.limit_top
+	var limit_right: int = camera.limit_right
+	var limit_bottom: int = camera.limit_bottom
+	# 限制被禁用时不做约束。
+	if limit_left <= -9999999 and limit_top <= -9999999 and limit_right >= 9999999 and limit_bottom >= 9999999:
+		return raw_offset
+	var viewport := camera.get_viewport()
+	if viewport == null:
+		return raw_offset
+	var viewport_size: Vector2 = viewport.get_visible_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return raw_offset
+	var zoom: Vector2 = camera.zoom
+	if is_zero_approx(zoom.x) or is_zero_approx(zoom.y):
+		return raw_offset
+	var half_w: float = viewport_size.x * 0.5 / zoom.x
+	var half_h: float = viewport_size.y * 0.5 / zoom.y
+	var min_x: float = float(limit_left) + half_w
+	var max_x: float = float(limit_right) - half_w
+	var min_y: float = float(limit_top) + half_h
+	var max_y: float = float(limit_bottom) - half_h
+	if min_x > max_x:
+		min_x = (float(limit_left) + float(limit_right)) * 0.5
+		max_x = min_x
+	if min_y > max_y:
+		min_y = (float(limit_top) + float(limit_bottom)) * 0.5
+		max_y = min_y
+	var center: Vector2 = camera.global_position
+	if not center.is_finite():
+		return Vector2.ZERO
+	var center_x: float = clampf(center.x, min_x, max_x)
+	var center_y: float = clampf(center.y, min_y, max_y)
+	var dx_min: float = min_x - center_x
+	var dx_max: float = max_x - center_x
+	var dy_min: float = min_y - center_y
+	var dy_max: float = max_y - center_y
+	return Vector2(clampf(raw_offset.x, dx_min, dx_max), clampf(raw_offset.y, dy_min, dy_max))
+
+func _is_shake_debug_enabled(target_pcam: Node2D) -> bool:
+	if not is_instance_valid(target_pcam):
+		return false
+	var player_owner := target_pcam.get_parent()
+	if player_owner == null:
+		return false
+	return bool(player_owner.get("camera_damage_debug"))
+
+func _debug_shake_trace(tag: String, target_pcam: Node2D, payload: Dictionary = {}) -> void:
+	if not _is_shake_debug_enabled(target_pcam):
+		return
+	var now_ms := Time.get_ticks_msec()
+	if tag == "shake_offset_clamped" and now_ms - _shake_trace_last_ms < 100:
+		return
+	_shake_trace_last_ms = now_ms
+	var camera := _get_target_camera(target_pcam)
+	print("[ShakeTrace] ", tag,
+		" room=", RoomManager.current_room if RoomManager else "",
+		" pcam=", target_pcam.global_position if is_instance_valid(target_pcam) else Vector2.ZERO,
+		" cam=", camera.global_position if camera else Vector2.ZERO,
+		" cam_offset=", camera.offset if camera else Vector2.ZERO,
+		" payload=", payload)

@@ -106,8 +106,6 @@ func _on_save_slot_pressed(slot_index: int):
 	
 	if is_dialog_open:
 		return
-		
-	await FadeManager.fade_out(0.15)
 	
 	var save_data = save_slots[slot_index]
 	if save_data.exists:

@@ -48,6 +48,98 @@ static func try_double_jump(player: Node, jump_just_pressed: bool) -> bool:
 
 	return false
 
+static func handle_jump2_rotation(player: Node, fixed_delta: float) -> void:
+	if player.warp_flight_active:
+		return
+	if player.current_state != player.PlayerState.DASH and player.current_state != player.PlayerState.HURT and player.current_state != player.PlayerState.DIE and player.has_double_jumped and player.is_double_jump_holding:
+		player.jump2_rotation += player.jump2_rotation_speed * fixed_delta
+		player.animated_sprite.rotation_degrees = fmod(player.jump2_rotation, 360)
+	else:
+		if player.animated_sprite.rotation_degrees != 0:
+			player.animated_sprite.rotation_degrees = 0
+			player.jump2_rotation = 0
+
+static func can_accept_jumpbox_bounce(player: Node) -> bool:
+	if player.is_dying or player.current_state == player.PlayerState.DIE:
+		return false
+	var now_ms = Time.get_ticks_msec()
+	return now_ms - player.jumpbox_last_bounce_time_ms >= player.jumpbox_retrigger_lock_ms
+
+static func mark_double_jump_started(player: Node) -> void:
+	player.last_double_jump_started_time_ms = Time.get_ticks_msec()
+
+static func is_recent_double_jump_start(player: Node, window_sec: float = 0.12) -> bool:
+	var now_ms = Time.get_ticks_msec()
+	return now_ms - player.last_double_jump_started_time_ms <= int(window_sec * 1000.0)
+
+static func _apply_jumpbox_horizontal_speed(player: Node, base_speed: float, direction: int) -> void:
+	var signed_speed: float = base_speed * player.effective_horizontal_multiplier * direction
+	player.velocity.x = clamp(signed_speed, -player.jumpbox_max_horizontal_speed, player.jumpbox_max_horizontal_speed)
+
+static func handle_landing(player: Node) -> void:
+	PlayerAirStateServiceScript.apply_landing_state(player)
+	if player.current_state == player.PlayerState.DOWN:
+		if player.down_state_entry_time >= player.land_shake_min_down_time:
+			CameraShakeManager.shake("y_strong", player.phantom_camera)
+	var move_input_ground = Input.get_axis("left", "right")
+	if move_input_ground == 0:
+		player.change_state(player.PlayerState.IDLE)
+	else:
+		if player.is_running:
+			player.change_state(player.PlayerState.RUN)
+		else:
+			player.change_state(player.PlayerState.MOVE)
+
+static func start_normal_jump_from_wall(player: Node) -> void:
+	player.velocity.y = player.jump_velocity
+	player.jump_hold_timer = 0.0
+	PlayerAirStateServiceScript.apply_wall_jump_ready_state(player)
+	player.exit_wallgrip()
+	player.change_state(player.PlayerState.JUMP)
+
+static func start_wall_jump(player: Node) -> void:
+	player.velocity.y = player.wall_jump_v_speed
+	player.velocity.x = player.wall_jump_h_speed * -player.wall_direction
+	player.wall_jump_timer = 0.0
+	player.wall_jump_hold_timer = 0.0
+	player.can_reattach_to_wall = false
+	PlayerAirStateServiceScript.apply_wall_jump_ready_state(player)
+	player.change_state(player.PlayerState.WALLJUMP)
+
+static func update_wall_detection(player: Node) -> void:
+	player.is_touching_wall = false
+	player.wall_direction = 0
+	if not player.can_reattach_to_wall:
+		return
+	if player.left_wall_ray.is_colliding():
+		player.is_touching_wall = true
+		player.wall_direction = -1
+	elif player.right_wall_ray.is_colliding():
+		player.is_touching_wall = true
+		player.wall_direction = 1
+
+static func start_wallgrip(player: Node) -> void:
+	if player.wall_grip_unlocked and player.is_touching_wall and not player.is_on_floor() and player.can_reattach_to_wall:
+		player.wall_grip_reverse_timer_node.stop()
+		player.is_gliding = false
+		player.glide_timer = 0.0
+		player.change_state(player.PlayerState.WALLGRIP)
+		player.velocity.y = 0
+		player.velocity.x = 0
+		player.has_double_jumped = false
+		player.can_double_jump = true
+		player.has_dashed_in_air = false
+		player.can_glide = false
+		player.is_double_jump_holding = false
+		player.was_gliding_before_dash = false
+
+static func exit_wallgrip(player: Node) -> void:
+	if player.current_state == player.PlayerState.WALLGRIP:
+		if player.velocity.y >= 0:
+			player.change_state(player.PlayerState.DOWN)
+		else:
+			player.change_state(player.PlayerState.JUMP)
+
 # 进入滑翔状态时清理移动计时和初速度。
 static func start_glide(player: Node) -> void:
 	player.is_gliding = true
@@ -213,7 +305,3 @@ static func clear_jumpbox_effect(player: Node) -> void:
 
 	player.is_jumpbox_continuous_jump = false
 	player.is_jump_interrupt_decaying = false
-
-static func _apply_jumpbox_horizontal_speed(player: Node, base_speed: float, direction: int) -> void:
-	var signed_speed: float = base_speed * player.effective_horizontal_multiplier * direction
-	player.velocity.x = clamp(signed_speed, -player.jumpbox_max_horizontal_speed, player.jumpbox_max_horizontal_speed)

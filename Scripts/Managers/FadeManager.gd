@@ -39,3 +39,13 @@ func fade_in(duration: float):
 func force_fade_in():
 	fade_rect.color = Color(0, 0, 0, 0)
 	fade_rect.visible = false
+
+func get_black_alpha() -> float:
+	if not is_instance_valid(fade_rect):
+		return 0.0
+	return clampf(fade_rect.color.a, 0.0, 1.0)
+
+func is_fully_black(threshold: float = 0.995) -> bool:
+	if not is_instance_valid(fade_rect):
+		return false
+	return fade_rect.visible and get_black_alpha() >= clampf(threshold, 0.0, 1.0)

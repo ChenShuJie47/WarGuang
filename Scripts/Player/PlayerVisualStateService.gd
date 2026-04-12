@@ -1,6 +1,51 @@
 extends RefCounted
 class_name PlayerVisualStateService
 
+static func find_vignette_effect(player: Node) -> void:
+	# 等待一帧确保所有节点都加载完成
+	await player.get_tree().process_frame
+
+	# 通过路径直接获取
+	var vignette = player.get_node_or_null("/root/MainGameScene/VignetteEffect")
+	if vignette:
+		player.vignette_effect = vignette
+		return
+
+	# 或者通过遍历子节点查找
+	var main_scene = player.get_tree().current_scene
+	if main_scene:
+		for child in main_scene.get_children():
+			if child.name == "VignetteEffect" or child.is_in_group("vignette_effect"):
+				player.vignette_effect = child
+				break
+	if not player.vignette_effect:
+		print("Player: 警告：未找到VignetteEffect节点")
+
+static func start_vignette_hurt(player: Node) -> void:
+	if player.vignette_effect and player.vignette_effect.has_method("start_hurt_effect"):
+		player.is_hurt_visual_active = true
+
+		# 从VignetteEffect获取持续时间
+		var duration = player.vignette_effect.hurt_darkness_duration
+		player.vignette_effect.start_hurt_effect(duration)
+		# 设置定时器，在受伤效果持续时间结束后处理
+		player.get_tree().create_timer(duration).timeout.connect(
+			func():
+				# 清除即将受伤标记
+				player.is_about_to_be_hurt = false
+				player._on_hurt_duration_end(false)
+		)
+
+static func start_vignette_shadow_hurt(player: Node) -> void:
+	if player.vignette_effect and player.vignette_effect.has_method("start_shadow_hurt_effect"):
+		var duration = player.vignette_effect.hurt_shadow_darkness_duration
+		player.vignette_effect.start_shadow_hurt_effect(duration)
+
+		player.get_tree().create_timer(duration).timeout.connect(
+			func():
+				player._on_hurt_duration_end(true)
+		)
+
 static func on_hurt_duration_end(player: Node, _is_shadow_hurt: bool) -> void:
 	if not player.vignette_effect:
 		return

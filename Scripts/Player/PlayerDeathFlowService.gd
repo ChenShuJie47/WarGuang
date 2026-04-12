@@ -41,10 +41,10 @@ static func start_death_process(player: Node) -> void:
 	player.global_position = Global.get_save_point_position()
 	player.reset_player_for_respawn()
 	# 黑屏期内先同步复活点房间与相机限制，再完成居中归位。
-	await PlayerRoomTransitionService.sync_room_and_camera_for_respawn(player)
+	await PlayerRoomTransitionService.sync_room_and_camera_for_respawn(player, "", true)
 	# 额外等待一帧并再次居中，防止限制异步刷新覆盖首帧对齐。
 	await player.get_tree().process_frame
-	PlayerRoomTransitionService.sync_camera_to_player_center(player)
+	PlayerRoomTransitionService.sync_camera_to_player_center(player, true)
 	await FadeManager.fade_in(player.fade_transition_time / 2)
 
 	player.get_tree().create_timer(0.5).timeout.connect(func():
