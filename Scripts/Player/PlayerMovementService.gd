@@ -92,6 +92,58 @@ static func handle_dash_timers(player: Node, fixed_delta: float) -> void:
 				else:
 					player.change_state(player.PlayerState.DOWN)
 
+static func _check_game_pause_state(player: Node) -> bool:
+	if player.is_in_dialogue:
+		return true
+	var game_setting_nodes = player.get_tree().get_nodes_in_group("game_setting_scene")
+	if game_setting_nodes.size() > 0:
+		for node in game_setting_nodes:
+			if node.visible:
+				return true
+	if player.get_tree().paused:
+		return true
+	return false
+
+static func update_timer_with_pause(_player: Node, timer_ref: float, fixed_delta: float, is_paused: bool = false) -> float:
+	if is_paused:
+		return timer_ref
+	return timer_ref + fixed_delta
+
+static func apply_gravity(player: Node, fixed_delta: float) -> void:
+	if player.current_state == player.PlayerState.WALLGRIP:
+		return
+	if player.current_state == player.PlayerState.GLIDE and player.glide_timer <= player.glide_hover_time:
+		player.velocity.y = min(player.velocity.y, 0.0)
+		return
+	if player.is_jump_interrupt_decaying:
+		return
+	player.velocity.y += player.gravity * player.effective_gravity_multiplier * fixed_delta
+	player.velocity.y = min(player.velocity.y, player.effective_max_fall_speed)
+
+static func update_coyote_time(player: Node) -> void:
+	if player.was_on_floor and not player.is_on_floor() and player.velocity.y >= 0 and not player.is_jumping:
+		player.coyote_time_active = true
+		player.coyote_timer.start(player.coyote_time)
+		if not player.is_jumping:
+			player.can_compensation_jump = true
+			player.compensation_jump_used = false
+	if player.is_on_floor():
+		player.coyote_time_active = false
+		player.has_double_jumped = false
+		player.can_double_jump = false
+		player.can_compensation_jump = false
+		player.compensation_jump_used = false
+		player.is_jumping = false
+		player.is_run_jumping = false
+		player.has_dashed_in_air = false
+		player.can_glide = false
+		player.is_double_jump_holding = false
+		player.was_gliding_before_dash = false
+		player.wall_grip_reverse_timer_node.stop()
+		player.jump_buffer_after_dash = false
+		player.jump_buffer_type = 0
+	player.was_on_floor = player.is_on_floor()
+
 # 处理冲刺输入和冲刺进入条件。
 static func try_dash(player: Node, dash_just_pressed: bool) -> bool:
 	if dash_just_pressed and player.can_dash and player.dash_unlocked:
@@ -106,6 +158,8 @@ static func try_dash(player: Node, dash_just_pressed: bool) -> bool:
 			if player.has_dashed_in_air:
 				return false
 			player.has_dashed_in_air = true
+
+		player.dash_locked_direction = 1 if player.is_facing_right else -1
 
 		player.change_state(player.PlayerState.DASH)
 		player.can_dash = false
@@ -231,7 +285,10 @@ static func handle_run_state(player: Node, _delta: float, move_input: float, jum
 
 # 处理基础冲刺状态的速度锁定。
 static func handle_dash_state(player: Node) -> void:
-	var dash_direction = 1 if player.is_facing_right else -1
+	var dash_direction: int = player.dash_locked_direction
+	if dash_direction == 0:
+		dash_direction = 1 if player.is_facing_right else -1
+		player.dash_locked_direction = dash_direction
 	player.velocity.x = dash_direction * player.dash_speed
 	player.velocity.y = 0
 

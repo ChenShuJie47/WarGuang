@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bgd4cnk4b8qrx" path="res://Scripts/GameScenes/MainGameScene.gd" id="1_dcv5v"]
 [ext_resource type="PackedScene" uid="uid://dwj2ydwabq3n0" path="res://Scenes/Player/Player.tscn" id="1_wdg0h"]
-[ext_resource type="PackedScene" uid="uid://kkrfw8yl08js" path="res://Scenes/Player/PlayerUI.tscn" id="2_4xi3m"]
+[ext_resource type="PackedScene" uid="uid://kkrfw8yl08js" path="res://Scenes/Player/PlayerUI/PlayerUI.tscn" id="2_4xi3m"]
 [ext_resource type="PackedScene" uid="uid://dmmevbmmo24d7" path="res://Scenes/GameScenes/Room1.tscn" id="3_mvl1i"]
 [ext_resource type="PackedScene" uid="uid://dbiq0bp6upwiq" path="res://Scenes/GameScenes/Room2.tscn" id="4_mvl1i"]
 [ext_resource type="PackedScene" uid="uid://cytmqowp6nqi7" path="res://Scenes/GameScenes/Room3.tscn" id="5_545fw"]
@@ -25,7 +25,6 @@ environment = SubResource("Environment_jbabp")
 physics_interpolation_mode = 1
 position = Vector2(367, -77)
 zoom = Vector2(2, 2)
-process_callback = 0
 limit_enabled = false
 position_smoothing_speed = 8.0
 

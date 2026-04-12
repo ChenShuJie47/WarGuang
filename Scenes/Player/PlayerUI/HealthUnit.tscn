@@ -1,6 +1,6 @@
 [gd_scene load_steps=34 format=3 uid="uid://h0kyvxadfyys"]
 
-[ext_resource type="Script" uid="uid://dlnhn12wstg44" path="res://Scripts/Player/HealthUnit.gd" id="1_ddyvn"]
+[ext_resource type="Script" uid="uid://dlnhn12wstg44" path="res://Scripts/Player/PlayerUI/HealthUnit.gd" id="1_ddyvn"]
 [ext_resource type="Texture2D" uid="uid://bf4x7jhte0y3x" path="res://Assets/Textures/Warmas/血量UI.png" id="2_40jfk"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l0nrl"]

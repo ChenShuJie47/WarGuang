@@ -74,10 +74,17 @@ func start_game_from_save(slot_index: int, fade_duration: float = 1.0):
 	if task_manager and task_manager.has_method("reset_for_scene_load"):
 		task_manager.reset_for_scene_load()
 	
-	# 带转场效果进入游戏
-	await switch_scene("res://Scenes/GameScenes/MainGameScene.tscn", fade_duration)
-	
-	# 等待场景加载完成
+	# 存档进游戏采用专用流程：先全黑切场景，等待主场景相机就绪后再淡入。
+	await FadeManager.fade_out(fade_duration)
+	await AudioManager.play_bgm("BGM1", fade_duration)
+	get_tree().change_scene_to_file("res://Scenes/GameScenes/MainGameScene.tscn")
+	await get_tree().process_frame
+	var main_scene = get_tree().current_scene
+	if main_scene and main_scene.has_method("wait_until_boot_visual_ready"):
+		await main_scene.wait_until_boot_visual_ready()
+	await FadeManager.fade_in(fade_duration)
+
+	# 等待一帧让淡入后的状态稳定
 	await get_tree().process_frame
 	
 	# 确保 DialogueManager 重置

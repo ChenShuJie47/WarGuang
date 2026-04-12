@@ -92,7 +92,7 @@ static func finalize_post_physics(player: Node, fixed_delta: float, move_input: 
 	player.handle_afterimages(fixed_delta)
 	player.handle_jump2_rotation(fixed_delta)
 
-	if move_input != 0 and player.current_state != player.PlayerState.DIE and player.current_state != player.PlayerState.HURT:
+	if move_input != 0 and player.current_state != player.PlayerState.DIE and player.current_state != player.PlayerState.HURT and player.current_state != player.PlayerState.DASH:
 		if player.current_state == player.PlayerState.SUPERDASHSTART or player.current_state == player.PlayerState.SUPERDASH:
 			pass
 		else:
