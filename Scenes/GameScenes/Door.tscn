@@ -3,12 +3,10 @@
 [ext_resource type="Script" uid="uid://boplah23edai1" path="res://Scripts/GameScenes/Door.gd" id="1_sr1d7"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3gasd"]
-size = Vector2(24, 20)
+size = Vector2(48, 64)
 
 [node name="Door" type="Area2D"]
 script = ExtResource("1_sr1d7")
-use_non_instant_camera_follow_test = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-scale = Vector2(2, 4)
 shape = SubResource("RectangleShape2D_3gasd")

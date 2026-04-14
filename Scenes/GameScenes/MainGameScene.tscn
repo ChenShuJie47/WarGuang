@@ -23,7 +23,7 @@ environment = SubResource("Environment_jbabp")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 physics_interpolation_mode = 1
-position = Vector2(367, -77)
+position = Vector2(602, -158)
 zoom = Vector2(2, 2)
 limit_enabled = false
 position_smoothing_speed = 8.0
@@ -38,17 +38,17 @@ script = ExtResource("18_iaaki")
 [node name="Room1" parent="RoomContainer" instance=ExtResource("3_mvl1i")]
 
 [node name="Room2" parent="RoomContainer" instance=ExtResource("4_mvl1i")]
-position = Vector2(3676, -17)
+position = Vector2(7636, 489)
 
 [node name="Room3" parent="RoomContainer" instance=ExtResource("5_545fw")]
-position = Vector2(-2777, -1)
+position = Vector2(-1743, 197)
 
 [node name="Room4" parent="RoomContainer" instance=ExtResource("6_rbrij")]
-position = Vector2(-5788, -949)
+position = Vector2(294, 1693)
 room_color = Color(0.9884812, 0.6002661, 0.71938556, 0.64705884)
 
 [node name="Player" parent="." instance=ExtResource("1_wdg0h")]
-position = Vector2(367, -77)
+position = Vector2(602, -158)
 
 [node name="PlayerUI" parent="." instance=ExtResource("2_4xi3m")]
 health_unit_spacing = 70.0

@@ -45,7 +45,7 @@ func _interact_with_chair():
 	var current_room_id = RoomManager.current_room
 	
 	# 设置存档点，包含房间ID
-	Global.set_save_point(global_position, save_point_id, "res://Scenes/GameScenes/MainGameScene.tscn")
+	Global.set_save_point(global_position, save_point_id, ScenePaths.GAME_MAIN)
 	
 	# 记录当前房间到全局数据（需要扩展Global）
 	Global.last_save_room = current_room_id

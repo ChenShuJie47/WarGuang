@@ -179,7 +179,7 @@ func load_save_data(data: Dictionary):
 		else:
 			last_save_point["position"] = save_point_data.get("position", Vector2(0, 0))
 		
-		last_save_point["scene_path"] = save_point_data.get("scene_path", "res://Scenes/GameScenes/MainGameScene.tscn")
+		last_save_point["scene_path"] = save_point_data.get("scene_path", ScenePaths.GAME_MAIN)
 		last_save_point["save_point_id"] = save_point_data.get("save_point_id", "start_point")
 
 	# 关键：确保房间落点来自该存档槽本身
@@ -302,7 +302,7 @@ func is_item_collected(item_id: String) -> bool:
 	return item_id in collected_items
 
 ## 设置静态存档点（玩家主动存档）
-func set_save_point(position: Vector2, save_point_id: String = "default_chair", scene_path: String = "res://Scenes/GameScenes/MainGameScene.tscn"):
+func set_save_point(position: Vector2, save_point_id: String = "default_chair", scene_path: String = ScenePaths.GAME_MAIN):
 	last_save_point["position"] = position
 	last_save_point["scene_path"] = scene_path
 	last_save_point["save_point_id"] = save_point_id

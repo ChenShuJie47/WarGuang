@@ -32,9 +32,13 @@ func _initialize_pool():
 
 func _create_afterimage_instance() -> Node2D:
 	# 创建单个残影实例
-	var scene_path = "res://Scenes/Instances/Afterimage.tscn"
+	var scene_path: String = ScenePaths.PLAYER_AFTERIMAGE
 	if ResourceLoader.exists(scene_path):
-		return preload("res://Scenes/Instances/Afterimage.tscn").instantiate()
+		var scene: PackedScene = load(scene_path)
+		if scene:
+			return scene.instantiate()
+		push_error("残影场景加载失败：" + scene_path)
+		return null
 	else:
 		push_error("残影场景不存在：" + scene_path)
 		return null
