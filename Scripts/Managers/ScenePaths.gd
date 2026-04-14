@@ -19,8 +19,9 @@ const UI_DARK_OVERLAY = "res://Scenes/Managers/DarkOverlay.tscn"
 # ============================================
 # 玩家相关场景
 # ============================================
-const PLAYER_HEALTH_UNIT = "res://Scenes/Player/HealthUnit.tscn"
-const PLAYER_UI = "res://Scenes/Player/PlayerUI.tscn"
+const PLAYER_UI_DIR = "res://Scenes/Player/PlayerUI"
+const PLAYER_HEALTH_UNIT = PLAYER_UI_DIR + "/HealthUnit.tscn"
+const PLAYER_UI = PLAYER_UI_DIR + "/PlayerUI.tscn"
 const PLAYER_AFTERIMAGE = "res://Scenes/Instances/Afterimage.tscn"
 
 # ============================================

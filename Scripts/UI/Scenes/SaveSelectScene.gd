@@ -13,9 +13,9 @@ var save_slots = []  ## 存档槽数据数组，存储每个槽位的存档信�
 var delete_button_connections = []  ## 删除按钮连接状态数组，记录每个删除按钮是否已连接信号
 var is_dialog_open: bool = false  ## 删除确认对话框是否打开状态
 
-var esc_cooldown: bool = false  ## ESC键防重复触发冷却状态
-var esc_timer: Timer  ## ESC键防重复触发计时器
-var esc_initial_cooldown: bool = true  ## ESC键初始冷却状态（新增：场景开始后0.1秒内不接受ESC输入）
+var _scene_input_locked: bool = true
+
+@onready var ui_transition_animator: UITransitionAnimator = $UITransitionAnimator
 
 @onready var save_slot_buttons = [
 	$SaveSlot1,
@@ -28,35 +28,25 @@ func _ready():
 	for i in range(3):
 		delete_button_connections[i] = false
 	
-	## 创建ESC冷却计时器（防止快速重复触发）
-	esc_timer = Timer.new()
-	esc_timer.wait_time = 0.1
-	esc_timer.one_shot = true
-	esc_timer.timeout.connect(_enable_esc)
-	add_child(esc_timer)
-	
 	_load_save_data()
 	_connect_signals()
 	_update_slot_display()
+	_set_scene_input_locked(true)
+	if ui_transition_animator:
+		ui_transition_animator.reset_state()
 	
 	$BackButton.pressed.connect(_on_back_button_pressed)
-	FadeManager.fade_in(0.1)
+	if not ui_transition_animator:
+		FadeManager.fade_in(FadeManager.ui_overlay_fast_fade_duration)
+		_set_scene_input_locked(false)
+	else:
+		if FadeManager and FadeManager.has_method("get_black_alpha") and FadeManager.get_black_alpha() <= 0.01:
+			call_deferred("_on_scene_transition_enter_begin")
 	
 	await get_tree().create_timer(0.1).timeout
 	
 	## 修改：调用LightingManager的统一函数
 	LightingManager.setup_ui_breathing_effect(self)
-	
-	## 新增：延迟0.1秒后启用ESC键（模拟SettingsScene的初始冷却机制）
-	get_tree().create_timer(0.1).timeout.connect(_enable_initial_esc)
-
-## 新增：启用初始ESC键输入
-func _enable_initial_esc():
-	esc_initial_cooldown = false
-
-## 启用ESC键（用于防重复触发机制）
-func _enable_esc():
-	esc_cooldown = false
 
 ## 加载存档数据
 func _load_save_data():
@@ -102,30 +92,26 @@ func _update_slot_display():
 
 ## 处理存档槽按钮按下
 func _on_save_slot_pressed(slot_index: int):
+	if _scene_input_locked:
+		return
 	AudioManager.play_sfx("button_click")
 	
 	if is_dialog_open:
 		return
+
+	_set_scene_input_locked(true)
+	if ui_transition_animator:
+		await ui_transition_animator.play_exit_transition()
 	
-	var save_data = save_slots[slot_index]
-	if save_data.exists:
-		await SceneManager.start_game_from_save(slot_index, 1.5)
-	else:
-		Global.current_save_slot = slot_index
-		Global.initialize_new_game()
-		SaveManager.save_game(slot_index, Global.get_save_data())
-		await SceneManager.switch_scene("res://Scenes/GameScenes/MainGameScene.tscn", 1.5)
+	await SceneManager.start_game_from_save(slot_index)
 
 ## 处理输入事件（新增ESC键初始冷却检查）
 func _input(event):
-	if event.is_action_pressed("ui_cancel") and not esc_cooldown and not is_dialog_open:
-		## 检查初始冷却状态
-		if esc_initial_cooldown:
-			print("SaveSelectScene: ESC键仍在初始冷却中")
-			return
-			
-		esc_cooldown = true
-		esc_timer.start()
+	if _scene_input_locked:
+		if event is InputEventKey or event is InputEventMouseButton or event is InputEventJoypadButton:
+			get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("ui_cancel") and not is_dialog_open:
 		_on_back_button_pressed()
 
 ## 处理删除按钮按下
@@ -171,14 +157,33 @@ func _on_confirm_delete(slot_index: int):
 
 ## 处理返回按钮按下
 func _on_back_button_pressed():
+	if _scene_input_locked:
+		return
 	AudioManager.play_sfx("button_click")
 	
 	if is_dialog_open:
 		return
+
+	_set_scene_input_locked(true)
+	if ui_transition_animator:
+		await ui_transition_animator.play_exit_transition()
 		
 	LightingManager.stop_all_light_effects()
-	await SceneManager.switch_scene("res://Scenes/UI/Scenes/TitleScene.tscn", 0.15)
+	await SceneManager.switch_scene(ScenePaths.UI_TITLE)
 
 ## 退出场景时停止灯光效果
 func _exit_tree():
 	LightingManager.stop_all_light_effects()
+
+func is_scene_interaction_locked() -> bool:
+	return _scene_input_locked
+
+func _set_scene_input_locked(locked: bool) -> void:
+	_scene_input_locked = locked
+	_set_buttons_enabled(not locked)
+
+func _on_scene_transition_enter_begin() -> void:
+	_set_scene_input_locked(true)
+	if ui_transition_animator:
+		await ui_transition_animator.play_enter_transition()
+	_set_scene_input_locked(false)

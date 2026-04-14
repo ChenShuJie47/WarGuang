@@ -1,7 +1,8 @@
-[gd_scene load_steps=15 format=3 uid="uid://cnx8rqa13bm26"]
+[gd_scene load_steps=20 format=3 uid="uid://cnx8rqa13bm26"]
 
 [ext_resource type="Script" uid="uid://2jv58grmryqa" path="res://Scripts/UI/Scenes/TitleScene.gd" id="1_25ulu"]
 [ext_resource type="PackedScene" uid="uid://8vv4frjt0qmt" path="res://Scenes/UI/Scenes/SettingsScene.tscn" id="2_fkiff"]
+[ext_resource type="Script" uid="uid://c6yjpi17utwg8" path="res://Scripts/UI/Scenes/UITransitionAnimator.gd" id="2_transition_animator"]
 [ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="3_oeyvi"]
 [ext_resource type="Texture2D" uid="uid://cy2yuswokrtcg" path="res://Assets/Textures/Backgrounds/2.png" id="4_oeyvi"]
 [ext_resource type="Texture2D" uid="uid://bnf2wds016uy8" path="res://Assets/Textures/UIs/SceneUIs/场景UI集.png" id="5_oeyvi"]
@@ -15,9 +16,37 @@
 [ext_resource type="Texture2D" uid="uid://cjc0lbil1c0sw" path="res://Assets/Textures/UIs/SceneUIs/退出游戏3.tres" id="13_u4xyb"]
 [ext_resource type="Texture2D" uid="uid://bn8vn843wolho" path="res://Assets/Textures/UIs/SceneUIs/退出游戏2.tres" id="14_lnewd"]
 
+[sub_resource type="Animation" id="Animation_material_enter"]
+resource_name = "material_enter"
+length = 0.4
+
+[sub_resource type="Animation" id="Animation_material_exit"]
+resource_name = "material_exit"
+length = 0.4
+
+[sub_resource type="Animation" id="Animation_material_loop"]
+resource_name = "material_loop"
+loop_mode = 1
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_external_material"]
+_data = {
+&"material_enter": SubResource("Animation_material_enter"),
+&"material_exit": SubResource("Animation_material_exit"),
+&"material_loop": SubResource("Animation_material_loop")
+}
+
 [node name="TitleScene" type="CanvasLayer"]
 script = ExtResource("1_25ulu")
 settings_scene_resource = ExtResource("2_fkiff")
+
+[node name="UITransitionAnimator" type="Node" parent="."]
+script = ExtResource("2_transition_animator")
+extra_target_paths = Array[NodePath]([NodePath("../UI")])
+
+[node name="ExternalMaterialAnimator" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_external_material")
+}
 
 [node name="CanvasModulate" type="CanvasModulate" parent="."]
 color = Color(0.8239239, 0.82392395, 0.8239239, 1)
@@ -38,7 +67,7 @@ region_enabled = true
 region_rect = Rect2(0, 0, 512, 288)
 
 [node name="Title" type="Sprite2D" parent="."]
-position = Vector2(648.00006, 137.99998)
+position = Vector2(671, 138)
 scale = Vector2(2.5, 2.5)
 texture = ExtResource("5_oeyvi")
 region_enabled = true
@@ -50,13 +79,14 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -183.0
-offset_top = -115.0
-offset_right = -55.0
-offset_bottom = -11.0
+offset_left = -59.0
+offset_top = -35.0
+offset_right = 69.0
+offset_bottom = 69.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(2.5, 2.5)
+pivot_offset = Vector2(64.8, 48.799995)
 alignment = 1
 
 [node name="StartButton" type="TextureButton" parent="UI"]

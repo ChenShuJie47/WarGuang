@@ -25,31 +25,34 @@ region_enabled = true
 region_rect = Rect2(9, 169, 158, 110)
 
 [node name="ContinueButton" type="TextureButton" parent="."]
-offset_left = 712.0
-offset_top = 155.0
-offset_right = 730.6667
-offset_bottom = 171.0
+offset_left = 724.0
+offset_top = 181.0
+offset_right = 742.6667
+offset_bottom = 197.0
 scale = Vector2(3, 3)
+pivot_offset = Vector2(9.333328, 8)
 texture_normal = ExtResource("4_urdrt")
 texture_pressed = ExtResource("5_hmv1b")
 texture_hover = ExtResource("6_2syoe")
 
 [node name="SettingsButton" type="TextureButton" parent="."]
-offset_left = 464.00003
-offset_top = 208.00002
-offset_right = 512.0
-offset_bottom = 224.00002
+offset_left = 531.0
+offset_top = 241.00002
+offset_right = 579.0
+offset_bottom = 257.0
 scale = Vector2(3, 3)
+pivot_offset = Vector2(23.666656, 7.9999924)
 texture_normal = ExtResource("7_1r1p8")
 texture_pressed = ExtResource("8_g4qhq")
 texture_hover = ExtResource("9_fnua2")
 
 [node name="MainMenuButton" type="TextureButton" parent="."]
-offset_left = 512.0
-offset_top = 296.0
-offset_right = 560.0
-offset_bottom = 312.0
+offset_left = 531.0
+offset_top = 331.0
+offset_right = 579.0
+offset_bottom = 347.0
 scale = Vector2(3, 3)
+pivot_offset = Vector2(24.333328, 8)
 texture_normal = ExtResource("10_kd82h")
 texture_pressed = ExtResource("11_eq7uf")
 texture_hover = ExtResource("12_bmvyg")

@@ -102,40 +102,40 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 跳跃移动速度（像素/秒）
 @export var jump_move_speed: float = 140.0
 ## 一段跳初始速度
-@export var jump_velocity: float = -140.0
+@export var jump_velocity: float = -120.0
 ## 二段跳初始速度
-@export var double_jump_velocity: float = -120.0
+@export var double_jump_velocity: float = -80.0
 ## 最大跳跃按住时间（秒）
-@export var max_jump_hold_time: float = 0.23
+@export var max_jump_hold_time: float = 0.25
 ## 跳跃额外速度（长按期间每帧增加）
 @export var jump_hold_boost: float = -35.0
 ## 重力
 @export var gravity: float = 1300.0
 ## 最大下落速度
-@export var max_fall_speed: float = 480.0
+@export var max_fall_speed: float = 500.0
 ## 土狼时间（离开平台后仍可跳跃的时间）
 @export var coyote_time: float = 0.2
 ## 跳跃缓冲时间（提前按跳跃的有效时间）
 @export var jump_buffer_time: float = 0.15
 ## 触发落地抖动的最小DOWN状态持续时间
-@export var land_shake_min_down_time: float = 0.9
+@export var land_shake_min_down_time: float = 1.2
 
 ## 滑翔设置
 @export_category("滑翔设置")
 ## 进入滑翔的初始水平速度
 @export var glide_init_h_speed: float = 0.0
 ## 滑翔目标水平速度
-@export var glide_target_h_speed: float = 160.0
+@export var glide_target_h_speed: float = 180.0
 ## 滑翔水平加速度（按住方向键时每秒逼近目标水平速度的最大变化率，单位近似 px/s^2）
-@export var glide_horizontal_acceleration: float = 500.0
+@export var glide_horizontal_acceleration: float = 600.0
 ## 滑翔松开方向键时的水平减速（松手后的缓慢衰减速率）
 @export var glide_release_deceleration: float = 80.0
 ## 滑翔最大下落速度乘数
-@export var glide_max_fall_multiplier: float = 0.25
+@export var glide_max_fall_multiplier: float = 0.3
 ## 进入滑翔后的滞空时间（秒）- 期间下落速度上限为 0
-@export var glide_hover_time: float = 0.3
+@export var glide_hover_time: float = 0.2
 ## 滑翔下落倍率过渡时间（秒）- 进入滑翔后线性增加
-@export var glide_fall_accel_time: float = 0.9
+@export var glide_fall_accel_time: float = 0.8
 
 ## 受伤设置
 @export_category("受伤设置")
@@ -152,13 +152,13 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 传送伤害飞行最低速度（像素/秒）
 @export var warp_flight_min_speed: float = 50.0
 ## 传送伤害飞行第一段上升距离（像素）
-@export var warp_flight_lift_distance: float = 60.0
+@export var warp_flight_lift_distance: float = 64.0
 ## 传送伤害飞行第一段上升速度（像素/秒）
-@export var warp_flight_lift_speed: float = 150.0
+@export var warp_flight_lift_speed: float = 120.0
 ## 传送伤害分段停滞时间（秒）
 @export var warp_flight_phase_pause_time: float = 0.5
 ## 传送伤害飞行目标点向上偏移（像素）
-@export var warp_flight_target_height_offset: float = 50.0
+@export var warp_flight_target_height_offset: float = 32.0
 ## 传送伤害飞行抵达判定距离（像素）
 @export var warp_flight_arrive_epsilon: float = 2.0
 
@@ -176,11 +176,11 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 冲刺设置
 @export_category("冲刺设置")
 ## 冲刺速度
-@export var dash_speed: float = 450.0
+@export var dash_speed: float = 420.0
 ## 冲刺持续时间（秒）
-@export var dash_duration: float = 0.18
+@export var dash_duration: float = 0.2
 ## 黑色冲刺持续时间（秒）
-@export var black_dash_duration: float = 0.21
+@export var black_dash_duration: float = 0.23
 ## 冲刺冷却时间（秒）
 @export var dash_cooldown: float = 0.6
 ## 冲刺后惯性初速度
@@ -194,11 +194,11 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 超级冲刺目标速度
 @export var super_dash_speed: float = 550
 ## 超级冲刺加速时间（秒）
-@export var super_dash_accel_time: float = 0.5
+@export var super_dash_accel_time: float = 0.6
 ## 超级冲刺输入锁定时间（秒）
 @export var super_dash_input_lock_time: float = 0.2
 ## 超级冲刺最大持续时间（秒）
-@export var super_dash_max_duration: float = 5
+@export var super_dash_max_duration: float = 4
 
 ## 奔跑设置
 @export_category("奔跑设置")
@@ -212,9 +212,9 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 奔跑跳跃设置
 @export_category("奔跑跳跃设置")
 ## 奔跑跳跃水平速度加成
-@export var run_jump_boost_speed: float = 140.0
+@export var run_jump_boost_speed: float = 120.0
 ## 奔跑跳跃加成持续时间（秒）
-@export var run_jump_boost_duration: float = 0.5
+@export var run_jump_boost_duration: float = 0.6
 ## 奔跑跳跃衰减时间（秒）
 @export var run_jump_decay_time: float = 0.3
 
@@ -225,17 +225,17 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 
 @export_category("二段跳残影特殊效果设置")
 ## 水平速度加成（增加到基础移动速度上）
-@export var jump2_horizontal_boost: float = 260.0
+@export var jump2_horizontal_boost: float = 240.0
 ## 水平速度加成持续时间（秒）
-@export var jump2_boost_duration: float = 0.5
+@export var jump2_boost_duration: float = 0.6
 ## 水平速度加成减少过渡时间（秒）
-@export var jump2_boost_decrease_time: float = 0.4
+@export var jump2_boost_decrease_time: float = 0.3
 ## 打断 JumpBox 持续二段跳后的垂直速度衰减时间（秒）
 @export var jump2_interrupt_decay_time: float = 0.1
 ## JumpBox 重新触发锁定时间（毫秒）
 @export var jumpbox_retrigger_lock_ms: int = 120
 ## JumpBox 单次触发的最大上抛力（像素/秒）
-@export var jumpbox_max_vertical_force: float = 700.0
+@export var jumpbox_max_vertical_force: float = 600.0
 ## JumpBox 水平速度上限（像素/秒）
 @export var jumpbox_max_horizontal_speed: float = 420.0
 
@@ -257,15 +257,15 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 
 @export_category("墙跳设置")
 ## 墙跳水平初速度（离开墙体的水平速度）
-@export var wall_jump_h_speed: float = 360.0
+@export var wall_jump_h_speed: float = 520.0
 ## 墙跳垂直速度
-@export var wall_jump_v_speed: float = -140.0
+@export var wall_jump_v_speed: float = -180.0
 ## 墙跳后重新附着延迟（秒）
-@export var wall_jump_reattach_delay: float = 0.24
+@export var wall_jump_reattach_delay: float = 0.2
 ## 墙跳最大按住时间（秒）
-@export var wall_jump_max_hold_time: float = 0.23
+@export var wall_jump_max_hold_time: float = 0.25
 ## 墙跳额外垂直速度（长按期间每帧增加）
-@export var wall_jump_hold_boost: float = -60.0
+@export var wall_jump_hold_boost: float = -35.0
 
 @export_category("特殊状态设置")
 ## IDLE状态进入SLEEP状态的时间（秒）
@@ -273,15 +273,15 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## IDLE状态进入LOOKUP/LOOKDOWN状态的时间（秒）
 @export var idle_to_look_time: float = 0.8
 ## LOOKUP状态相机向上偏移距离
-@export var lookup_camera_offset: float = 140.0
+@export var lookup_camera_offset: float = 120.0
 ## LOOKDOWN状态相机向下偏移距离
-@export var lookdown_camera_offset: float = 140.0
+@export var lookdown_camera_offset: float = 120.0
 
 @export_category("相机观察设置")
 ## 相机偏移过渡时间（秒）
 @export var camera_offset_transition_duration: float = 0.4
 ## 相机观察加速阶段占比（其余阶段为匀速），取值越大加速阶段越长
-@export var camera_offset_accel_ratio: float = 0.1
+@export var camera_offset_accel_ratio: float = 0.2
 
 @export_category("Hit Stop 设置")
 ## 是否启用Hit Stop

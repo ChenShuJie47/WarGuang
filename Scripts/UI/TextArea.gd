@@ -4,7 +4,7 @@ class_name TextArea
 
 ## 区域基础大小（可在编辑器直接拖动调整）
 ## 注意：最终大小 = size * scale
-@export var size: Vector2 = Vector2(200, 150) : set = set_size
+@export var size: Vector2 = Vector2(200, 200) : set = set_size
 
 ## 参考颜色（仅编辑器可见）
 @export var debug_color: Color = Color(0.0, 0.784, 0.196, 0.137)

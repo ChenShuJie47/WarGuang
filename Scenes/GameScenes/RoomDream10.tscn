@@ -58,7 +58,7 @@ position = Vector2(525, -88)
 door_id = "2-10"
 
 [node name="Door1-10" parent="Doors" instance=ExtResource("4_auxex")]
-position = Vector2(5736, -440)
+position = Vector2(2843, -873)
 door_id = "1-10"
 
 [node name="HurtBoxs" type="Node2D" parent="."]
