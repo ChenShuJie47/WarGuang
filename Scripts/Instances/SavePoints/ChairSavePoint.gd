@@ -4,7 +4,7 @@ extends Area2D
 
 @export var save_point_id: String = "default_chair"
 ## 交互后禁止操控的时间（秒）
-@export var interaction_lock_duration: float = 1.0
+@export var interaction_lock_duration: float = 2.0
 
 var player_in_range: bool = false
 var has_interacted: bool = false

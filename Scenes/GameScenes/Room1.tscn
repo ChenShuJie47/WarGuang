@@ -26,7 +26,7 @@ size = Vector2(643, 363)
 script = ExtResource("1_am8bf")
 room_bgm = "BGM1"
 adjacent_rooms = Array[String](["Room2", "Room3"])
-room_color = Color(0.78775924, 0.78775924, 0.78775924, 1)
+room_color = Color(0.6039216, 0.80784315, 0.78039217, 0.8)
 room_bounds = NodePath("RoomBounds1")
 
 [node name="Background" type="Sprite2D" parent="."]

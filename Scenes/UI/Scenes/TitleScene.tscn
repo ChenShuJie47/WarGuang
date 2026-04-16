@@ -4,17 +4,17 @@
 [ext_resource type="PackedScene" uid="uid://8vv4frjt0qmt" path="res://Scenes/UI/Scenes/SettingsScene.tscn" id="2_fkiff"]
 [ext_resource type="Script" uid="uid://c6yjpi17utwg8" path="res://Scripts/UI/Scenes/UITransitionAnimator.gd" id="2_transition_animator"]
 [ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="3_oeyvi"]
-[ext_resource type="Texture2D" uid="uid://cy2yuswokrtcg" path="res://Assets/Textures/Backgrounds/2.png" id="4_oeyvi"]
-[ext_resource type="Texture2D" uid="uid://bnf2wds016uy8" path="res://Assets/Textures/UIs/SceneUIs/场景UI集.png" id="5_oeyvi"]
-[ext_resource type="Texture2D" uid="uid://bjc5gdmw20xyj" path="res://Assets/Textures/UIs/SceneUIs/开始游戏1.tres" id="6_kvyf1"]
-[ext_resource type="Texture2D" uid="uid://wv2gpaboywlb" path="res://Assets/Textures/UIs/SceneUIs/开始游戏3.tres" id="7_lcuoq"]
-[ext_resource type="Texture2D" uid="uid://dmfajaseu5l5w" path="res://Assets/Textures/UIs/SceneUIs/开始游戏2.tres" id="8_s4mlw"]
-[ext_resource type="Texture2D" uid="uid://b8sssglim6e7l" path="res://Assets/Textures/UIs/SceneUIs/游戏设置1.tres" id="9_lhhs8"]
-[ext_resource type="Texture2D" uid="uid://d3005vubpe6i5" path="res://Assets/Textures/UIs/SceneUIs/游戏设置3.tres" id="10_iwgkb"]
-[ext_resource type="Texture2D" uid="uid://dv32j07wleyus" path="res://Assets/Textures/UIs/SceneUIs/游戏设置2.tres" id="11_syapl"]
-[ext_resource type="Texture2D" uid="uid://dpvdmut6a731j" path="res://Assets/Textures/UIs/SceneUIs/退出游戏1.tres" id="12_1p8n3"]
-[ext_resource type="Texture2D" uid="uid://cjc0lbil1c0sw" path="res://Assets/Textures/UIs/SceneUIs/退出游戏3.tres" id="13_u4xyb"]
-[ext_resource type="Texture2D" uid="uid://bn8vn843wolho" path="res://Assets/Textures/UIs/SceneUIs/退出游戏2.tres" id="14_lnewd"]
+[ext_resource type="Texture2D" uid="uid://b8m7xj4t4q3ic" path="res://Assets/Textures/UIs/SceneUIs/2.png" id="5_iwgkb"]
+[ext_resource type="Texture2D" uid="uid://ma8b6mvk540g" path="res://Assets/Textures/UIs/SceneUIs/11.tres" id="6_lhhs8"]
+[ext_resource type="Texture2D" uid="uid://wv2gpaboywlb" path="res://Assets/Textures/UIs/SceneUIs/tres/开始游戏3.tres" id="7_lcuoq"]
+[ext_resource type="Texture2D" uid="uid://b5a3hd3064lkh" path="res://Assets/Textures/UIs/SceneUIs/12.tres" id="7_lhhs8"]
+[ext_resource type="Texture2D" uid="uid://dmfajaseu5l5w" path="res://Assets/Textures/UIs/SceneUIs/tres/开始游戏2.tres" id="8_s4mlw"]
+[ext_resource type="Texture2D" uid="uid://bhiurmt0u3qnh" path="res://Assets/Textures/UIs/SceneUIs/13.tres" id="9_lhhs8"]
+[ext_resource type="Texture2D" uid="uid://d3005vubpe6i5" path="res://Assets/Textures/UIs/SceneUIs/tres/游戏设置3.tres" id="10_iwgkb"]
+[ext_resource type="Texture2D" uid="uid://br13cvvy0echj" path="res://Assets/Textures/UIs/SceneUIs/14.tres" id="10_syapl"]
+[ext_resource type="Texture2D" uid="uid://dv32j07wleyus" path="res://Assets/Textures/UIs/SceneUIs/tres/游戏设置2.tres" id="11_syapl"]
+[ext_resource type="Texture2D" uid="uid://cjc0lbil1c0sw" path="res://Assets/Textures/UIs/SceneUIs/tres/退出游戏3.tres" id="13_u4xyb"]
+[ext_resource type="Texture2D" uid="uid://bn8vn843wolho" path="res://Assets/Textures/UIs/SceneUIs/tres/退出游戏2.tres" id="14_lnewd"]
 
 [sub_resource type="Animation" id="Animation_material_enter"]
 resource_name = "material_enter"
@@ -52,26 +52,25 @@ libraries = {
 color = Color(0.8239239, 0.82392395, 0.8239239, 1)
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-position = Vector2(576, 324)
-scale = Vector2(4.4999995, 2.53125)
-color = Color(0.27935672, 0.27935672, 0.27935672, 1)
-range_layer_min = 1
-range_layer_max = 1
+position = Vector2(640.00006, 360)
+scale = Vector2(5, 5)
+color = Color(0.30048224, 0.30069208, 0.43463334, 1)
+range_layer_max = 100
 texture = ExtResource("3_oeyvi")
 
 [node name="Background" type="Sprite2D" parent="."]
 position = Vector2(640, 360.00003)
 scale = Vector2(2.5, 2.5)
-texture = ExtResource("4_oeyvi")
+texture = ExtResource("5_iwgkb")
 region_enabled = true
 region_rect = Rect2(0, 0, 512, 288)
 
 [node name="Title" type="Sprite2D" parent="."]
 position = Vector2(671, 138)
 scale = Vector2(2.5, 2.5)
-texture = ExtResource("5_oeyvi")
+texture = ExtResource("6_lhhs8")
 region_enabled = true
-region_rect = Rect2(432, 16, 80, 32)
+region_rect = Rect2(176, 16, 160, 80)
 
 [node name="UI" type="VBoxContainer" parent="."]
 anchors_preset = 8
@@ -79,19 +78,20 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -59.0
-offset_top = -35.0
-offset_right = 69.0
-offset_bottom = 69.0
+offset_left = -44.0
+offset_top = 17.00003
+offset_right = 84.0
+offset_bottom = 161.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(2.5, 2.5)
-pivot_offset = Vector2(64.8, 48.799995)
+pivot_offset = Vector2(62.479996, 68.07999)
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="StartButton" type="TextureButton" parent="UI"]
 layout_mode = 2
-texture_normal = ExtResource("6_kvyf1")
+texture_normal = ExtResource("7_lhhs8")
 texture_pressed = ExtResource("7_lcuoq")
 texture_hover = ExtResource("8_s4mlw")
 
@@ -103,6 +103,6 @@ texture_hover = ExtResource("11_syapl")
 
 [node name="QuitButton" type="TextureButton" parent="UI"]
 layout_mode = 2
-texture_normal = ExtResource("12_1p8n3")
+texture_normal = ExtResource("10_syapl")
 texture_pressed = ExtResource("13_u4xyb")
 texture_hover = ExtResource("14_lnewd")
