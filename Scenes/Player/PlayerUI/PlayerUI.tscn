@@ -6,9 +6,9 @@
 [ext_resource type="Texture2D" uid="uid://dvv0jc1oeuum5" path="res://Assets/Textures/Warmas/w.png" id="4_p4cyq"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="4_ruvwe"]
 [ext_resource type="PackedScene" uid="uid://h0kyvxadfyys" path="res://Scenes/Player/PlayerUI/HealthUnit.tscn" id="5_27bup"]
-[ext_resource type="Texture2D" uid="uid://wfe7dgsksxno" path="res://Assets/Textures/UIs/SceneUIs/设置1.tres" id="7_p4cyq"]
-[ext_resource type="Texture2D" uid="uid://b3bk8r4dyhftb" path="res://Assets/Textures/UIs/SceneUIs/设置3.tres" id="8_dk7d2"]
-[ext_resource type="Texture2D" uid="uid://kwnfo4pj52u1" path="res://Assets/Textures/UIs/SceneUIs/设置2.tres" id="9_7xpsu"]
+[ext_resource type="Texture2D" uid="uid://wfe7dgsksxno" path="res://Assets/Textures/UIs/SceneUIs/tres/设置1.tres" id="7_p4cyq"]
+[ext_resource type="Texture2D" uid="uid://b3bk8r4dyhftb" path="res://Assets/Textures/UIs/SceneUIs/tres/设置3.tres" id="8_dk7d2"]
+[ext_resource type="Texture2D" uid="uid://kwnfo4pj52u1" path="res://Assets/Textures/UIs/SceneUIs/tres/设置2.tres" id="9_7xpsu"]
 
 [node name="PlayerUI" type="CanvasLayer"]
 script = ExtResource("1_uyejk")

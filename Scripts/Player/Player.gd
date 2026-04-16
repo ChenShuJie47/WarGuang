@@ -15,12 +15,9 @@ enum DamageType {
 	WARP_SHADOW      # 阴影传送伤害
 }
 
-## 帧率标准化设置
-const TARGET_FPS: float = 60.0                    # 目标帧率（与 physics_ticks_per_second 一致）
-const FIXED_DELTA: float = 1.0 / TARGET_FPS       # 固定时间步长 = 0.01667 秒
-const MAX_FRAME_TIME: float = 1.0 / 30.0          # 最大帧时间（30FPS 下限，防止卡顿时代码逻辑过快）
-const CAMERA_LIMIT_DISABLED: int = 10000000       # 禁用相机限制时使用的极大边界值（与 PhantomCamera2D 默认值一致）
-const CAMERA_TELEPORT_DEBUG: bool = false
+##组件脚本引用
+#region Signals
+
 const PlayerHitStopServiceScript = preload("res://Scripts/Player/PlayerHitStopService.gd")
 const PlayerAirStateServiceScript = preload("res://Scripts/Player/PlayerAirStateService.gd")
 const PlayerAirAbilityServiceScript = preload("res://Scripts/Player/PlayerAirAbilityService.gd")
@@ -55,10 +52,21 @@ const PlayerWarpFlightServiceScript = preload("res://Scripts/Player/PlayerWarpFl
 const PlayerWarpResetServiceScript = preload("res://Scripts/Player/PlayerWarpResetService.gd")
 const PlayerVisualStateServiceScript = preload("res://Scripts/Player/PlayerVisualStateService.gd")
 const PlayerCameraDebugServiceScript = preload("res://Scripts/Player/PlayerCameraDebugService.gd")
+
+#endregion
+
+## 帧率标准化设置
+const TARGET_FPS: float = 60.0                    # 目标帧率（与 physics_ticks_per_second 一致）
+const FIXED_DELTA: float = 1.0 / TARGET_FPS       # 固定时间步长 = 0.01667 秒
+const MAX_FRAME_TIME: float = 1.0 / 30.0          # 最大帧时间（30FPS 下限，防止卡顿时代码逻辑过快）
+const CAMERA_LIMIT_DISABLED: int = 10000000       # 禁用相机限制时使用的极大边界值（与 PhantomCamera2D 默认值一致）
+const CAMERA_TELEPORT_DEBUG: bool = false
+
 const DEFAULT_HURT_HIT_STOP_DURATION: float = 0.1
 const DEFAULT_HURT_HIT_STOP_INTENSITY: float = 1.2
 const DEFAULT_JUMPBOX_HIT_STOP_DURATION: float = 0.25
 const DEFAULT_JUMPBOX_HIT_STOP_INTENSITY: float = 0.8
+
 ## 独立的玩家 FX 控制器，用于状态单播与周期性特效。
 const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXController.gd")
 
@@ -205,9 +213,9 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 快速按键时间窗口（秒）
 @export var quick_tap_time_window: float = 0.3
 ## 撞墙反弹的X轴速度
-@export var wall_bump_rebound_x: float = 180.0
+@export var wall_bump_rebound_x: float = 300.0
 ## 撞墙反弹的Y轴速度  
-@export var wall_bump_rebound_y: float = -130.0
+@export var wall_bump_rebound_y: float = -300.0
 
 ## 奔跑跳跃设置
 @export_category("奔跑跳跃设置")

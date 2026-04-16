@@ -1,18 +1,19 @@
-[gd_scene load_steps=14 format=3 uid="uid://cwp2nnedkebnl"]
+[gd_scene load_steps=15 format=3 uid="uid://cwp2nnedkebnl"]
 
 [ext_resource type="Script" uid="uid://c8ybqtmdpgils" path="res://Scripts/UI/Scenes/SaveSelectScene.gd" id="1_6ahw5"]
 [ext_resource type="Script" uid="uid://c6yjpi17utwg8" path="res://Scripts/UI/Scenes/UITransitionAnimator.gd" id="1_transition_animator"]
 [ext_resource type="Texture2D" uid="uid://dmxv540ejjtkg" path="res://Assets/Textures/UIs/SaveSlotBlue.tres" id="2_1iexe"]
-[ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1.png" id="2_283jm"]
 [ext_resource type="PackedScene" uid="uid://b81s4uybrdtsf" path="res://Scenes/UI/Scenes/DeleteConfirmDialog.tscn" id="2_axbvp"]
 [ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="3_1ibob"]
 [ext_resource type="Texture2D" uid="uid://c1v56vyheog76" path="res://Assets/Textures/UIs/SaveSlotRed.tres" id="3_283jm"]
-[ext_resource type="Texture2D" uid="uid://xygjp77wxevl" path="res://Assets/Textures/UIs/SceneUIs/回退1.tres" id="7_nc2wn"]
-[ext_resource type="Texture2D" uid="uid://40v6kkfpqldt" path="res://Assets/Textures/UIs/SceneUIs/回退3.tres" id="8_xxd4s"]
-[ext_resource type="Texture2D" uid="uid://bv4wcsihjxeaa" path="res://Assets/Textures/UIs/SceneUIs/关闭1.tres" id="9_1ibob"]
-[ext_resource type="Texture2D" uid="uid://duklbrpm0cx67" path="res://Assets/Textures/UIs/SceneUIs/回退2.tres" id="9_c6mq1"]
-[ext_resource type="Texture2D" uid="uid://kxm2uujj5ma4" path="res://Assets/Textures/UIs/SceneUIs/关闭3.tres" id="10_nc2wn"]
-[ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/关闭2.tres" id="11_xxd4s"]
+[ext_resource type="Texture2D" uid="uid://lv2f6kd1slvx" path="res://Assets/Textures/UIs/SceneUIs/3.png" id="5_xxd4s"]
+[ext_resource type="Texture2D" uid="uid://xygjp77wxevl" path="res://Assets/Textures/UIs/SceneUIs/tres/回退1.tres" id="7_nc2wn"]
+[ext_resource type="Texture2D" uid="uid://40v6kkfpqldt" path="res://Assets/Textures/UIs/SceneUIs/tres/回退3.tres" id="8_xxd4s"]
+[ext_resource type="Texture2D" uid="uid://bv4wcsihjxeaa" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭1.tres" id="9_1ibob"]
+[ext_resource type="Texture2D" uid="uid://duklbrpm0cx67" path="res://Assets/Textures/UIs/SceneUIs/tres/回退2.tres" id="9_c6mq1"]
+[ext_resource type="Texture2D" uid="uid://5qddr72wwywa" path="res://Assets/Textures/UIs/f944179bbf3e6af371ada2fca06d8a99.png" id="9_sj26l"]
+[ext_resource type="Texture2D" uid="uid://kxm2uujj5ma4" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭3.tres" id="10_nc2wn"]
+[ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭2.tres" id="11_xxd4s"]
 
 [node name="SaveSelectScene" type="CanvasLayer"]
 script = ExtResource("1_6ahw5")
@@ -27,20 +28,19 @@ extra_target_paths = Array[NodePath]([NodePath("../SaveSlot1"), NodePath("../Sav
 color = Color(0.41215247, 0.41215247, 0.41215247, 1)
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-position = Vector2(575.00006, 324)
-scale = Vector2(4.4999995, 2.53125)
-color = Color(0.6317153, 0.63171524, 0.63171524, 1)
+position = Vector2(639.50006, 359.99997)
+scale = Vector2(5, 5)
+color = Color(0.60784316, 0.60784316, 0.48235294, 0.7490196)
 range_layer_min = 1
 range_layer_max = 1
 texture = ExtResource("3_1ibob")
-texture_scale = 2.0
 
 [node name="Background" type="Sprite2D" parent="."]
 position = Vector2(640, 359.5)
-scale = Vector2(3.3333335, 3.3287036)
-texture = ExtResource("2_283jm")
+scale = Vector2(5, 5)
+texture = ExtResource("5_xxd4s")
 region_enabled = true
-region_rect = Rect2(0, 0, 384, 216)
+region_rect = Rect2(0, 144, 256, 144)
 
 [node name="BackButton" type="TextureButton" parent="."]
 offset_left = 1214.0
@@ -53,27 +53,32 @@ texture_pressed = ExtResource("10_nc2wn")
 texture_hover = ExtResource("11_xxd4s")
 
 [node name="SaveSlot1" type="TextureButton" parent="."]
-offset_left = 200.0
-offset_top = 150.0
-offset_right = 386.0
-offset_bottom = 354.0
+offset_left = 202.0
+offset_top = 237.0
+offset_right = 388.0
+offset_bottom = 441.0
+pivot_offset = Vector2(89, 100)
 
 [node name="EmptySlot" type="Sprite2D" parent="SaveSlot1"]
 position = Vector2(93, 102)
 scale = Vector2(6, 6)
-texture = ExtResource("2_1iexe")
+texture = ExtResource("9_sj26l")
+region_enabled = true
+region_rect = Rect2(61, 3, 45, 80)
 
 [node name="FilledSlot" type="Sprite2D" parent="SaveSlot1"]
 position = Vector2(93, 102)
 scale = Vector2(6, 6)
-texture = ExtResource("3_283jm")
+texture = ExtResource("9_sj26l")
+region_enabled = true
+region_rect = Rect2(113, 2, 45, 80)
 
 [node name="DeleteButton" type="TextureButton" parent="SaveSlot1"]
 layout_mode = 0
-offset_left = 63.0
-offset_top = 222.0
-offset_right = 80.0
-offset_bottom = 233.0
+offset_left = 57.0
+offset_top = 358.0
+offset_right = 74.0
+offset_bottom = 374.0
 scale = Vector2(3, 3)
 texture_normal = ExtResource("7_nc2wn")
 texture_pressed = ExtResource("8_xxd4s")

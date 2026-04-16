@@ -80,6 +80,9 @@ texture={
 "roughness/mode": 0,
 "roughness/src_normal": ""
 }
+animation_library={
+&"animation/trimming": true
+}
 
 [input]
 

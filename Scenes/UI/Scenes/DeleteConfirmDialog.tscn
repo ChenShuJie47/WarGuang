@@ -1,14 +1,14 @@
 [gd_scene load_steps=10 format=3 uid="uid://b81s4uybrdtsf"]
 
 [ext_resource type="Script" uid="uid://g5mcy2rrpi1j" path="res://Scripts/UI/Scenes/DeleteConfirmDialog.gd" id="1_8trha"]
-[ext_resource type="Texture2D" uid="uid://bnf2wds016uy8" path="res://Assets/Textures/UIs/SceneUIs/场景UI集.png" id="2_rl7e0"]
+[ext_resource type="Texture2D" uid="uid://bnf2wds016uy8" path="res://Assets/Textures/UIs/SceneUIs/tres/场景UI集.png" id="2_rl7e0"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="2_s464x"]
-[ext_resource type="Texture2D" uid="uid://bwow0r831nkda" path="res://Assets/Textures/UIs/SceneUIs/确认1.tres" id="4_wv8yg"]
-[ext_resource type="Texture2D" uid="uid://knvng6xnqnc1" path="res://Assets/Textures/UIs/SceneUIs/确认3.tres" id="5_8pcg6"]
-[ext_resource type="Texture2D" uid="uid://di5f8dpskcf3n" path="res://Assets/Textures/UIs/SceneUIs/确认2.tres" id="6_nvsot"]
-[ext_resource type="Texture2D" uid="uid://d3up5h4l7og6c" path="res://Assets/Textures/UIs/SceneUIs/取消1.tres" id="7_lchh4"]
-[ext_resource type="Texture2D" uid="uid://bg28yyvx1w0e3" path="res://Assets/Textures/UIs/SceneUIs/取消3.tres" id="8_ww0du"]
-[ext_resource type="Texture2D" uid="uid://bqxqw0qqnx73x" path="res://Assets/Textures/UIs/SceneUIs/取消2.tres" id="9_uxqie"]
+[ext_resource type="Texture2D" uid="uid://bwow0r831nkda" path="res://Assets/Textures/UIs/SceneUIs/tres/确认1.tres" id="4_wv8yg"]
+[ext_resource type="Texture2D" uid="uid://knvng6xnqnc1" path="res://Assets/Textures/UIs/SceneUIs/tres/确认3.tres" id="5_8pcg6"]
+[ext_resource type="Texture2D" uid="uid://di5f8dpskcf3n" path="res://Assets/Textures/UIs/SceneUIs/tres/确认2.tres" id="6_nvsot"]
+[ext_resource type="Texture2D" uid="uid://d3up5h4l7og6c" path="res://Assets/Textures/UIs/SceneUIs/tres/取消1.tres" id="7_lchh4"]
+[ext_resource type="Texture2D" uid="uid://bg28yyvx1w0e3" path="res://Assets/Textures/UIs/SceneUIs/tres/取消3.tres" id="8_ww0du"]
+[ext_resource type="Texture2D" uid="uid://bqxqw0qqnx73x" path="res://Assets/Textures/UIs/SceneUIs/tres/取消2.tres" id="9_uxqie"]
 
 [node name="DeleteConfirmDialog" type="CanvasLayer"]
 layer = 50

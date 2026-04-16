@@ -1,31 +1,31 @@
 [gd_scene load_steps=30 format=3 uid="uid://8vv4frjt0qmt"]
 
 [ext_resource type="Script" uid="uid://b8qfrtedcjp8w" path="res://Scripts/UI/Scenes/SettingsScene.gd" id="1_kwsuw"]
-[ext_resource type="Texture2D" uid="uid://cckjdme671kpv" path="res://Assets/Textures/Backgrounds/3.png" id="2_8gcs1"]
-[ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="2_tpcns"]
 [ext_resource type="Script" uid="uid://c6yjpi17utwg8" path="res://Scripts/UI/Scenes/UITransitionAnimator.gd" id="2_transition_animator"]
-[ext_resource type="Texture2D" uid="uid://bv4wcsihjxeaa" path="res://Assets/Textures/UIs/SceneUIs/关闭1.tres" id="4_vx36v"]
-[ext_resource type="Texture2D" uid="uid://kxm2uujj5ma4" path="res://Assets/Textures/UIs/SceneUIs/关闭3.tres" id="5_bvn5r"]
+[ext_resource type="Texture2D" uid="uid://yr64w1p2oclf" path="res://Assets/Instances/SettingsScene.tres" id="3_pn2j1"]
+[ext_resource type="Texture2D" uid="uid://lv2f6kd1slvx" path="res://Assets/Textures/UIs/SceneUIs/3.png" id="4_pn2j1"]
+[ext_resource type="Texture2D" uid="uid://bv4wcsihjxeaa" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭1.tres" id="4_vx36v"]
+[ext_resource type="Texture2D" uid="uid://kxm2uujj5ma4" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭3.tres" id="5_bvn5r"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="5_wi6u5"]
-[ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/关闭2.tres" id="6_pn2j1"]
-[ext_resource type="Texture2D" uid="uid://clsfxo3yvpw85" path="res://Assets/Textures/UIs/SceneUIs/音量设置1.tres" id="8_rwgsd"]
-[ext_resource type="Texture2D" uid="uid://1s1p4qb2ylw1" path="res://Assets/Textures/UIs/SceneUIs/音量设置3.tres" id="9_vx36v"]
-[ext_resource type="Texture2D" uid="uid://drw5t7db5y62a" path="res://Assets/Textures/UIs/SceneUIs/音量设置2.tres" id="10_bvn5r"]
+[ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭2.tres" id="6_pn2j1"]
+[ext_resource type="Texture2D" uid="uid://clsfxo3yvpw85" path="res://Assets/Textures/UIs/SceneUIs/tres/音量设置1.tres" id="8_rwgsd"]
+[ext_resource type="Texture2D" uid="uid://1s1p4qb2ylw1" path="res://Assets/Textures/UIs/SceneUIs/tres/音量设置3.tres" id="9_vx36v"]
+[ext_resource type="Texture2D" uid="uid://drw5t7db5y62a" path="res://Assets/Textures/UIs/SceneUIs/tres/音量设置2.tres" id="10_bvn5r"]
 [ext_resource type="Script" uid="uid://78cuppapjngy" path="res://Scripts/UI/Scenes/ControlsPage.gd" id="10_oi1yp"]
-[ext_resource type="Texture2D" uid="uid://ctxsxvklddrjj" path="res://Assets/Textures/UIs/SceneUIs/按键设置1.tres" id="11_pn2j1"]
-[ext_resource type="Texture2D" uid="uid://bfmrxf2530tkm" path="res://Assets/Textures/UIs/SceneUIs/按键设置3.tres" id="12_hlh84"]
-[ext_resource type="Texture2D" uid="uid://dq50bsyyfm8iu" path="res://Assets/Textures/UIs/SceneUIs/按键设置2.tres" id="13_houfj"]
-[ext_resource type="Texture2D" uid="uid://byvir3m2iyxib" path="res://Assets/Textures/UIs/SceneUIs/画面设置1.tres" id="14_ppuk0"]
-[ext_resource type="Texture2D" uid="uid://mwsdo3dlldy8" path="res://Assets/Textures/UIs/SceneUIs/画面设置3.tres" id="15_leam6"]
-[ext_resource type="Texture2D" uid="uid://eubxxblcwaux" path="res://Assets/Textures/UIs/SceneUIs/画面设置2.tres" id="16_ihv7n"]
-[ext_resource type="Texture2D" uid="uid://myf1ynvvcbp" path="res://Assets/Textures/UIs/SceneUIs/更改映射1.tres" id="18_ppuk0"]
-[ext_resource type="Texture2D" uid="uid://brcgevaq6ummn" path="res://Assets/Textures/UIs/SceneUIs/更改映射3.tres" id="19_leam6"]
-[ext_resource type="Texture2D" uid="uid://vduid6lfejtn" path="res://Assets/Textures/UIs/SceneUIs/更改映射2.tres" id="20_ihv7n"]
-[ext_resource type="Texture2D" uid="uid://xygjp77wxevl" path="res://Assets/Textures/UIs/SceneUIs/回退1.tres" id="21_pn2j1"]
-[ext_resource type="Texture2D" uid="uid://40v6kkfpqldt" path="res://Assets/Textures/UIs/SceneUIs/回退3.tres" id="22_hlh84"]
-[ext_resource type="Texture2D" uid="uid://duklbrpm0cx67" path="res://Assets/Textures/UIs/SceneUIs/回退2.tres" id="23_houfj"]
-[ext_resource type="Texture2D" uid="uid://bxip4ialo0qsl" path="res://Assets/Textures/UIs/SceneUIs/音量滑块1.tres" id="24_houfj"]
-[ext_resource type="Texture2D" uid="uid://dolaxw8vcjj6y" path="res://Assets/Textures/UIs/SceneUIs/音量滑块2.tres" id="25_ppuk0"]
+[ext_resource type="Texture2D" uid="uid://ctxsxvklddrjj" path="res://Assets/Textures/UIs/SceneUIs/tres/按键设置1.tres" id="11_pn2j1"]
+[ext_resource type="Texture2D" uid="uid://bfmrxf2530tkm" path="res://Assets/Textures/UIs/SceneUIs/tres/按键设置3.tres" id="12_hlh84"]
+[ext_resource type="Texture2D" uid="uid://dq50bsyyfm8iu" path="res://Assets/Textures/UIs/SceneUIs/tres/按键设置2.tres" id="13_houfj"]
+[ext_resource type="Texture2D" uid="uid://byvir3m2iyxib" path="res://Assets/Textures/UIs/SceneUIs/tres/画面设置1.tres" id="14_ppuk0"]
+[ext_resource type="Texture2D" uid="uid://mwsdo3dlldy8" path="res://Assets/Textures/UIs/SceneUIs/tres/画面设置3.tres" id="15_leam6"]
+[ext_resource type="Texture2D" uid="uid://eubxxblcwaux" path="res://Assets/Textures/UIs/SceneUIs/tres/画面设置2.tres" id="16_ihv7n"]
+[ext_resource type="Texture2D" uid="uid://myf1ynvvcbp" path="res://Assets/Textures/UIs/SceneUIs/tres/更改映射1.tres" id="18_ppuk0"]
+[ext_resource type="Texture2D" uid="uid://brcgevaq6ummn" path="res://Assets/Textures/UIs/SceneUIs/tres/更改映射3.tres" id="19_leam6"]
+[ext_resource type="Texture2D" uid="uid://vduid6lfejtn" path="res://Assets/Textures/UIs/SceneUIs/tres/更改映射2.tres" id="20_ihv7n"]
+[ext_resource type="Texture2D" uid="uid://xygjp77wxevl" path="res://Assets/Textures/UIs/SceneUIs/tres/回退1.tres" id="21_pn2j1"]
+[ext_resource type="Texture2D" uid="uid://40v6kkfpqldt" path="res://Assets/Textures/UIs/SceneUIs/tres/回退3.tres" id="22_hlh84"]
+[ext_resource type="Texture2D" uid="uid://duklbrpm0cx67" path="res://Assets/Textures/UIs/SceneUIs/tres/回退2.tres" id="23_houfj"]
+[ext_resource type="Texture2D" uid="uid://bxip4ialo0qsl" path="res://Assets/Textures/UIs/SceneUIs/tres/音量滑块1.tres" id="24_houfj"]
+[ext_resource type="Texture2D" uid="uid://dolaxw8vcjj6y" path="res://Assets/Textures/UIs/SceneUIs/tres/音量滑块2.tres" id="25_ppuk0"]
 
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_tpcns"]
 color = Color(0.19607843, 0.15686275, 0.11764706, 1)
@@ -50,18 +50,19 @@ extra_target_paths = Array[NodePath]([NodePath("../BackButton"), NodePath("../Se
 color = Color(0.66656864, 0.6665687, 0.6665685, 1)
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
-position = Vector2(576, 324)
-scale = Vector2(4.4999995, 2.53125)
+position = Vector2(640.00006, 360)
+scale = Vector2(5, 2.8125002)
+color = Color(0.3529412, 0.3529412, 0.50980395, 0.78431374)
 range_layer_min = 1
 range_layer_max = 100
-texture = ExtResource("2_tpcns")
+texture = ExtResource("3_pn2j1")
 
 [node name="Background" type="Sprite2D" parent="."]
-position = Vector2(639.99994, 359.99997)
-scale = Vector2(3.3333335, 3.333333)
-texture = ExtResource("2_8gcs1")
+position = Vector2(640, 360)
+scale = Vector2(5, 5)
+texture = ExtResource("4_pn2j1")
 region_enabled = true
-region_rect = Rect2(0, 0, 384, 216)
+region_rect = Rect2(256, 0, 256, 144)
 
 [node name="BackButton" type="TextureButton" parent="."]
 anchors_preset = 1
