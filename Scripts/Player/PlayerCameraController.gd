@@ -7,50 +7,101 @@ const CAMERA_LIMIT_DISABLED: int = 10000000
 const CAMERA_TELEPORT_DEBUG: bool = false
 # 复用玩家相机数学工具，统一处理中心点与边界裁剪。
 const PlayerCameraMathUtil = preload("res://Scripts/Player/PlayerCameraMath.gd")
+# Warp 追镜在等待玩家真正落位时的默认超时（秒）。
 const DEFAULT_WARP_CAMERA_HOLD_TIMEOUT: float = 6.0
 
-# 当前绑定的玩家节点。
+@export_category("Lookahead")
+## 是否启用水平速度前瞻。
+## true 时镜头会在角色移动方向上提前给出可视空间。
+@export var lookahead_enabled: bool = true
+## 速度前瞻的最大水平偏移（像素）。
+## 值越大，镜头“看前方”的距离越远。
+@export var lookahead_max_x: float = 128.0
+## 达到最大前瞻时的参考水平速度（像素/秒）。
+## 值越小，普通移动更容易获得明显前瞻。
+@export var lookahead_velocity_for_max: float = 160.0
+## 前瞻朝目标偏移推进时的速度（像素/秒）。
+## 值越小，镜头越柔和；值越大，响应越快。
+@export var lookahead_accel: float = 200.0
+## 前瞻回收或反向修正时的速度（像素/秒）。
+## 建议略高于 accel，避免换向拖尾过长。
+@export var lookahead_decel: float = 120.0
+## 停止输入后前瞻回零的缓冲时间（秒）。
+## 用于抑制急停时镜头“瞬间回抽”的突兀感。
+@export var lookahead_stop_recover_time: float = 0.4
+## 是否在空中阶段关闭前瞻。
+## true 时跳跃/下落不会继续叠加前瞻。
+@export var lookahead_disable_in_air: bool = false
+## 低速移动时的最小前瞻（像素）。
+## 让普通走动也能保持基本“看前方”效果。
+@export var lookahead_min_x: float = 64.0
+
+@export_category("Focus Capture")
+## 是否启用焦点抢夺系统。
+## 关闭后所有 Beacon 区域都不会影响相机目标。
+@export var focus_capture_enabled: bool = true
+## 焦点抢夺全局倍率。
+## >1.0 会增强 Beacon 影响；<1.0 会减弱。
+@export var focus_capture_global_blend: float = 1.2
+## 焦点抢夺单帧目标偏移上限（像素）。
+## 防止目标过远导致镜头跳变。
+@export var focus_capture_max_offset: float = 320.0
+## 抢夺偏移平滑收敛速度系数。
+## 值越大越“跟手”，值越小越平滑。
+@export var focus_capture_smooth: float = 12.0
+
+# 当前绑定的 Player 节点引用。
 var player: Player = null
-# 当前绑定的 PhantomCamera 节点。
+# 当前绑定的 PhantomCamera2D 节点引用。
 var phantom_camera: Node = null
-# 传送后相机轴锁的临时保持计时器。
+# 传送守卫剩余时长（秒）。
 var camera_transition_guard_timer: float = 0.0
-# 标记是否正在等待相机过渡恢复。
+# 是否启用传送守卫流程。
 var camera_transition_guard_active: bool = false
-# 传送前的 dead zone 备份值，用于恢复普通跟随范围。
+# 传送守卫前 dead zone 备份（x=width, y=height）。
 var camera_transition_dead_zone_backup: Vector2 = Vector2(0.125, 0.1)
-# 传送守卫已经持续了多久。
+# 当前守卫已运行时长（秒）。
 var camera_transition_guard_elapsed: float = 0.0
-# 相机守卫至少保持的最短时间。
+# 守卫最短持续时长（秒）。
 var camera_transition_guard_min_duration: float = 0.12
-# 标记是否已经完成依赖注入。
+# setup 是否已经执行完成。
 var setup_completed: bool = false
-# 相机异常日志节流时间戳，避免一帧内刷屏。
+# 相机异常日志节流用时间戳（毫秒）。
 var invalid_camera_debug_last_log_ms: int = -1000000
-# 传送伤害临时追镜是否生效。
+# Warp 追镜是否正在运行。
 var warp_camera_catchup_active: bool = false
-# 传送伤害追镜前 dead zone 备份。
+# Warp 追镜前 dead zone 备份（x=width, y=height）。
 var warp_camera_dead_zone_backup: Vector2 = Vector2.ZERO
+# Warp dead zone 备份是否有效。
 var warp_camera_dead_zone_backup_valid: bool = false
+# Warp 追镜前的 follow_target 备份。
 var warp_camera_follow_target_backup: Node = null
+# Warp 追镜使用的临时锚点节点。
 var warp_camera_anchor: Node2D = null
+# 是否正在等待玩家完成最终落位。
 var warp_camera_waiting_for_player_teleport: bool = false
+# 等待玩家落位的剩余时间（秒）。
 var warp_camera_wait_timeout: float = 0.0
+## 传送伤害追镜的最长等待时间。
 @export var warp_camera_hold_timeout: float = DEFAULT_WARP_CAMERA_HOLD_TIMEOUT
-# Door 传送测试追镜是否生效。
+# Door 追镜模式是否激活。
 var door_camera_catchup_active: bool = false
-# Door 追镜前 dead zone 备份。
+# Door 追镜前 dead zone 备份（x=width, y=height）。
 var door_camera_dead_zone_backup: Vector2 = Vector2.ZERO
-# Door 追镜期间临时解限前的 Phantom 限制备份。
+# Door 追镜前 Phantom 限制备份。
 var door_limits_backup := {
 	"left": -CAMERA_LIMIT_DISABLED,
 	"top": -CAMERA_LIMIT_DISABLED,
 	"right": CAMERA_LIMIT_DISABLED,
 	"bottom": CAMERA_LIMIT_DISABLED
 }
+# 死亡冻结镜头是否接管相机更新。
 var death_camera_freeze_active: bool = false
+# 死亡冻结使用的相机中心位置。
 var death_camera_freeze_position: Vector2 = Vector2.ZERO
+# 黑屏过场是否正在接管相机状态。
 var blackout_transition_active: bool = false
+# 黑屏过场期间的限制与状态备份。
 var blackout_transition_backup := {
 	"valid": false,
 	"pcam": {
@@ -66,16 +117,29 @@ var blackout_transition_backup := {
 		"bottom": CAMERA_LIMIT_DISABLED
 	}
 }
+# 调试轨迹日志的上次输出时间戳（毫秒）。
 var camera_trace_last_tick_ms: int = -1000000
+# 调试轨迹日志最小刷新间隔（毫秒）。
 const CAMERA_TRACE_TICK_INTERVAL_MS: int = 240
+# 常规跟随模式使用的中间锚点。
+var normal_follow_anchor: Node2D = null
+# 当前帧平滑后的前瞻偏移 x 值（像素）。
+var lookahead_current_x: float = 0.0
+# 停止移动后回收计时（秒）。
+var lookahead_stop_elapsed: float = 0.0
+# 当前注册到控制器的焦点区列表。
+var active_focus_zones: Array[Node] = []
+# 当前帧平滑后的焦点抢夺偏移。
+var focus_capture_current_offset: Vector2 = Vector2.ZERO
 
 # 初始化相机控制器的绑定对象。
 func setup(player_ref: Player) -> void:
 	player = player_ref
 	phantom_camera = player.get_node_or_null("PhantomCamera2D")
+	_ensure_normal_follow_anchor()
 	if phantom_camera:
 		if phantom_camera.follow_target == null:
-			phantom_camera.follow_target = player
+			_set_normal_follow_target()
 		camera_transition_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
 	setup_completed = true
 	_debug_camera_trace("setup")
@@ -88,6 +152,7 @@ func physics_process(fixed_delta: float) -> void:
 		return
 	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
 		return
+	_update_normal_follow_anchor(fixed_delta)
 	_ensure_valid_follow_target()
 	var camera := player.get_viewport().get_camera_2d()
 	if (camera and (not camera.global_position.is_finite() or not camera.offset.is_finite())) or not phantom_camera.global_position.is_finite():
@@ -155,7 +220,7 @@ func sync_camera_after_room_teleport() -> void:
 	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
 		return
 	if phantom_camera.follow_target == null:
-		phantom_camera.follow_target = player
+		_set_normal_follow_target()
 
 	var camera := player.get_viewport().get_camera_2d()
 	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
@@ -205,7 +270,7 @@ func sync_camera_to_player_center() -> void:
 		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x
 		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y
 		warp_camera_dead_zone_backup_valid = false
-	phantom_camera.follow_target = player
+	_set_normal_follow_target()
 
 	# 重生场景不需要观察偏移，直接回归零偏移保证“尽量以玩家为中心”。
 	if phantom_camera.has_method("set_follow_offset"):
@@ -252,7 +317,7 @@ func begin_blackout_camera_transition() -> void:
 	warp_camera_wait_timeout = 0.0
 	warp_camera_dead_zone_backup_valid = false
 	if phantom_camera:
-		phantom_camera.follow_target = player
+		_set_normal_follow_target()
 		phantom_camera.follow_offset = Vector2.ZERO
 	var camera := player.get_viewport().get_camera_2d()
 	if camera:
@@ -434,7 +499,7 @@ func _release_warp_camera_hold(follow_player: bool) -> void:
 		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y
 		warp_camera_dead_zone_backup_valid = false
 	if follow_player and is_instance_valid(player):
-		phantom_camera.follow_target = player
+		_set_normal_follow_target()
 		_safe_teleport_phantom_camera()
 	elif is_instance_valid(warp_camera_follow_target_backup):
 		phantom_camera.follow_target = warp_camera_follow_target_backup
@@ -461,9 +526,120 @@ func _ensure_valid_follow_target() -> void:
 		if phantom_camera.follow_target != warp_camera_anchor:
 			phantom_camera.follow_target = warp_camera_anchor
 		return
-	if phantom_camera.follow_target == null or not is_instance_valid(phantom_camera.follow_target):
-		if is_instance_valid(player):
-			phantom_camera.follow_target = player
+	_set_normal_follow_target()
+
+func _ensure_normal_follow_anchor() -> void:
+	if not is_instance_valid(player):
+		return
+	if is_instance_valid(normal_follow_anchor):
+		return
+	var parent_node := player.get_parent()
+	if parent_node == null:
+		return
+	normal_follow_anchor = Node2D.new()
+	normal_follow_anchor.name = "PlayerCameraFollowAnchor"
+	parent_node.add_child(normal_follow_anchor)
+	normal_follow_anchor.global_position = player.global_position
+
+func _set_normal_follow_target() -> void:
+	if not is_instance_valid(phantom_camera):
+		return
+	_ensure_normal_follow_anchor()
+	if is_instance_valid(normal_follow_anchor):
+		phantom_camera.follow_target = normal_follow_anchor
+	elif is_instance_valid(player):
+		phantom_camera.follow_target = player
+
+func _update_normal_follow_anchor(fixed_delta: float) -> void:
+	if not is_instance_valid(player):
+		return
+	_ensure_normal_follow_anchor()
+	if not is_instance_valid(normal_follow_anchor):
+		return
+	var lookahead_x := _compute_lookahead_x(fixed_delta)
+	var focus_offset := _compute_focus_capture_offset(fixed_delta)
+	var desired_offset := Vector2(lookahead_x, 0.0) + focus_offset
+	normal_follow_anchor.global_position = player.global_position + desired_offset
+
+func _compute_lookahead_x(fixed_delta: float) -> float:
+	if not lookahead_enabled:
+		lookahead_current_x = move_toward(lookahead_current_x, 0.0, lookahead_decel * fixed_delta)
+		return lookahead_current_x
+	if not is_instance_valid(player):
+		return 0.0
+	if lookahead_disable_in_air and not player.is_on_floor() and not player.coyote_time_active:
+		lookahead_current_x = move_toward(lookahead_current_x, 0.0, lookahead_decel * fixed_delta)
+		return lookahead_current_x
+
+	var control_locked: bool = bool(player.get("is_control_locked"))
+	var vx := 0.0
+	if not control_locked and player.velocity.is_finite():
+		vx = player.velocity.x
+	var speed_abs := absf(vx)
+	if speed_abs < 8.0:
+		lookahead_stop_elapsed += fixed_delta
+		var recover_ratio := 1.0
+		if lookahead_stop_recover_time > 0.0:
+			recover_ratio = clampf(lookahead_stop_elapsed / lookahead_stop_recover_time, 0.35, 1.0)
+		lookahead_current_x = move_toward(lookahead_current_x, 0.0, lookahead_decel * recover_ratio * fixed_delta)
+		return lookahead_current_x
+
+	lookahead_stop_elapsed = 0.0
+	var speed_ratio := clampf(speed_abs / maxf(lookahead_velocity_for_max, 1.0), 0.0, 1.0)
+	var target_magnitude := lerpf(lookahead_min_x, lookahead_max_x, speed_ratio)
+	var target := signf(vx) * target_magnitude
+	var accel := lookahead_accel
+	if signf(target) != signf(lookahead_current_x) or absf(target) < absf(lookahead_current_x):
+		accel = lookahead_decel
+	lookahead_current_x = move_toward(lookahead_current_x, target, accel * fixed_delta)
+	return lookahead_current_x
+
+func _compute_focus_capture_offset(fixed_delta: float) -> Vector2:
+	if not focus_capture_enabled:
+		focus_capture_current_offset = focus_capture_current_offset.lerp(Vector2.ZERO, clampf(focus_capture_smooth * fixed_delta, 0.0, 1.0))
+		return focus_capture_current_offset
+
+	var best_weight := -1.0
+	var best_offset := Vector2.ZERO
+	var stale_zones: Array[Node] = []
+	for zone in active_focus_zones:
+		if not is_instance_valid(zone):
+			stale_zones.append(zone)
+			continue
+		if not zone.has_method("get_focus_capture_sample_for_player"):
+			continue
+		var sample: Dictionary = zone.get_focus_capture_sample_for_player(player)
+		if not bool(sample.get("valid", false)):
+			continue
+		var weight: float = float(sample.get("weight", 0.0))
+		if weight > best_weight:
+			best_weight = weight
+			best_offset = sample.get("offset", Vector2.ZERO)
+
+	for stale_zone in stale_zones:
+		active_focus_zones.erase(stale_zone)
+
+	var target_offset := Vector2.ZERO
+	if best_weight > 0.0:
+		target_offset = best_offset * maxf(focus_capture_global_blend, 0.0)
+		if focus_capture_max_offset > 0.0 and target_offset.length() > focus_capture_max_offset:
+			target_offset = target_offset.normalized() * focus_capture_max_offset
+
+	var smooth := clampf(focus_capture_smooth * fixed_delta, 0.0, 1.0)
+	focus_capture_current_offset = focus_capture_current_offset.lerp(target_offset, smooth)
+	return focus_capture_current_offset
+
+func register_focus_capture_zone(zone: Node) -> void:
+	if zone == null:
+		return
+	if active_focus_zones.has(zone):
+		return
+	active_focus_zones.append(zone)
+
+func unregister_focus_capture_zone(zone: Node) -> void:
+	if zone == null:
+		return
+	active_focus_zones.erase(zone)
 
 # Door 传送测试路径：短时解限 + 快速追镜 + 自动恢复目标房间限制。
 func start_door_teleport_camera_catchup(catchup_duration: float = 0.20, unlock_duration: float = 0.32) -> void:

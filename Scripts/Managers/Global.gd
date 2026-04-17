@@ -61,6 +61,16 @@ func _ready():
 # 当前存档槽
 var current_save_slot: int = -1
 
+# 启动阶段待执行的过场序列标识。
+var pending_boot_cinematic_id: StringName = &""
+
+# 启动阶段过场携带的上下文参数。
+var pending_boot_cinematic_payload: Dictionary = {}
+
+# 游戏时长（秒），只统计实际游玩时间
+var total_play_time_seconds: int = 0
+var _play_time_session_start_ms: int = -1
+
 var last_save_room: String = "Room1"  # 最后存档的房间
 
 # 初始化新游戏（创建新存档时调用）
@@ -71,6 +81,8 @@ func initialize_new_game():
 	player_current_health = 3
 	player_coins = 0
 	last_save_room = "Room1"
+	total_play_time_seconds = 0
+	_play_time_session_start_ms = -1
 	unlocked_abilities = {
 		"dash": false,
 		"double_jump": false,
@@ -98,6 +110,37 @@ func initialize_new_game():
 		task_manager.npc_interactions.clear()
 		task_manager.tasks_completed.clear()
 		task_manager.special_dialogues_shown.clear()
+
+
+func request_boot_cinematic(sequence_id: StringName, payload: Dictionary = {}) -> void:
+	pending_boot_cinematic_id = sequence_id
+	pending_boot_cinematic_payload = payload.duplicate(true)
+
+
+func peek_boot_cinematic_request() -> Dictionary:
+	if pending_boot_cinematic_id == &"":
+		return {}
+	return {
+		"id": pending_boot_cinematic_id,
+		"payload": pending_boot_cinematic_payload.duplicate(true)
+	}
+
+
+func consume_boot_cinematic_request() -> Dictionary:
+	if pending_boot_cinematic_id == &"":
+		return {}
+	var request := {
+		"id": pending_boot_cinematic_id,
+		"payload": pending_boot_cinematic_payload.duplicate(true)
+	}
+	pending_boot_cinematic_id = &""
+	pending_boot_cinematic_payload = {}
+	return request
+
+
+func clear_boot_cinematic_request() -> void:
+	pending_boot_cinematic_id = &""
+	pending_boot_cinematic_payload = {}
 
 
 # 保存游戏数据
@@ -138,6 +181,7 @@ func get_save_data() -> Dictionary:
 		"maniac_stage3_challenge_completed": maniac_stage3_challenge_completed,
 		"maniac_stage3_last_challenge_failed": maniac_stage3_last_challenge_failed,
 		"destructible_walls_destroyed": destructible_walls_destroyed.duplicate(true),  # 深拷贝防止引用污染
+		"play_time_seconds": get_total_play_time_seconds(),
 		"timestamp": Time.get_datetime_string_from_system()
 	}
 
@@ -185,6 +229,12 @@ func load_save_data(data: Dictionary):
 	# 关键：确保房间落点来自该存档槽本身
 	if data.has("last_save_room"):
 		last_save_room = data["last_save_room"]
+
+	if data.has("play_time_seconds"):
+		total_play_time_seconds = int(data["play_time_seconds"])
+	else:
+		total_play_time_seconds = 0
+	_play_time_session_start_ms = -1
 	
 	# 方案A：动态检查点不入档，只把检查点运行态重置为与静态存档点一致
 	last_checkpoint_position = get_save_point_position()
@@ -341,3 +391,41 @@ func get_save_point_position() -> Vector2:
 	else:
 		print("警告：存档位置数据损坏，使用默认位置")
 		return Vector2(0, 0)
+
+func start_play_time_session() -> void:
+	if _play_time_session_start_ms >= 0:
+		return
+	_play_time_session_start_ms = Time.get_ticks_msec()
+
+func pause_play_time_session() -> void:
+	if _play_time_session_start_ms < 0:
+		return
+	var elapsed_ms: int = Time.get_ticks_msec() - _play_time_session_start_ms
+	total_play_time_seconds += int(elapsed_ms / 1000.0)
+	_play_time_session_start_ms = -1
+
+func resume_play_time_session() -> void:
+	start_play_time_session()
+
+func stop_play_time_session() -> void:
+	pause_play_time_session()
+
+func get_total_play_time_seconds() -> int:
+	if _play_time_session_start_ms < 0:
+		return total_play_time_seconds
+	var elapsed_ms: int = Time.get_ticks_msec() - _play_time_session_start_ms
+	return total_play_time_seconds + int(elapsed_ms / 1000.0)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_persist_play_time_before_quit()
+
+func _exit_tree() -> void:
+	_persist_play_time_before_quit()
+
+func _persist_play_time_before_quit() -> void:
+	if current_save_slot < 0:
+		return
+	stop_play_time_session()
+	if SaveManager:
+		SaveManager.save_game(current_save_slot, get_save_data())

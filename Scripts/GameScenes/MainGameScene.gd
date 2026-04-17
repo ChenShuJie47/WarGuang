@@ -3,22 +3,31 @@ extends Node2D
 
 signal boot_visual_ready
 
+# 启动阶段是否已经准备好让场景切换流程继续。
 var _boot_visual_ready: bool = false
 
 @onready var room_container = $RoomContainer
 @onready var player = $Player
+# 新存档开场与后续事件演出的独立导演节点。
+@onready var boot_cinematic_director = $BootCinematicDirector
 
 func _ready():
 	_cleanup_runtime_camera_viewfinder_overlays()
 	if RoomManager and RoomManager.has_method("reset_runtime_state"):
 		RoomManager.reset_runtime_state()
+	# 当前启动是否携带一次性的新存档开场请求。
+	var boot_cinematic_request: Dictionary = {}
+	if Global and Global.has_method("peek_boot_cinematic_request"):
+		boot_cinematic_request = Global.peek_boot_cinematic_request()
+	# 是否需要走开场导演流程，而不是常规存档睡眠同步。
+	var should_play_opening: bool = boot_cinematic_request.get("id", "") == "new_save_opening"
 
 	# 初始化房间系统
 	initialize_room_system()
 	
 	# 设置玩家引用
 	RoomManager.set_player(player)
-	if Global.current_save_slot >= 0:
+	if Global.current_save_slot >= 0 and not should_play_opening:
 		_preposition_player_and_camera_for_save()
 	
 	# 确保 CanvasModulate 节点正确引用
@@ -40,7 +49,10 @@ func _ready():
 	
 	# 如果是从存档加载，设置玩家位置和状态
 	if Global.current_save_slot >= 0:
-		await _load_from_save()
+		if should_play_opening:
+			await _play_new_game_opening_sequence()
+		else:
+			await _load_from_save()
 	else:
 		await get_tree().process_frame
 		RoomManager.load_room("Room1")
@@ -52,6 +64,21 @@ func _ready():
 
 	_boot_visual_ready = true
 	boot_visual_ready.emit()
+
+func _play_new_game_opening_sequence() -> void:
+	if FadeManager and FadeManager.has_method("fade_out"):
+		await FadeManager.fade_out(0.0)
+	if RoomManager:
+		RoomManager.load_room("Room1")
+	await get_tree().process_frame
+	var boot_cinematic_request: Dictionary = {}
+	if Global and Global.has_method("consume_boot_cinematic_request"):
+		boot_cinematic_request = Global.consume_boot_cinematic_request()
+	if boot_cinematic_director and boot_cinematic_director.has_method("play_intro_sequence"):
+		await boot_cinematic_director.play_intro_sequence(boot_cinematic_request)
+	if boot_cinematic_director and boot_cinematic_director.has_method("start_gameplay_drop"):
+		boot_cinematic_director.start_gameplay_drop(player, boot_cinematic_request)
+		await boot_cinematic_director.gameplay_drop_started
 
 func _exit_tree() -> void:
 	_cleanup_runtime_camera_viewfinder_overlays()

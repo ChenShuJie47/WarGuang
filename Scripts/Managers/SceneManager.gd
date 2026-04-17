@@ -6,6 +6,8 @@ var _scene_switch_in_progress: bool = false
 func switch_scene(scene_path: String):
 	if not _begin_scene_switch("switch_scene -> %s" % scene_path):
 		return
+	if scene_path != ScenePaths.GAME_MAIN and Global:
+		Global.stop_play_time_session()
 
 	# 修复：切换场景前确保结束当前对话
 	var dialogue_system = get_node_or_null("/root/DialogueSystem")
@@ -27,6 +29,8 @@ func switch_scene(scene_path: String):
 func return_to_title_from_game_setting(already_black: bool = false):
 	if not _begin_scene_switch("return_to_title_from_game_setting"):
 		return
+	if Global:
+		Global.stop_play_time_session()
 
 	if already_black:
 		if AudioManager:
@@ -64,12 +68,16 @@ func start_game_from_save(slot_index: int):
 		door_manager.clear_all_doors()
 	
 	Global.current_save_slot = slot_index
+	# 当前槽位是否已经存在真实存档文件。
+	var save_exists: bool = SaveManager.save_exists(slot_index)
 	
 	# 记录开始时间（从点击存档开始）
 	var start_time = Time.get_ticks_msec()
 	
 	# 加载存档数据
-	if SaveManager.save_exists(slot_index):
+	if save_exists:
+		if Global and Global.has_method("clear_boot_cinematic_request"):
+			Global.clear_boot_cinematic_request()
 		var data = SaveManager.load_game(slot_index)
 		if not data.is_empty():
 			Global.load_save_data(data)
@@ -78,6 +86,8 @@ func start_game_from_save(slot_index: int):
 			SaveManager.save_game(slot_index, Global.get_save_data())
 	else:
 		Global.initialize_new_game()
+		if Global and Global.has_method("request_boot_cinematic"):
+			Global.request_boot_cinematic(&"new_save_opening")
 		SaveManager.save_game(slot_index, Global.get_save_data())
 	
 	# 确保 TaskManager 重置 NPC 状态
@@ -99,6 +109,8 @@ func start_game_from_save(slot_index: int):
 	if remain_black > 0.0:
 		await get_tree().create_timer(remain_black).timeout
 	await FadeManager.fade_in(FadeManager.ui_save_to_game_fade_in_duration)
+	if Global:
+		Global.start_play_time_session()
 
 	# 等待一帧让淡入后的状态稳定
 	await get_tree().process_frame

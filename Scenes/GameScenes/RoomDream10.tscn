@@ -1,7 +1,7 @@
-[gd_scene load_steps=13 format=4 uid="uid://cpl4se47i7uk6"]
+[gd_scene load_steps=12 format=4 uid="uid://cpl4se47i7uk6"]
 
 [ext_resource type="Script" uid="uid://driejj5w0waqn" path="res://Scripts/GameScenes/Room.gd" id="1_83itb"]
-[ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1.png" id="2_hofoq"]
+[ext_resource type="Texture2D" uid="uid://lv2f6kd1slvx" path="res://Assets/Textures/UIs/SceneUIs/3.png" id="2_hofoq"]
 [ext_resource type="Texture2D" uid="uid://fl5mcf6y1aa3" path="res://Assets/Textures/Tiles/new tiles 16×16-01.png" id="3_hofoq"]
 [ext_resource type="PackedScene" uid="uid://c7552ukdc1li7" path="res://Scenes/GameScenes/Door.tscn" id="4_auxex"]
 [ext_resource type="PackedScene" uid="uid://gij1n237uov8" path="res://Scenes/Instances/SavePoints/DynamicCheckpoint.tscn" id="5_6vpoh"]
@@ -26,21 +26,18 @@ texture = ExtResource("3_hofoq")
 physics_layer_0/collision_layer = 6
 sources/2 = SubResource("TileSetAtlasSource_boueb")
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_rumk0"]
-size = Vector2(384, 216)
-
 [node name="RoomDream10" type="Node2D" node_paths=PackedStringArray("room_bounds")]
 script = ExtResource("1_83itb")
 room_id = "RoomDream10"
-room_color = Color(0.88235295, 0.60784316, 1, 0.64705884)
+room_color = Color(0.88235295, 0.60784316, 1, 1)
 room_bounds = NodePath("RoomBounds10")
 
 [node name="Background" type="Sprite2D" parent="."]
 position = Vector2(2891.9998, -284)
-scale = Vector2(15.729166, 4.7037034)
+scale = Vector2(24, 7.5)
 texture = ExtResource("2_hofoq")
 region_enabled = true
-region_rect = Rect2(0, 0, 384, 216)
+region_rect = Rect2(0, 144, 256, 144)
 
 [node name="RoomTrigger" type="Area2D" parent="."]
 
@@ -95,19 +92,13 @@ checkpoint_id = 1002
 belongs_to_room = "RoomDream10"
 
 [node name="RoomBounds10" type="Node2D" parent="."]
+visible = false
 position = Vector2(2767, -357.00003)
 scale = Vector2(7.6800017, 1.9700004)
 script = ExtResource("6_sgrg1")
 size = Vector2(768, 460)
 debug_color = Color(0, 0.824, 0.588, 0.235)
 metadata/_custom_type_script = "uid://bnu2kwe1y26uk"
-
-[node name="Camera2DText" type="Area2D" parent="."]
-visible = false
-position = Vector2(515, -67)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Camera2DText"]
-shape = SubResource("RectangleShape2D_rumk0")
 
 [node name="WaterSurface" parent="." instance=ExtResource("6_83itb")]
 position = Vector2(3019.9998, 168.00002)

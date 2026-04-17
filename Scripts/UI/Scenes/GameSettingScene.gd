@@ -57,6 +57,8 @@ func _ready():
 	
 	get_tree().paused = true
 	is_open = true
+	if Global:
+		Global.pause_play_time_session()
 	
 	# 关键修复：显示黑色遮罩层
 	DarkOverlay.show_overlay()
@@ -128,6 +130,8 @@ func _close_game_setting():
 	await _play_close_animation()
 	DarkOverlay.hide_overlay()
 	get_tree().paused = false
+	if Global:
+		Global.resume_play_time_session()
 	menu_closed.emit()
 	queue_free()
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://b03jaomk2cnqd"]
+[gd_scene load_steps=13 format=3 uid="uid://b03jaomk2cnqd"]
 
 [ext_resource type="Script" uid="uid://bgd4cnk4b8qrx" path="res://Scripts/GameScenes/MainGameScene.gd" id="1_dcv5v"]
 [ext_resource type="PackedScene" uid="uid://dwj2ydwabq3n0" path="res://Scenes/Player/Player.tscn" id="1_wdg0h"]
@@ -8,6 +8,8 @@
 [ext_resource type="PackedScene" uid="uid://cytmqowp6nqi7" path="res://Scenes/GameScenes/Room3.tscn" id="5_545fw"]
 [ext_resource type="PackedScene" uid="uid://cpl4se47i7uk6" path="res://Scenes/GameScenes/RoomDream10.tscn" id="6_rbrij"]
 [ext_resource type="PackedScene" uid="uid://bq2thpcuuy615" path="res://Scenes/GameScenes/VignetteEffect.tscn" id="8_jbabp"]
+[ext_resource type="Script" uid="uid://dvqwec3j18pnf" path="res://Scripts/GameScenes/BootCinematicDirector.gd" id="9_boot_cinematic"]
+[ext_resource type="Texture2D" uid="uid://cy2yuswokrtcg" path="res://Assets/Textures/Backgrounds/2.png" id="11_ncfrq"]
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="18_iaaki"]
 
 [sub_resource type="Environment" id="Environment_jbabp"]
@@ -23,7 +25,7 @@ environment = SubResource("Environment_jbabp")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 physics_interpolation_mode = 1
-position = Vector2(602, -158)
+position = Vector2(872, -2191)
 zoom = Vector2(2, 2)
 limit_enabled = false
 position_smoothing_speed = 8.0
@@ -38,19 +40,25 @@ script = ExtResource("18_iaaki")
 [node name="Room1" parent="RoomContainer" instance=ExtResource("3_mvl1i")]
 
 [node name="Room2" parent="RoomContainer" instance=ExtResource("4_mvl1i")]
-position = Vector2(7636, 489)
+position = Vector2(7978, 1140)
 
 [node name="Room3" parent="RoomContainer" instance=ExtResource("5_545fw")]
-position = Vector2(-1743, 197)
+position = Vector2(-1487, 1876)
 
 [node name="Room4" parent="RoomContainer" instance=ExtResource("6_rbrij")]
-position = Vector2(294, 1693)
+position = Vector2(-52, 2253)
 room_color = Color(0.9884812, 0.6002661, 0.71938556, 0.64705884)
 
 [node name="Player" parent="." instance=ExtResource("1_wdg0h")]
-position = Vector2(602, -158)
+position = Vector2(872, -2191)
 
 [node name="PlayerUI" parent="." instance=ExtResource("2_4xi3m")]
 health_unit_spacing = 70.0
 
 [node name="VignetteEffect" parent="." instance=ExtResource("8_jbabp")]
+
+[node name="BootCinematicDirector" type="CanvasLayer" parent="."]
+process_mode = 3
+layer = 1105
+script = ExtResource("9_boot_cinematic")
+intro_animation_texture = ExtResource("11_ncfrq")

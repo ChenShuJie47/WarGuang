@@ -114,5 +114,7 @@ func get_save_info(slot_index: int) -> Dictionary:
 		"exists": true,
 		"player_max_health": data.get("player_max_health", 3),
 		"player_coins": data.get("player_coins", 0),
+		"last_save_room": data.get("last_save_room", "Room1"),
+		"play_time_seconds": data.get("play_time_seconds", 0),
 		"timestamp": data.get("timestamp", "")
 	}

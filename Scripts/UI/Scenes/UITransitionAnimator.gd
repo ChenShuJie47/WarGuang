@@ -50,6 +50,7 @@ func _ready() -> void:
 		_initial_title_scale = _title.scale
 	_apply_enter_start_state()
 
+## 播放场景入场动画
 func play_enter_transition() -> void:
 	if not _has_targets():
 		return
@@ -78,6 +79,7 @@ func play_enter_transition() -> void:
 		_tween.parallel().tween_property(target, "scale", _extra_initial_scales[i], settle_duration)
 	await _tween.finished
 
+## 播放场景退场动画
 func play_exit_transition() -> void:
 	if not _has_targets():
 		return
@@ -109,6 +111,7 @@ func play_exit_transition() -> void:
 		_tween.parallel().tween_property(target, "scale", Vector2.ZERO, vanish_duration)
 	await _tween.finished
 
+## 还原到缓存的编辑器基态
 func reset_state() -> void:
 	_stop_tween()
 	if _title:
@@ -121,6 +124,7 @@ func reset_state() -> void:
 		target.position = _extra_initial_positions[i]
 		target.scale = _extra_initial_scales[i]
 
+## 应用入场初始偏移和透明状态
 func _apply_enter_start_state() -> void:
 	if _title:
 		_title.modulate = Color(_initial_title_modulate.r, _initial_title_modulate.g, _initial_title_modulate.b, 0.0)
@@ -135,6 +139,7 @@ func _apply_enter_start_state() -> void:
 		target.position = Vector2(base_pos.x, base_pos.y + extra_drift_distance)
 		target.scale = base_scale * peak_scale_multiplier
 
+## 缓存当前标题和额外目标的基态
 func _cache_targets() -> void:
 	_title = _resolve_target(title_path)
 	_extra_targets.clear()
@@ -149,15 +154,34 @@ func _cache_targets() -> void:
 			_extra_initial_positions.append(target.position)
 			_extra_initial_scales.append(target.scale)
 
+## 仅刷新当前全部目标缓存
+func refresh_targets() -> void:
+	_cache_targets()
+	if _title:
+		_initial_title_modulate = _title.modulate
+		_initial_title_position = _title.position
+		_initial_title_scale = _title.scale
+
+## 仅刷新标题目标缓存
+func refresh_title_target_only() -> void:
+	_title = _resolve_target(title_path)
+	if _title:
+		_initial_title_modulate = _title.modulate
+		_initial_title_position = _title.position
+		_initial_title_scale = _title.scale
+
+## 解析可动画化节点
 func _resolve_target(path: NodePath) -> CanvasItem:
 	var target := get_node_or_null(path)
 	if target and target is CanvasItem:
 		return target
 	return null
 
+## 判断是否至少存在一个动画目标
 func _has_targets() -> bool:
 	return _title != null or not _extra_targets.is_empty()
 
+## 停止当前 Tween
 func _stop_tween() -> void:
 	if _tween and _tween.is_valid():
 		_tween.kill()

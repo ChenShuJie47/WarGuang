@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://dhvpsakgvr6v5"]
+
+[ext_resource type="Script" uid="uid://de4ch1pjkbn33" path="res://Scripts/Instances/CameraFocusBeacon.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dmxv540ejjtkg" path="res://Assets/Textures/UIs/SaveSlotBlue.tres" id="2_tbx8o"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tbx8o"]
+size = Vector2(576, 344)
+
+[node name="CameraFocusBeacon" type="Area2D"]
+script = ExtResource("1_script")
+capture_radius = 280.0
+steal_strength = 0.88
+falloff_power = 1.15
+max_focus_offset = 320.0
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.25, 0.85, 1, 0.7)
+position = Vector2(0, -24)
+scale = Vector2(4, 6)
+texture = ExtResource("2_tbx8o")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(32, -84)
+shape = SubResource("RectangleShape2D_tbx8o")
+
+[node name="FocusTarget" type="Marker2D" parent="."]
+position = Vector2(0, -96)

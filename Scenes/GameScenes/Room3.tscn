@@ -1,7 +1,7 @@
 [gd_scene load_steps=12 format=4 uid="uid://cytmqowp6nqi7"]
 
 [ext_resource type="Script" uid="uid://driejj5w0waqn" path="res://Scripts/GameScenes/Room.gd" id="1_08isg"]
-[ext_resource type="Texture2D" uid="uid://cckjdme671kpv" path="res://Assets/Textures/Backgrounds/3.png" id="2_0882f"]
+[ext_resource type="Texture2D" uid="uid://lcyku0uvo3m8" path="res://Assets/Textures/UIs/SceneUIs/title002.png" id="2_mjspf"]
 [ext_resource type="Texture2D" uid="uid://fl5mcf6y1aa3" path="res://Assets/Textures/Tiles/new tiles 16×16-01.png" id="3_0882f"]
 [ext_resource type="PackedScene" uid="uid://c7552ukdc1li7" path="res://Scenes/GameScenes/Door.tscn" id="4_v3s8p"]
 [ext_resource type="PackedScene" uid="uid://bq5gktnvtvvop" path="res://Scenes/Instances/HurtBoxs/HurtBox.tscn" id="5_mjspf"]
@@ -35,8 +35,9 @@ room_color = Color(0.728822, 0.728822, 0.728822, 1)
 room_bounds = NodePath("RoomBounds3")
 
 [node name="Background" type="Sprite2D" parent="."]
-position = Vector2(192, -108)
-texture = ExtResource("2_0882f")
+position = Vector2(309, -103)
+scale = Vector2(3, 3)
+texture = ExtResource("2_mjspf")
 region_enabled = true
 region_rect = Rect2(0, 0, 384, 216)
 

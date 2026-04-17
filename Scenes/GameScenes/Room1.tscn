@@ -1,8 +1,8 @@
-[gd_scene load_steps=19 format=4 uid="uid://dmmevbmmo24d7"]
+[gd_scene load_steps=20 format=4 uid="uid://dmmevbmmo24d7"]
 
 [ext_resource type="Script" uid="uid://driejj5w0waqn" path="res://Scripts/GameScenes/Room.gd" id="1_am8bf"]
 [ext_resource type="Script" uid="uid://bnu2kwe1y26uk" path="res://Scripts/UI/TextArea.gd" id="2_5m2yc"]
-[ext_resource type="Texture2D" uid="uid://fl5mcf6y1aa3" path="res://Assets/Textures/Tiles/new tiles 16×16-01.png" id="2_qxijn"]
+[ext_resource type="Texture2D" uid="uid://b8m7xj4t4q3ic" path="res://Assets/Textures/UIs/SceneUIs/2.png" id="2_qxijn"]
 [ext_resource type="PackedScene" uid="uid://c7552ukdc1li7" path="res://Scenes/GameScenes/Door.tscn" id="4_37qyv"]
 [ext_resource type="PackedScene" uid="uid://dkf8hj58symgr" path="res://Scenes/Instances/HealthUpgradeItem.tscn" id="4_qqk48"]
 [ext_resource type="PackedScene" uid="uid://gij1n237uov8" path="res://Scenes/Instances/SavePoints/DynamicCheckpoint.tscn" id="5_5m2yc"]
@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://c27lxln10kkbv" path="res://Scenes/NPCs/MasterNPC.tscn" id="13_gmrqp"]
 [ext_resource type="PackedScene" uid="uid://ch51hg2xln7gy" path="res://Scenes/Instances/DestructibleWall.tscn" id="16_5m2yc"]
 [ext_resource type="PackedScene" uid="uid://dmecyxvlsc52o" path="res://Scenes/Instances/Environments/WaterSurface.tscn" id="17_qxijn"]
+[ext_resource type="PackedScene" uid="uid://dhvpsakgvr6v5" path="res://Scenes/Instances/CameraFocusBeacon.tscn" id="18_focus"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_qqk48"]
 
@@ -25,15 +26,23 @@ size = Vector2(643, 363)
 [node name="Room1" type="Node2D" node_paths=PackedStringArray("room_bounds")]
 script = ExtResource("1_am8bf")
 room_bgm = "BGM1"
-adjacent_rooms = Array[String](["Room2", "Room3"])
-room_color = Color(0.6039216, 0.80784315, 0.78039217, 0.8)
+room_color = Color(0.09385047, 0.11063736, 0.10015421, 1)
 room_bounds = NodePath("RoomBounds1")
 
 [node name="Background" type="Sprite2D" parent="."]
-scale = Vector2(600, 200)
+position = Vector2(3772, -660.00006)
+scale = Vector2(449.5, 122.5)
 texture = ExtResource("2_qxijn")
 region_enabled = true
 region_rect = Rect2(0, 16, 16, 16)
+
+[node name="ColorRect" type="ColorRect" parent="."]
+offset_left = -888.0
+offset_top = -1552.0
+offset_right = -874.56
+offset_bottom = -1535.36
+scale = Vector2(100, 100)
+color = Color(0.1536, 0.32, 0.2368, 0.9764706)
 
 [node name="RoomTrigger" type="Area2D" parent="."]
 
@@ -113,9 +122,19 @@ checkpoint_id = 102
 belongs_to_room = "Room1"
 
 [node name="DynamicCheckpoint3" parent="DynamicCheckpoints" instance=ExtResource("5_5m2yc")]
-position = Vector2(1759, -30)
+position = Vector2(176, -208)
 checkpoint_id = 103
 belongs_to_room = "Room1"
+
+[node name="CameraFocusBeacons" type="Node2D" parent="."]
+
+[node name="CameraFocusBeacon" parent="CameraFocusBeacons" instance=ExtResource("18_focus")]
+position = Vector2(1320, -80)
+capture_radius = 300.0
+
+[node name="CameraFocusBeacon2" parent="CameraFocusBeacons" instance=ExtResource("18_focus")]
+position = Vector2(912, -80)
+capture_radius = 300.0
 
 [node name="RotationHurtBoxs" type="Node2D" parent="."]
 position = Vector2(-24, -72)
@@ -149,8 +168,8 @@ position = Vector2(1087, -61)
 wall_id = "1"
 
 [node name="RoomBounds1" type="Node2D" parent="."]
-position = Vector2(3232, -472)
-scale = Vector2(40, 10)
+position = Vector2(3216, -904)
+scale = Vector2(40, 13.959999)
 script = ExtResource("2_5m2yc")
 debug_color = Color(0, 0.824, 0.588, 0.235)
 metadata/_custom_type_script = "uid://bnu2kwe1y26uk"

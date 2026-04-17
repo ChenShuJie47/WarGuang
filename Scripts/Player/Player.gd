@@ -891,6 +891,10 @@ func _on_dialogue_ended():
 func lock_control(duration: float, lock_type: String = "general"):
 	PlayerControlLockServiceScript.lock_control(self, duration, lock_type)
 
+## 立即解除控制锁定。
+func unlock_control() -> void:
+	PlayerControlLockServiceScript.unlock_control(self)
+
 #锁定控制回调
 func _on_control_lock_timeout():
 	PlayerControlLockServiceScript.unlock_control(self)
@@ -934,6 +938,16 @@ func start_door_camera_catchup_after_teleport(catchup_duration: float = 0.20, un
 ## Door 传送后的自动走位：锁定输入，只由脚本移动/跳跃到最近动态检查点。
 func start_door_autowalk_to_dynamic_checkpoint(room_id: String, door_position: Vector2, facing_right: bool, allow_jump: bool = true, timeout: float = 1.4) -> bool:
 	return PlayerRoomTransitionServiceScript.start_door_autowalk_to_dynamic_checkpoint(self, room_id, door_position, facing_right, allow_jump, timeout)
+
+## 注册一个会影响相机焦点的区域。
+func register_camera_focus_zone(zone: Node) -> void:
+	if camera_controller and camera_controller.has_method("register_focus_capture_zone"):
+		camera_controller.register_focus_capture_zone(zone)
+
+## 取消注册一个会影响相机焦点的区域。
+func unregister_camera_focus_zone(zone: Node) -> void:
+	if camera_controller and camera_controller.has_method("unregister_focus_capture_zone"):
+		camera_controller.unregister_focus_capture_zone(zone)
 
 #endregion
 
