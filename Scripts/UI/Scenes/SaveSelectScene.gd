@@ -118,7 +118,6 @@ func _ensure_slot_outline(slot_button: TextureButton) -> Panel:
 	outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	outline.focus_mode = Control.FOCUS_NONE
 	outline.z_index = 20
-	outline.layout_mode = 0
 	outline.anchor_left = 0.0
 	outline.anchor_top = 0.0
 	outline.anchor_right = 1.0

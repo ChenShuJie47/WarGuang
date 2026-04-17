@@ -3,8 +3,21 @@ extends Node2D
 
 signal boot_visual_ready
 
+const ROOM_DREAM10_FIRST_ENTER_FLAG: String = "room_dream10_first_enter"
+
 # 启动阶段是否已经准备好让场景切换流程继续。
 var _boot_visual_ready: bool = false
+var _room_event_running: bool = false
+
+@export_category("Room Event Cinematic")
+## 是否启用首次进入 RoomDream10 的事件演出。
+@export var roomdream10_first_enter_enabled: bool = true
+## 首入事件目标房间 ID。
+@export var roomdream10_event_room_id: String = "RoomDream10"
+## 首入事件步骤序列（Inspector 配置）。
+@export var roomdream10_event_sequence_steps: Array[Dictionary] = []
+## 首入事件结束后黑幕淡出时长（秒）。
+@export var roomdream10_event_reveal_duration: float = 0.55
 
 @onready var room_container = $RoomContainer
 @onready var player = $Player
@@ -15,6 +28,8 @@ func _ready():
 	_cleanup_runtime_camera_viewfinder_overlays()
 	if RoomManager and RoomManager.has_method("reset_runtime_state"):
 		RoomManager.reset_runtime_state()
+	if RoomManager and RoomManager.has_signal("room_loaded") and not RoomManager.room_loaded.is_connected(_on_room_loaded):
+		RoomManager.room_loaded.connect(_on_room_loaded)
 	# 当前启动是否携带一次性的新存档开场请求。
 	var boot_cinematic_request: Dictionary = {}
 	if Global and Global.has_method("peek_boot_cinematic_request"):
@@ -70,9 +85,15 @@ func _play_new_game_opening_sequence() -> void:
 		FadeManager.force_black()
 	else:
 		await FadeManager.fade_out(0.0)
+	if boot_cinematic_director and boot_cinematic_director.has_method("force_overlay_black"):
+		boot_cinematic_director.force_overlay_black()
 	if RoomManager:
 		RoomManager.load_room("Room1")
 	await get_tree().process_frame
+	if FadeManager and FadeManager.has_method("force_black"):
+		FadeManager.force_black()
+	if boot_cinematic_director and boot_cinematic_director.has_method("force_overlay_black"):
+		boot_cinematic_director.force_overlay_black()
 	var boot_cinematic_request: Dictionary = {}
 	if Global and Global.has_method("consume_boot_cinematic_request"):
 		boot_cinematic_request = Global.consume_boot_cinematic_request()
@@ -80,8 +101,15 @@ func _play_new_game_opening_sequence() -> void:
 		await boot_cinematic_director.play_intro_sequence(boot_cinematic_request)
 	if boot_cinematic_director and boot_cinematic_director.has_method("start_gameplay_drop"):
 		boot_cinematic_director.start_gameplay_drop(player, boot_cinematic_request)
-		while boot_cinematic_director and boot_cinematic_director.has_method("is_gameplay_drop_started") and not boot_cinematic_director.is_gameplay_drop_started():
+		var wait_timeout: float = 4.0
+		var wait_elapsed: float = 0.0
+		while boot_cinematic_director and boot_cinematic_director.has_method("is_gameplay_drop_started") and not boot_cinematic_director.is_gameplay_drop_started() and wait_elapsed < wait_timeout:
 			await get_tree().process_frame
+			wait_elapsed += 1.0 / maxf(float(Engine.physics_ticks_per_second), 30.0)
+		if boot_cinematic_director and boot_cinematic_director.has_method("is_gameplay_drop_started") and not boot_cinematic_director.is_gameplay_drop_started():
+			push_warning("BootCinematicDirector: 掉落开始等待超时，执行兜底揭黑。")
+			if boot_cinematic_director.has_method("reveal_overlay_to_gameplay"):
+				await boot_cinematic_director.reveal_overlay_to_gameplay(0.45)
 
 func _exit_tree() -> void:
 	_cleanup_runtime_camera_viewfinder_overlays()
@@ -192,3 +220,55 @@ func _on_player_died():
 	# 关键修复：死亡时清除动态检查点记录
 	if DynamicCheckpointManager.has_method("clear_all_checkpoints_on_death"):
 		DynamicCheckpointManager.clear_all_checkpoints_on_death()
+
+func _on_room_loaded(room_id: String, _previous_room: String) -> void:
+	if not roomdream10_first_enter_enabled:
+		return
+	if room_id != roomdream10_event_room_id:
+		return
+	if _room_event_running:
+		return
+	if Global and Global.has_method("has_cinematic_flag") and Global.has_cinematic_flag(ROOM_DREAM10_FIRST_ENTER_FLAG):
+		return
+	call_deferred("_play_roomdream10_first_enter_event")
+
+func _play_roomdream10_first_enter_event() -> void:
+	if _room_event_running:
+		return
+	if not is_instance_valid(player):
+		return
+	if not is_instance_valid(boot_cinematic_director):
+		return
+	_room_event_running = true
+	if FadeManager and FadeManager.has_method("force_black"):
+		FadeManager.force_black()
+	var sequence_steps: Array = roomdream10_event_sequence_steps.duplicate(true)
+	if sequence_steps.is_empty():
+		var event_frames: Array[Texture2D] = []
+		var source_frames: Array[Texture2D] = boot_cinematic_director.intro_visual_frames
+		if source_frames.size() > 0:
+			event_frames.append(source_frames[0])
+		if source_frames.size() > 1:
+			event_frames.append(source_frames[1])
+		sequence_steps = [
+			{
+				"type": "VISUAL",
+				"frames": event_frames,
+				"frame_durations": PackedFloat32Array([1.8, 2.1]),
+				"default_frame_time": 2.0,
+				"fade_time": 0.35
+			},
+			{
+				"type": "BLACK_HOLD",
+				"hold_time": 0.2
+			}
+		]
+	await boot_cinematic_director.play_blocking_intro_event(player, {
+		"sequence_steps": sequence_steps,
+		"reveal_duration": roomdream10_event_reveal_duration
+	})
+	if Global and Global.has_method("set_cinematic_flag"):
+		Global.set_cinematic_flag(ROOM_DREAM10_FIRST_ENTER_FLAG, true)
+		if SaveManager and Global.current_save_slot >= 0 and SaveManager.has_method("save_game"):
+			SaveManager.save_game(Global.current_save_slot, Global.get_save_data())
+	_room_event_running = false

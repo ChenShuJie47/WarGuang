@@ -56,6 +56,10 @@ enum IntroStepType {
 ## 推荐值：opening_cinematic（新存档开场）、boss_cinematic（Boss 演出）、event_cinematic（剧情事件）
 @export var gameplay_lock_type: String = "opening_cinematic"
 
+@export_category("Event Cinematic")
+## 非开场事件演出结束后，黑幕淡出的默认时长（秒）。
+@export var event_reveal_duration: float = 0.45
+
 # 当前是否正在播放任意导入阶段。
 var _intro_running: bool = false
 # 当前是否正在进行演出式掉落。
@@ -143,6 +147,28 @@ func _start_drop_flow_deferred() -> void:
 func is_gameplay_drop_started() -> bool:
 	return _drop_started
 
+func is_gameplay_drop_running() -> bool:
+	return _drop_running
+
+func is_intro_running() -> bool:
+	return _intro_running
+
+func force_overlay_black() -> void:
+	if not is_instance_valid(_overlay_root):
+		return
+	_overlay_root.visible = true
+	if is_instance_valid(_black_rect):
+		_black_rect.visible = true
+		_black_rect.color.a = 1.0
+	if is_instance_valid(_text_label):
+		_text_label.visible = false
+		_text_label.text = ""
+		_text_label.modulate.a = 0.0
+	if is_instance_valid(_visual_rect):
+		_visual_rect.visible = false
+		_visual_rect.texture = null
+		_visual_rect.modulate.a = 0.0
+
 func _start_drop_flow() -> void:
 	if not is_instance_valid(_player):
 		_drop_started = true
@@ -150,13 +176,13 @@ func _start_drop_flow() -> void:
 		gameplay_drop_finished.emit()
 		_drop_running = false
 		return
+	_drop_started = true
+	gameplay_drop_started.emit()
 	_cache_camera_nodes()
 	_cache_player_runtime_switches()
 	_enter_cinematic_control_mode()
 
-	# 这里是对 SceneManager 的关键同步点：只有真正开始掉落才允许外部淡入。
-	_drop_started = true
-	gameplay_drop_started.emit()
+	# 这里是对 SceneManager 的关键同步点：进入掉落流程后由导演自身接管可见性。
 	_apply_gameplay_overlay_visibility(false)
 
 	var drop_speed: float = maxf(float(_active_payload.get("gameplay_drop_speed", gameplay_drop_speed)), 10.0)
@@ -354,7 +380,7 @@ func _run_intro_sequence_steps() -> void:
 		await _run_intro_step(step)
 
 func _run_intro_step(step: Dictionary) -> void:
-	var step_type: int = int(step.get("type", IntroStepType.BLACK_HOLD))
+	var step_type: int = _resolve_intro_step_type(step.get("type", IntroStepType.BLACK_HOLD))
 	match step_type:
 		IntroStepType.TEXT:
 			await _run_intro_text_block(step)
@@ -365,8 +391,21 @@ func _run_intro_step(step: Dictionary) -> void:
 		_:
 			await _run_black_hold_block(step)
 
+func _resolve_intro_step_type(raw_type: Variant) -> int:
+	if raw_type is String:
+		match String(raw_type).to_upper():
+			"TEXT":
+				return IntroStepType.TEXT
+			"VISUAL":
+				return IntroStepType.VISUAL
+			"BLACK_HOLD":
+				return IntroStepType.BLACK_HOLD
+			_:
+				return IntroStepType.BLACK_HOLD
+	return int(raw_type)
+
 func _run_intro_text_block(step: Dictionary) -> void:
-	var lines: PackedStringArray = step.get("lines", _active_payload.get("intro_text_lines", intro_text_lines))
+	var lines := _extract_text_lines(step)
 	if lines.is_empty():
 		return
 	var hold_time: float = float(step.get("hold_time", _active_payload.get("intro_text_hold_time", intro_text_hold_time)))
@@ -396,10 +435,10 @@ func _run_intro_text_block(step: Dictionary) -> void:
 func _run_intro_visual_block(step: Dictionary) -> void:
 	if not is_instance_valid(_visual_rect):
 		return
-	var visual_frames: Array[Texture2D] = step.get("frames", _active_payload.get("intro_visual_frames", intro_visual_frames))
+	var visual_frames: Array[Texture2D] = _extract_visual_frames(step)
 	if visual_frames.is_empty():
 		return
-	var frame_durations: PackedFloat32Array = step.get("frame_durations", _active_payload.get("intro_visual_frame_durations", intro_visual_frame_durations))
+	var frame_durations: PackedFloat32Array = _extract_frame_durations(step)
 	var default_frame_time: float = float(step.get("default_frame_time", _active_payload.get("intro_visual_default_frame_time", intro_visual_default_frame_time)))
 	var fade_time: float = float(step.get("fade_time", _active_payload.get("intro_visual_fade_time", intro_visual_fade_time)))
 	for index in range(visual_frames.size()):
@@ -444,3 +483,74 @@ func _fade_overlay_to_black() -> void:
 	fade.set_ease(Tween.EASE_IN_OUT)
 	fade.tween_property(_black_rect, "color:a", 1.0, 0.35)
 	await fade.finished
+
+func reveal_overlay_to_gameplay(duration: float = -1.0) -> void:
+	if not is_instance_valid(_overlay_root) or not is_instance_valid(_black_rect):
+		return
+	var reveal_duration: float = event_reveal_duration if duration < 0.0 else duration
+	_black_rect.visible = true
+	_black_rect.color.a = 1.0
+	if reveal_duration <= 0.0:
+		_black_rect.color.a = 0.0
+		_overlay_root.visible = false
+		return
+	var fade := create_tween()
+	fade.set_trans(Tween.TRANS_SINE)
+	fade.set_ease(Tween.EASE_OUT)
+	fade.tween_property(_black_rect, "color:a", 0.0, reveal_duration)
+	await fade.finished
+	_overlay_root.visible = false
+
+func play_blocking_intro_event(player_ref: Player, payload: Dictionary = {}) -> void:
+	if _intro_running or _drop_running:
+		return
+	if not is_instance_valid(player_ref):
+		return
+	_player = player_ref
+	_active_payload = payload.get("payload", payload) if typeof(payload.get("payload", payload)) == TYPE_DICTIONARY else {}
+	_cache_camera_nodes()
+	_cache_player_runtime_switches()
+	_enter_cinematic_control_mode()
+	force_overlay_black()
+	await play_intro_sequence(payload)
+	await reveal_overlay_to_gameplay(float(_active_payload.get("reveal_duration", event_reveal_duration)))
+	_restore_camera_behavior()
+	_restore_player_runtime_switches()
+	if is_instance_valid(_player):
+		_player.velocity = Vector2.ZERO
+		if _player.has_method("unlock_control"):
+			_player.unlock_control()
+		if _player.has_method("set_player_control"):
+			_player.set_player_control(true)
+
+func _extract_text_lines(step: Dictionary) -> PackedStringArray:
+	var fallback: Variant = _active_payload.get("intro_text_lines", intro_text_lines)
+	var raw_lines: Variant = step.get("lines", fallback)
+	var lines := PackedStringArray()
+	if raw_lines is PackedStringArray:
+		return raw_lines
+	if raw_lines is Array:
+		for item in raw_lines:
+			lines.append(String(item))
+	return lines
+
+func _extract_visual_frames(step: Dictionary) -> Array[Texture2D]:
+	var fallback: Variant = _active_payload.get("intro_visual_frames", intro_visual_frames)
+	var raw_frames: Variant = step.get("frames", fallback)
+	var visual_frames: Array[Texture2D] = []
+	if raw_frames is Array:
+		for item in raw_frames:
+			if item is Texture2D:
+				visual_frames.append(item)
+	return visual_frames
+
+func _extract_frame_durations(step: Dictionary) -> PackedFloat32Array:
+	var fallback: Variant = _active_payload.get("intro_visual_frame_durations", intro_visual_frame_durations)
+	var raw_durations: Variant = step.get("frame_durations", fallback)
+	if raw_durations is PackedFloat32Array:
+		return raw_durations
+	var durations := PackedFloat32Array([])
+	if raw_durations is Array:
+		for item in raw_durations:
+			durations.append(float(item))
+	return durations

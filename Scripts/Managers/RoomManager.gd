@@ -1,5 +1,7 @@
 extends Node
 
+signal room_loaded(room_id: String, previous_room: String)
+
 const CAMERA_LIMIT_DISABLED: int = 10000000  # 禁用相机限制时使用的极大边界值（与 PhantomCamera2D 默认值一致）
 
 # 在变量声明部分添加
@@ -62,6 +64,7 @@ func load_room(room_id: String):
 	if not rooms.has(room_id):
 		push_error("房间不存在：" + room_id)
 		return
+	var previous_room: String = current_room
 	_debug_room_camera_trace("load_room_begin", {"target_room": room_id, "from_room": current_room})
 	
 	notify_dynamic_checkpoint_manager_room_change(room_id)
@@ -82,6 +85,7 @@ func load_room(room_id: String):
 	
 	switch_room_bgm(room_id)
 	update_camera_limits()
+	room_loaded.emit(room_id, previous_room)
 	_debug_room_camera_trace("load_room_end", {"current_room": current_room})
 
 func ensure_room_loaded(room_id: String) -> void:

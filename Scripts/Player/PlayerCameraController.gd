@@ -14,12 +14,12 @@ const DEFAULT_WARP_CAMERA_HOLD_TIMEOUT: float = 6.0
 ## 是否启用水平速度前瞻。
 ## true 时镜头会在角色移动方向上提前给出可视空间。
 @export var lookahead_enabled: bool = true
-## 速度前瞻的最大水平偏移（像素）。
+## 满足触发条件后使用的固定水平偏移（像素）。
 ## 值越大，镜头“看前方”的距离越远。
-@export var lookahead_max_x: float = 128.0
-## 达到最大前瞻时的参考水平速度（像素/秒）。
-## 值越小，普通移动更容易获得明显前瞻。
-@export var lookahead_velocity_for_max: float = 160.0
+@export var lookahead_fixed_offset_x: float = 128.0
+## 前瞻触发速度阈值（像素/秒）。
+## 速度绝对值低于该阈值时不会触发前瞻。
+@export var lookahead_trigger_speed: float = 160.0
 ## 前瞻朝目标偏移推进时的速度（像素/秒）。
 ## 值越小，镜头越柔和；值越大，响应越快。
 @export var lookahead_accel: float = 200.0
@@ -32,9 +32,6 @@ const DEFAULT_WARP_CAMERA_HOLD_TIMEOUT: float = 6.0
 ## 是否在空中阶段关闭前瞻。
 ## true 时跳跃/下落不会继续叠加前瞻。
 @export var lookahead_disable_in_air: bool = false
-## 低速移动时的最小前瞻（像素）。
-## 让普通走动也能保持基本“看前方”效果。
-@export var lookahead_min_x: float = 64.0
 
 @export_category("Focus Capture")
 ## 是否启用焦点抢夺系统。
@@ -578,7 +575,7 @@ func _compute_lookahead_x(fixed_delta: float, camera: Camera2D) -> float:
 		vx = player.velocity.x
 	var speed_abs := absf(vx)
 	var target := 0.0
-	if speed_abs >= maxf(lookahead_velocity_for_max, 1.0):
+	if speed_abs >= maxf(lookahead_trigger_speed, 1.0):
 		var viewport_size: Vector2 = player.get_viewport_rect().size
 		if viewport_size.x > 0.0 and viewport_size.y > 0.0 and camera.zoom.is_finite() and not is_zero_approx(camera.zoom.x):
 			var half_dead_w: float = viewport_size.x * camera_transition_dead_zone_backup.x * 0.5 / camera.zoom.x
@@ -586,9 +583,9 @@ func _compute_lookahead_x(fixed_delta: float, camera: Camera2D) -> float:
 			var pushing_right: bool = vx > 0.0
 			var pushing_left: bool = vx < 0.0
 			if pushing_right and player_offset_x > half_dead_w:
-				target = lookahead_max_x
+				target = lookahead_fixed_offset_x
 			elif pushing_left and player_offset_x < -half_dead_w:
-				target = -lookahead_max_x
+				target = -lookahead_fixed_offset_x
 
 	if is_zero_approx(target):
 		lookahead_stop_elapsed += fixed_delta

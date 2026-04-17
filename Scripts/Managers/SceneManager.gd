@@ -87,33 +87,7 @@ func start_game_from_save(slot_index: int):
 	else:
 		Global.initialize_new_game()
 		if Global and Global.has_method("request_boot_cinematic"):
-			Global.request_boot_cinematic(&"new_save_opening", {
-				"sequence_steps": [
-					{
-						"type": 0,
-						"lines": PackedStringArray(["序章", "黑暗正在退去"]),
-						"hold_time": 2.0,
-						"fade_time": 0.45
-					},
-					{
-						"type": 1,
-						"frames": [load("res://Assets/Textures/Backgrounds/2.png")],
-						"frame_durations": PackedFloat32Array([2.6]),
-						"default_frame_time": 2.6,
-						"fade_time": 0.45
-					},
-					{
-						"type": 0,
-						"lines": PackedStringArray(["新的旅程开始了"]),
-						"hold_time": 1.8,
-						"fade_time": 0.4
-					},
-					{
-						"type": 2,
-						"hold_time": 0.35
-					}
-				]
-			})
+			Global.request_boot_cinematic(&"new_save_opening")
 		SaveManager.save_game(slot_index, Global.get_save_data())
 	
 	# 确保 TaskManager 重置 NPC 状态
@@ -130,6 +104,8 @@ func start_game_from_save(slot_index: int):
 	await AudioManager.play_bgm("BGM1", FadeManager.ui_save_to_game_fade_out_duration)
 	get_tree().change_scene_to_file(ScenePaths.GAME_MAIN)
 	await get_tree().process_frame
+	if FadeManager and FadeManager.has_method("force_black"):
+		FadeManager.force_black()
 	var main_scene = get_tree().current_scene
 	if main_scene and main_scene.has_method("wait_until_boot_visual_ready"):
 		await main_scene.wait_until_boot_visual_ready()

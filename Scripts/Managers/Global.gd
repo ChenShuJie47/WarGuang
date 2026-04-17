@@ -67,6 +67,9 @@ var pending_boot_cinematic_id: StringName = &""
 # 启动阶段过场携带的上下文参数。
 var pending_boot_cinematic_payload: Dictionary = {}
 
+# 一次性演出触发标记（写入存档）。
+var played_cinematic_flags: Dictionary = {}
+
 # 游戏时长（秒），只统计实际游玩时间
 var total_play_time_seconds: int = 0
 var _play_time_session_start_ms: int = -1
@@ -83,6 +86,7 @@ func initialize_new_game():
 	last_save_room = "Room1"
 	total_play_time_seconds = 0
 	_play_time_session_start_ms = -1
+	played_cinematic_flags = {}
 	unlocked_abilities = {
 		"dash": false,
 		"double_jump": false,
@@ -181,6 +185,7 @@ func get_save_data() -> Dictionary:
 		"maniac_stage3_challenge_completed": maniac_stage3_challenge_completed,
 		"maniac_stage3_last_challenge_failed": maniac_stage3_last_challenge_failed,
 		"destructible_walls_destroyed": destructible_walls_destroyed.duplicate(true),  # 深拷贝防止引用污染
+		"played_cinematic_flags": played_cinematic_flags.duplicate(true),
 		"play_time_seconds": get_total_play_time_seconds(),
 		"timestamp": Time.get_datetime_string_from_system()
 	}
@@ -276,8 +281,24 @@ func load_save_data(data: Dictionary):
 		destructible_walls_destroyed = data["destructible_walls_destroyed"].duplicate()  # 使用 .duplicate() 防止引用污染
 	else:
 		destructible_walls_destroyed = []  # 新存档或无数据时重置为空数组
+
+	if data.has("played_cinematic_flags") and typeof(data["played_cinematic_flags"]) == TYPE_DICTIONARY:
+		played_cinematic_flags = data["played_cinematic_flags"].duplicate(true)
+	else:
+		played_cinematic_flags = {}
 	
 	print("Global: 存档数据加载完成")
+
+func has_cinematic_flag(flag_id: String) -> bool:
+	if flag_id.strip_edges() == "":
+		return false
+	return bool(played_cinematic_flags.get(flag_id, false))
+
+func set_cinematic_flag(flag_id: String, enabled: bool = true) -> void:
+	var normalized_id: String = flag_id.strip_edges()
+	if normalized_id == "":
+		return
+	played_cinematic_flags[normalized_id] = enabled
 
 # 通知能力解锁
 func _notify_ability_unlocks():
