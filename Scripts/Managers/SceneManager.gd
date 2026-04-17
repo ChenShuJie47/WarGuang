@@ -103,6 +103,8 @@ func start_game_from_save(slot_index: int):
 		await FadeManager.fade_out(0.0)
 	await AudioManager.play_bgm("BGM1", FadeManager.ui_save_to_game_fade_out_duration)
 	get_tree().change_scene_to_file(ScenePaths.GAME_MAIN)
+	if FadeManager and FadeManager.has_method("force_black"):
+		FadeManager.force_black()
 	await get_tree().process_frame
 	if FadeManager and FadeManager.has_method("force_black"):
 		FadeManager.force_black()

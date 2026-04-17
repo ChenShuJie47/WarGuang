@@ -14,8 +14,22 @@ var _room_event_running: bool = false
 @export var roomdream10_first_enter_enabled: bool = true
 ## 首入事件目标房间 ID。
 @export var roomdream10_event_room_id: String = "RoomDream10"
-## 首入事件步骤序列（Inspector 配置）。
+## 首入事件高级步骤序列（仅高级模式使用）。
 @export var roomdream10_event_sequence_steps: Array[Dictionary] = []
+## 是否启用高级步骤模式（Dictionary）。
+@export var roomdream10_event_use_advanced_steps: bool = false
+## 首入事件简化顺序（VISUAL/VISUAL/BLACK_HOLD）。
+@export var roomdream10_event_order: PackedStringArray = PackedStringArray(["VISUAL", "VISUAL", "BLACK_HOLD"])
+## 首入事件图片序列（按顺序）。
+@export var roomdream10_event_visual_frames: Array[Texture2D] = []
+## 首入事件图片时长（秒），数量不足时使用默认值。
+@export var roomdream10_event_visual_frame_durations: PackedFloat32Array = PackedFloat32Array([1.8, 2.1])
+## 首入事件图片默认时长（秒）。
+@export var roomdream10_event_default_frame_time: float = 2.0
+## 首入事件图片淡入淡出时长（秒）。
+@export var roomdream10_event_fade_time: float = 0.35
+## 首入事件黑屏停留时长（秒）。
+@export var roomdream10_event_black_hold_time: float = 0.2
 ## 首入事件结束后黑幕淡出时长（秒）。
 @export var roomdream10_event_reveal_duration: float = 0.55
 
@@ -110,6 +124,9 @@ func _play_new_game_opening_sequence() -> void:
 			push_warning("BootCinematicDirector: 掉落开始等待超时，执行兜底揭黑。")
 			if boot_cinematic_director.has_method("reveal_overlay_to_gameplay"):
 				await boot_cinematic_director.reveal_overlay_to_gameplay(0.45)
+		elif boot_cinematic_director and boot_cinematic_director.has_method("is_gameplay_drop_running") and not boot_cinematic_director.is_gameplay_drop_running():
+			if boot_cinematic_director.has_method("reveal_overlay_to_gameplay"):
+				await boot_cinematic_director.reveal_overlay_to_gameplay(0.0)
 
 func _exit_tree() -> void:
 	_cleanup_runtime_camera_viewfinder_overlays()
@@ -242,33 +259,60 @@ func _play_roomdream10_first_enter_event() -> void:
 	_room_event_running = true
 	if FadeManager and FadeManager.has_method("force_black"):
 		FadeManager.force_black()
-	var sequence_steps: Array = roomdream10_event_sequence_steps.duplicate(true)
-	if sequence_steps.is_empty():
-		var event_frames: Array[Texture2D] = []
-		var source_frames: Array[Texture2D] = boot_cinematic_director.intro_visual_frames
-		if source_frames.size() > 0:
-			event_frames.append(source_frames[0])
-		if source_frames.size() > 1:
-			event_frames.append(source_frames[1])
-		sequence_steps = [
-			{
-				"type": "VISUAL",
-				"frames": event_frames,
-				"frame_durations": PackedFloat32Array([1.8, 2.1]),
-				"default_frame_time": 2.0,
-				"fade_time": 0.35
-			},
-			{
-				"type": "BLACK_HOLD",
-				"hold_time": 0.2
-			}
-		]
+	var sequence_steps: Array = _build_roomdream10_event_steps()
 	await boot_cinematic_director.play_blocking_intro_event(player, {
 		"sequence_steps": sequence_steps,
-		"reveal_duration": roomdream10_event_reveal_duration
+		"reveal_duration": roomdream10_event_reveal_duration,
+		"pause_world": true
 	})
 	if Global and Global.has_method("set_cinematic_flag"):
 		Global.set_cinematic_flag(ROOM_DREAM10_FIRST_ENTER_FLAG, true)
 		if SaveManager and Global.current_save_slot >= 0 and SaveManager.has_method("save_game"):
 			SaveManager.save_game(Global.current_save_slot, Global.get_save_data())
 	_room_event_running = false
+
+func _build_roomdream10_event_steps() -> Array:
+	if roomdream10_event_use_advanced_steps:
+		return roomdream10_event_sequence_steps.duplicate(true)
+	var frames: Array[Texture2D] = roomdream10_event_visual_frames.duplicate()
+	if frames.is_empty() and is_instance_valid(boot_cinematic_director):
+		var fallback_frames: Array[Texture2D] = boot_cinematic_director.intro_visual_frames
+		if fallback_frames.size() > 0:
+			frames.append(fallback_frames[0])
+		if fallback_frames.size() > 1:
+			frames.append(fallback_frames[1])
+	var durations: PackedFloat32Array = roomdream10_event_visual_frame_durations
+	var frame_index: int = 0
+	var steps: Array = []
+	for token_raw in roomdream10_event_order:
+		var token: String = String(token_raw).strip_edges().to_upper()
+		if token == "VISUAL":
+			if frames.is_empty():
+				continue
+			var block_frames: Array[Texture2D] = []
+			var block_durations := PackedFloat32Array([])
+			if frame_index < frames.size():
+				block_frames.append(frames[frame_index])
+				var duration: float = roomdream10_event_default_frame_time
+				if frame_index < durations.size():
+					duration = maxf(float(durations[frame_index]), 0.01)
+				block_durations.append(duration)
+				frame_index += 1
+			else:
+				block_frames = frames
+				block_durations = durations
+			steps.append({
+				"type": "VISUAL",
+				"frames": block_frames,
+				"frame_durations": block_durations,
+				"default_frame_time": roomdream10_event_default_frame_time,
+				"fade_time": roomdream10_event_fade_time
+			})
+		elif token == "BLACK_HOLD":
+			steps.append({
+				"type": "BLACK_HOLD",
+				"hold_time": roomdream10_event_black_hold_time
+			})
+	if steps.is_empty():
+		steps.append({"type": "BLACK_HOLD", "hold_time": 0.1})
+	return steps

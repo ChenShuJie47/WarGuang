@@ -34,6 +34,9 @@ enum IntroStepType {
 @export var intro_visual_fade_time: float = 0.5
 ## 按顺序播放的开场步骤列表；留空时回退到默认步骤。
 @export var intro_sequence_steps: Array[Dictionary] = []
+## 简化版顺序配置：按字符串顺序执行（TEXT/VISUAL/BLACK_HOLD）。
+## 当 intro_sequence_steps 为空时生效。
+@export var intro_sequence_order: PackedStringArray = PackedStringArray(["TEXT", "TEXT", "VISUAL", "TEXT", "BLACK_HOLD"])
 
 @export_category("Gameplay Drop")
 ## 掉落演出开始时使用的相机缩放值。
@@ -368,6 +371,10 @@ func _run_intro_sequence_steps() -> void:
 	var sequence_steps: Array = _active_payload.get("sequence_steps", intro_sequence_steps)
 	sequence_steps = sequence_steps.duplicate(true)
 	if sequence_steps.is_empty():
+		var order: PackedStringArray = _active_payload.get("sequence_order", intro_sequence_order)
+		if not order.is_empty():
+			sequence_steps = _build_steps_from_order(order)
+	if sequence_steps.is_empty():
 		var use_intro_text: bool = _active_payload.get("use_intro_text", intro_text_enabled_by_default)
 		var use_intro_visual: bool = _active_payload.get("use_intro_visual", intro_visual_enabled_by_default)
 		if use_intro_text:
@@ -423,7 +430,7 @@ func _run_intro_text_block(step: Dictionary) -> void:
 		fade_in.set_ease(Tween.EASE_OUT)
 		fade_in.tween_property(_text_label, "modulate:a", 1.0, maxf(fade_time, 0.01))
 		await fade_in.finished
-		await get_tree().create_timer(maxf(hold_time, 0.01)).timeout
+		await _wait_seconds(maxf(hold_time, 0.01))
 		var fade_out := create_tween()
 		fade_out.set_trans(Tween.TRANS_SINE)
 		fade_out.set_ease(Tween.EASE_IN)
@@ -456,7 +463,7 @@ func _run_intro_visual_block(step: Dictionary) -> void:
 		fade_in.set_ease(Tween.EASE_OUT)
 		fade_in.tween_property(_visual_rect, "modulate:a", 1.0, maxf(fade_time, 0.01))
 		await fade_in.finished
-		await get_tree().create_timer(frame_duration).timeout
+		await _wait_seconds(frame_duration)
 		var fade_out := create_tween()
 		fade_out.set_trans(Tween.TRANS_SINE)
 		fade_out.set_ease(Tween.EASE_IN)
@@ -472,7 +479,7 @@ func _run_black_hold_block(step: Dictionary) -> void:
 	_black_rect.color.a = 1.0
 	var hold_time: float = float(step.get("hold_time", 0.35))
 	if hold_time > 0.0:
-		await get_tree().create_timer(hold_time).timeout
+		await _wait_seconds(hold_time)
 
 func _fade_overlay_to_black() -> void:
 	if not is_instance_valid(_black_rect):
@@ -508,12 +515,19 @@ func play_blocking_intro_event(player_ref: Player, payload: Dictionary = {}) -> 
 		return
 	_player = player_ref
 	_active_payload = payload.get("payload", payload) if typeof(payload.get("payload", payload)) == TYPE_DICTIONARY else {}
+	var pause_world: bool = bool(_active_payload.get("pause_world", true))
+	var tree := get_tree()
+	var paused_backup: bool = tree.paused if tree else false
 	_cache_camera_nodes()
 	_cache_player_runtime_switches()
 	_enter_cinematic_control_mode()
+	if pause_world and tree:
+		tree.paused = true
 	force_overlay_black()
 	await play_intro_sequence(payload)
 	await reveal_overlay_to_gameplay(float(_active_payload.get("reveal_duration", event_reveal_duration)))
+	if pause_world and tree:
+		tree.paused = paused_backup
 	_restore_camera_behavior()
 	_restore_player_runtime_switches()
 	if is_instance_valid(_player):
@@ -522,6 +536,66 @@ func play_blocking_intro_event(player_ref: Player, payload: Dictionary = {}) -> 
 			_player.unlock_control()
 		if _player.has_method("set_player_control"):
 			_player.set_player_control(true)
+
+func _wait_seconds(seconds: float) -> void:
+	var wait_time: float = maxf(seconds, 0.0)
+	if wait_time <= 0.0:
+		await get_tree().process_frame
+		return
+	await get_tree().create_timer(wait_time, true).timeout
+
+func _build_steps_from_order(order: PackedStringArray) -> Array[Dictionary]:
+	var steps: Array[Dictionary] = []
+	var text_lines: PackedStringArray = _extract_text_lines({})
+	var text_hold: float = float(_active_payload.get("intro_text_hold_time", intro_text_hold_time))
+	var text_fade: float = float(_active_payload.get("intro_text_fade_time", intro_text_fade_time))
+	var visual_frames: Array[Texture2D] = _extract_visual_frames({})
+	var visual_durations: PackedFloat32Array = _extract_frame_durations({})
+	var visual_default_time: float = float(_active_payload.get("intro_visual_default_frame_time", intro_visual_default_frame_time))
+	var visual_fade: float = float(_active_payload.get("intro_visual_fade_time", intro_visual_fade_time))
+	var text_index: int = 0
+	var frame_index: int = 0
+	for item in order:
+		var token: String = String(item).strip_edges().to_upper()
+		if token == "TEXT":
+			var text_block := PackedStringArray([])
+			if text_index < text_lines.size():
+				text_block.append(text_lines[text_index])
+				text_index += 1
+			else:
+				text_block = text_lines
+			steps.append({
+				"type": "TEXT",
+				"lines": text_block,
+				"hold_time": text_hold,
+				"fade_time": text_fade
+			})
+		elif token == "VISUAL":
+			var frame_block: Array[Texture2D] = []
+			var duration_block := PackedFloat32Array([])
+			if frame_index < visual_frames.size():
+				frame_block.append(visual_frames[frame_index])
+				var duration_value: float = visual_default_time
+				if frame_index < visual_durations.size():
+					duration_value = maxf(float(visual_durations[frame_index]), 0.01)
+				duration_block.append(duration_value)
+				frame_index += 1
+			else:
+				frame_block = visual_frames
+				duration_block = visual_durations
+			steps.append({
+				"type": "VISUAL",
+				"frames": frame_block,
+				"frame_durations": duration_block,
+				"default_frame_time": visual_default_time,
+				"fade_time": visual_fade
+			})
+		elif token == "BLACK_HOLD":
+			steps.append({
+				"type": "BLACK_HOLD",
+				"hold_time": 0.35
+			})
+	return steps
 
 func _extract_text_lines(step: Dictionary) -> PackedStringArray:
 	var fallback: Variant = _active_payload.get("intro_text_lines", intro_text_lines)
