@@ -7,18 +7,18 @@ extends CanvasLayer
 @onready var audio_button = $SettingsRoot/AudioButton          # 音量按钮
 @onready var controls_button = $SettingsRoot/ControlsButton    # 按键映射按钮
 @onready var graphics_button = $SettingsRoot/GraphicsButton    # 画面按钮
-@onready var audio_page = $SettingsRoot/AudioPage              # 音频页面
-@onready var controls_page = $SettingsRoot/ControlsPage        # 控制页面
-@onready var graphics_page = get_node_or_null("SettingsRoot/GraphicsPage") # 画面页面
-@onready var effect_level_option: OptionButton = get_node_or_null("SettingsRoot/GraphicsPage/EffectLevelContainer/EffectLevelOption")
+@onready var audio_page = $SettingsRoot/PagesRoot/AudioPage              # 音频页面
+@onready var controls_page = $SettingsRoot/PagesRoot/ControlsPage        # 控制页面
+@onready var graphics_page = get_node_or_null("SettingsRoot/PagesRoot/GraphicsPage") # 画面页面
+@onready var effect_level_option: OptionButton = get_node_or_null("SettingsRoot/PagesRoot/GraphicsPage/EffectLevelContainer/EffectLevelOption")
 @onready var close_button = $BackButton                        # 关闭按钮
 @onready var ui_transition_animator: UITransitionAnimator = $UITransitionAnimator
 
 ## 音量滑块引用（根据你的实际节点路径调整）
-@onready var master_volume_slider = $SettingsRoot/AudioPage/VolumeContainer/MasterVolumeLabel/MasterVolumeSlider
-@onready var bgm_volume_slider = $SettingsRoot/AudioPage/VolumeContainer/BGMVolumeLabel/BGMVolumeSlider
-@onready var sfx_volume_slider = $SettingsRoot/AudioPage/VolumeContainer/SFXVolumeLabel/SFXVolumeSlider
-@onready var voice_volume_slider = $SettingsRoot/AudioPage/VolumeContainer/VoiceVolumeLabel/VoiceVolumeSlider
+@onready var master_volume_slider = $SettingsRoot/PagesRoot/AudioPage/VolumeContainer/MasterVolumeLabel/MasterVolumeSlider
+@onready var bgm_volume_slider = $SettingsRoot/PagesRoot/AudioPage/VolumeContainer/BGMVolumeLabel/BGMVolumeSlider
+@onready var sfx_volume_slider = $SettingsRoot/PagesRoot/AudioPage/VolumeContainer/SFXVolumeLabel/SFXVolumeSlider
+@onready var voice_volume_slider = $SettingsRoot/PagesRoot/AudioPage/VolumeContainer/VoiceVolumeLabel/VoiceVolumeSlider
 
 ## 场景来源信息
 var opened_from: String = ""
@@ -26,7 +26,7 @@ var parent_scene: Node = null
 ## ESC键启用状态
 var esc_enabled: bool = false
 var _scene_input_locked: bool = true
-var _current_page_name: String = "controls"
+var _current_page_name: String = "audio"
 var _page_switch_in_progress: bool = false
 
 @export_category("Settings 页面内切换动画")
@@ -68,7 +68,9 @@ func _ready():
 		voice_volume_slider.value_changed.connect(_on_voice_volume_changed)
 	
 	_cache_page_base_states()
-	_switch_to_page("controls", false)
+	_set_only_page_visible("audio")
+	_current_page_name = "audio"
+	_set_category_button_state(_current_page_name)
 	_populate_effect_level_options()
 	if effect_level_option:
 		effect_level_option.item_selected.connect(_on_effect_level_selected)
@@ -109,21 +111,19 @@ func switch_to_page(page_name: String):
 	await _switch_to_page(page_name, true)
 
 func _switch_to_page(page_name: String, animated: bool = true) -> void:
-	if page_name == _current_page_name and animated:
+	if page_name == _current_page_name:
 		return
 	var target_page: CanvasItem = _resolve_page(page_name)
 	if target_page == null:
 		return
 	if _page_switch_in_progress:
 		return
+
 	var previous_page: CanvasItem = _resolve_page(_current_page_name)
 	_page_switch_in_progress = true
-	_set_category_buttons_enabled(false)
-	if animated and previous_page and previous_page != target_page:
-		await _play_page_exit(previous_page)
-		previous_page.visible = false
-		_restore_page_base_state(previous_page)
-	elif previous_page and previous_page != target_page:
+	if previous_page and previous_page != target_page:
+		if animated:
+			await _play_page_exit(previous_page)
 		previous_page.visible = false
 		_restore_page_base_state(previous_page)
 
@@ -135,7 +135,6 @@ func _switch_to_page(page_name: String, animated: bool = true) -> void:
 
 	_current_page_name = page_name
 	_set_category_button_state(page_name)
-	_set_category_buttons_enabled(true)
 	_page_switch_in_progress = false
 
 func _resolve_page(page_name: String) -> CanvasItem:
@@ -205,6 +204,13 @@ func _name_by_page(page: CanvasItem) -> String:
 	if page == graphics_page:
 		return "graphics"
 	return ""
+
+func _set_only_page_visible(active_page: String) -> void:
+	for page_name in ["audio", "controls", "graphics"]:
+		var page: CanvasItem = _resolve_page(page_name)
+		if page == null:
+			continue
+		page.visible = page_name == active_page
 
 func _set_category_buttons_enabled(enabled: bool) -> void:
 	audio_button.disabled = not enabled
@@ -339,10 +345,16 @@ func is_scene_interaction_locked() -> bool:
 
 func _set_scene_input_locked(locked: bool) -> void:
 	_scene_input_locked = locked
-	audio_button.disabled = locked
-	controls_button.disabled = locked
-	graphics_button.disabled = locked
-	close_button.disabled = locked
+	if locked:
+		audio_button.disabled = true
+		controls_button.disabled = true
+		graphics_button.disabled = true
+		close_button.disabled = true
+		return
+
+	close_button.disabled = false
+	_set_category_buttons_enabled(true)
+	_set_category_button_state(_current_page_name)
 
 func _on_scene_transition_enter_begin() -> void:
 	_set_scene_input_locked(true)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://cwp2nnedkebnl"]
+[gd_scene load_steps=24 format=3 uid="uid://cwp2nnedkebnl"]
 
 [ext_resource type="Script" uid="uid://c8ybqtmdpgils" path="res://Scripts/UI/Scenes/SaveSelectScene.gd" id="1_6ahw5"]
 [ext_resource type="Script" uid="uid://c6yjpi17utwg8" path="res://Scripts/UI/Scenes/UITransitionAnimator.gd" id="1_transition_animator"]
@@ -18,6 +18,7 @@
 [ext_resource type="Texture2D" uid="uid://kxm2uujj5ma4" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭3.tres" id="10_nc2wn"]
 [ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭2.tres" id="11_xxd4s"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="14_c6mq1"]
+[ext_resource type="Texture2D" uid="uid://dt0k8iplo1ouj" path="res://Assets/Textures/UIs/MyBalloonBackground.tres" id="14_ohahd"]
 
 [sub_resource type="Resource" id="Resource_tv67x"]
 script = ExtResource("3_pv5mx")
@@ -91,7 +92,7 @@ pivot_offset = Vector2(89, 100)
 [node name="EmptySlot" type="Sprite2D" parent="SaveSlot1"]
 position = Vector2(93, 102)
 scale = Vector2(6, 6)
-texture = ExtResource("2_1iexe")
+texture = ExtResource("14_ohahd")
 
 [node name="FilledSlot" type="Sprite2D" parent="SaveSlot1"]
 position = Vector2(93, 102)
@@ -129,7 +130,7 @@ offset_bottom = 354.0
 [node name="EmptySlot" type="Sprite2D" parent="SaveSlot2"]
 position = Vector2(93, 102)
 scale = Vector2(6, 6)
-texture = ExtResource("2_1iexe")
+texture = ExtResource("14_ohahd")
 
 [node name="FilledSlot" type="Sprite2D" parent="SaveSlot2"]
 position = Vector2(93, 102)
@@ -167,7 +168,7 @@ offset_bottom = 354.0
 [node name="EmptySlot" type="Sprite2D" parent="SaveSlot3"]
 position = Vector2(93, 102)
 scale = Vector2(6, 6)
-texture = ExtResource("2_1iexe")
+texture = ExtResource("14_ohahd")
 
 [node name="FilledSlot" type="Sprite2D" parent="SaveSlot3"]
 position = Vector2(93, 102)

@@ -20,6 +20,8 @@ var _scene_input_locked: bool = true
 @export_category("SaveSlot 交互反馈")
 @export var slot_hover_offset_y: float = 8.0
 @export var slot_hover_duration: float = 0.08
+@export var slot_hover_outline_width: int = 2
+@export var slot_hover_outline_color: Color = Color(1, 1, 1, 1)
 
 @export_category("SaveSlot 填充纹理按区域映射")
 ## 按房间ID配置填充纹理，点击数组右侧 + 新增元素，元素类型选 SaveSlotRoomTextureBinding，再拖拽纹理。
@@ -43,6 +45,7 @@ var _slot_base_positions: Array[Vector2] = []
 var _slot_empty_base_positions: Array[Vector2] = []
 var _slot_filled_base_positions: Array[Vector2] = []
 var _slot_tweens: Array[Tween] = []
+var _slot_outlines: Array[Panel] = []
 ## 房间ID到纹理的运行时查询表
 var _room_texture_lookup: Dictionary = {}
 
@@ -96,11 +99,45 @@ func _cache_slot_transforms() -> void:
 	_slot_empty_base_positions.clear()
 	_slot_filled_base_positions.clear()
 	_slot_tweens.clear()
+	_slot_outlines.clear()
 	for slot_button in save_slot_buttons:
 		_slot_base_positions.append(slot_button.position)
 		_slot_empty_base_positions.append(slot_button.get_node("EmptySlot").position)
 		_slot_filled_base_positions.append(slot_button.get_node("FilledSlot").position)
 		_slot_tweens.append(null)
+		_slot_outlines.append(_ensure_slot_outline(slot_button))
+
+## 确保 SaveSlot 拥有可复用的白色描边面板
+func _ensure_slot_outline(slot_button: TextureButton) -> Panel:
+	var outline: Panel = slot_button.get_node_or_null("HoverOutline") as Panel
+	if outline == null:
+		outline = Panel.new()
+		outline.name = "HoverOutline"
+		slot_button.add_child(outline)
+
+	outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	outline.focus_mode = Control.FOCUS_NONE
+	outline.z_index = 20
+	outline.layout_mode = 0
+	outline.anchor_left = 0.0
+	outline.anchor_top = 0.0
+	outline.anchor_right = 1.0
+	outline.anchor_bottom = 1.0
+	outline.offset_left = 0.0
+	outline.offset_top = 0.0
+	outline.offset_right = 0.0
+	outline.offset_bottom = 0.0
+
+	var border_style := StyleBoxFlat.new()
+	border_style.bg_color = Color(1, 1, 1, 0.0)
+	border_style.border_color = slot_hover_outline_color
+	border_style.border_width_left = slot_hover_outline_width
+	border_style.border_width_top = slot_hover_outline_width
+	border_style.border_width_right = slot_hover_outline_width
+	border_style.border_width_bottom = slot_hover_outline_width
+	outline.add_theme_stylebox_override("panel", border_style)
+	outline.modulate = Color(1, 1, 1, 0.0)
+	return outline
 
 ## 连接信号
 ## 连接存档槽相关信号
@@ -210,12 +247,14 @@ func _on_save_slot_mouse_entered(slot_index: int) -> void:
 	var slot_button: TextureButton = save_slot_buttons[slot_index]
 	var empty_slot: Sprite2D = slot_button.get_node("EmptySlot")
 	var filled_slot: Sprite2D = slot_button.get_node("FilledSlot")
+	var outline: Panel = _slot_outlines[slot_index]
 	_kill_slot_tween(slot_index)
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_CUBIC)
 	tween.set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(empty_slot, "position:y", _slot_empty_base_positions[slot_index].y - slot_hover_offset_y, slot_hover_duration)
 	tween.parallel().tween_property(filled_slot, "position:y", _slot_filled_base_positions[slot_index].y - slot_hover_offset_y, slot_hover_duration)
+	tween.parallel().tween_property(outline, "modulate:a", 1.0, slot_hover_duration)
 	_slot_tweens[slot_index] = tween
 
 ## 处理存档槽悬停离开
@@ -223,12 +262,14 @@ func _on_save_slot_mouse_exited(slot_index: int) -> void:
 	var slot_button: TextureButton = save_slot_buttons[slot_index]
 	var empty_slot: Sprite2D = slot_button.get_node("EmptySlot")
 	var filled_slot: Sprite2D = slot_button.get_node("FilledSlot")
+	var outline: Panel = _slot_outlines[slot_index]
 	_kill_slot_tween(slot_index)
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_CUBIC)
 	tween.set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(empty_slot, "position", _slot_empty_base_positions[slot_index], slot_hover_duration)
 	tween.parallel().tween_property(filled_slot, "position", _slot_filled_base_positions[slot_index], slot_hover_duration)
+	tween.parallel().tween_property(outline, "modulate:a", 0.0, slot_hover_duration)
 	_slot_tweens[slot_index] = tween
 
 ## 处理输入事件（新增ESC键初始冷却检查）

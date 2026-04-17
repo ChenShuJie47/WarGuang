@@ -66,7 +66,9 @@ func _ready():
 	boot_visual_ready.emit()
 
 func _play_new_game_opening_sequence() -> void:
-	if FadeManager and FadeManager.has_method("fade_out"):
+	if FadeManager and FadeManager.has_method("force_black"):
+		FadeManager.force_black()
+	else:
 		await FadeManager.fade_out(0.0)
 	if RoomManager:
 		RoomManager.load_room("Room1")
@@ -78,7 +80,8 @@ func _play_new_game_opening_sequence() -> void:
 		await boot_cinematic_director.play_intro_sequence(boot_cinematic_request)
 	if boot_cinematic_director and boot_cinematic_director.has_method("start_gameplay_drop"):
 		boot_cinematic_director.start_gameplay_drop(player, boot_cinematic_request)
-		await boot_cinematic_director.gameplay_drop_started
+		while boot_cinematic_director and boot_cinematic_director.has_method("is_gameplay_drop_started") and not boot_cinematic_director.is_gameplay_drop_started():
+			await get_tree().process_frame
 
 func _exit_tree() -> void:
 	_cleanup_runtime_camera_viewfinder_overlays()

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://b03jaomk2cnqd"]
+[gd_scene load_steps=15 format=3 uid="uid://b03jaomk2cnqd"]
 
 [ext_resource type="Script" uid="uid://bgd4cnk4b8qrx" path="res://Scripts/GameScenes/MainGameScene.gd" id="1_dcv5v"]
 [ext_resource type="PackedScene" uid="uid://dwj2ydwabq3n0" path="res://Scenes/Player/Player.tscn" id="1_wdg0h"]
@@ -9,7 +9,9 @@
 [ext_resource type="PackedScene" uid="uid://cpl4se47i7uk6" path="res://Scenes/GameScenes/RoomDream10.tscn" id="6_rbrij"]
 [ext_resource type="PackedScene" uid="uid://bq2thpcuuy615" path="res://Scenes/GameScenes/VignetteEffect.tscn" id="8_jbabp"]
 [ext_resource type="Script" uid="uid://dvqwec3j18pnf" path="res://Scripts/GameScenes/BootCinematicDirector.gd" id="9_boot_cinematic"]
-[ext_resource type="Texture2D" uid="uid://cy2yuswokrtcg" path="res://Assets/Textures/Backgrounds/2.png" id="11_ncfrq"]
+[ext_resource type="Texture2D" uid="uid://dnua3kkv0wkqj" path="res://Assets/Textures/Backgrounds/4.png" id="11_70mj8"]
+[ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1.png" id="12_dcv5v"]
+[ext_resource type="Texture2D" uid="uid://fl5mcf6y1aa3" path="res://Assets/Textures/Tiles/new tiles 16×16-01.png" id="13_cqkxv"]
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="18_iaaki"]
 
 [sub_resource type="Environment" id="Environment_jbabp"]
@@ -61,4 +63,5 @@ health_unit_spacing = 70.0
 process_mode = 3
 layer = 1105
 script = ExtResource("9_boot_cinematic")
-intro_animation_texture = ExtResource("11_ncfrq")
+intro_visual_frames = Array[Texture2D]([ExtResource("11_70mj8"), ExtResource("12_dcv5v"), ExtResource("13_cqkxv")])
+intro_visual_frame_durations = PackedFloat32Array(3, 1, 2)

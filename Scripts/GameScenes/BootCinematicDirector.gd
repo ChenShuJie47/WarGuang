@@ -5,6 +5,12 @@ signal intro_sequence_finished
 signal gameplay_drop_started
 signal gameplay_drop_finished
 
+enum IntroStepType {
+	TEXT,
+	VISUAL,
+	BLACK_HOLD
+}
+
 @export_category("Intro Text")
 ## 是否默认启用文字阶段；事件演出可在 payload 中关闭。
 @export var intro_text_enabled_by_default: bool = true
@@ -26,6 +32,8 @@ signal gameplay_drop_finished
 @export var intro_visual_default_frame_time: float = 1.2
 ## 视觉序列切换淡入淡出时长（秒）。
 @export var intro_visual_fade_time: float = 0.5
+## 按顺序播放的开场步骤列表；留空时回退到默认步骤。
+@export var intro_sequence_steps: Array[Dictionary] = []
 
 @export_category("Gameplay Drop")
 ## 掉落演出开始时使用的相机缩放值。
@@ -52,6 +60,8 @@ signal gameplay_drop_finished
 var _intro_running: bool = false
 # 当前是否正在进行演出式掉落。
 var _drop_running: bool = false
+# 当前掉落演出是否已经正式开始。
+var _drop_started: bool = false
 # 当前序列参数（来自 payload 或默认配置）。
 var _active_payload: Dictionary = {}
 
@@ -101,7 +111,8 @@ func play_sequence(_sequence_id: StringName, payload: Dictionary = {}) -> void:
 		var target_player: Player = payload.get("player_ref", null)
 		if is_instance_valid(target_player):
 			start_gameplay_drop(target_player, payload)
-			await gameplay_drop_started
+			while not _drop_started:
+				await get_tree().process_frame
 
 func play_intro_sequence(payload: Dictionary = {}) -> void:
 	if _intro_running:
@@ -111,14 +122,7 @@ func play_intro_sequence(payload: Dictionary = {}) -> void:
 	if is_instance_valid(_overlay_root):
 		_overlay_root.visible = true
 	_reset_overlay_state()
-
-	var use_intro_text: bool = _active_payload.get("use_intro_text", intro_text_enabled_by_default)
-	var use_intro_visual: bool = _active_payload.get("use_intro_visual", intro_visual_enabled_by_default)
-
-	if use_intro_text:
-		await _run_intro_text_sequence()
-	if use_intro_visual:
-		await _run_intro_visual_sequence()
+	await _run_intro_sequence_steps()
 	await _fade_overlay_to_black()
 
 	intro_sequence_finished.emit()
@@ -128,6 +132,7 @@ func start_gameplay_drop(player_ref: Player, payload: Dictionary = {}) -> void:
 	if _drop_running:
 		return
 	_drop_running = true
+	_drop_started = false
 	_player = player_ref
 	_active_payload = payload.get("payload", payload) if typeof(payload.get("payload", payload)) == TYPE_DICTIONARY else {}
 	call_deferred("_start_drop_flow_deferred")
@@ -135,8 +140,12 @@ func start_gameplay_drop(player_ref: Player, payload: Dictionary = {}) -> void:
 func _start_drop_flow_deferred() -> void:
 	await _start_drop_flow()
 
+func is_gameplay_drop_started() -> bool:
+	return _drop_started
+
 func _start_drop_flow() -> void:
 	if not is_instance_valid(_player):
+		_drop_started = true
 		gameplay_drop_started.emit()
 		gameplay_drop_finished.emit()
 		_drop_running = false
@@ -146,6 +155,7 @@ func _start_drop_flow() -> void:
 	_enter_cinematic_control_mode()
 
 	# 这里是对 SceneManager 的关键同步点：只有真正开始掉落才允许外部淡入。
+	_drop_started = true
 	gameplay_drop_started.emit()
 	_apply_gameplay_overlay_visibility(false)
 
@@ -244,6 +254,7 @@ func _build_overlay() -> void:
 	_text_label.add_theme_constant_override("margin_right", 72)
 	_text_label.add_theme_constant_override("margin_bottom", 80)
 	_overlay_root.add_child(_text_label)
+	_apply_gameplay_overlay_visibility(false)
 
 func _reset_overlay_state() -> void:
 	if not is_instance_valid(_black_rect) or not is_instance_valid(_text_label) or not is_instance_valid(_visual_rect):
@@ -327,10 +338,39 @@ func _play_player_animation(anim_name: StringName) -> void:
 	if _player.animated_sprite.sprite_frames and _player.animated_sprite.sprite_frames.has_animation(anim_text):
 		_player.animated_sprite.play(anim_text)
 
-func _run_intro_text_sequence() -> void:
-	var lines: PackedStringArray = _active_payload.get("intro_text_lines", intro_text_lines)
+func _run_intro_sequence_steps() -> void:
+	var sequence_steps: Array = _active_payload.get("sequence_steps", intro_sequence_steps)
+	sequence_steps = sequence_steps.duplicate(true)
+	if sequence_steps.is_empty():
+		var use_intro_text: bool = _active_payload.get("use_intro_text", intro_text_enabled_by_default)
+		var use_intro_visual: bool = _active_payload.get("use_intro_visual", intro_visual_enabled_by_default)
+		if use_intro_text:
+			sequence_steps.append({"type": IntroStepType.TEXT, "lines": intro_text_lines})
+		if use_intro_visual:
+			sequence_steps.append({"type": IntroStepType.VISUAL, "frames": intro_visual_frames, "frame_durations": intro_visual_frame_durations})
+	for step in sequence_steps:
+		if typeof(step) != TYPE_DICTIONARY:
+			continue
+		await _run_intro_step(step)
+
+func _run_intro_step(step: Dictionary) -> void:
+	var step_type: int = int(step.get("type", IntroStepType.BLACK_HOLD))
+	match step_type:
+		IntroStepType.TEXT:
+			await _run_intro_text_block(step)
+		IntroStepType.VISUAL:
+			await _run_intro_visual_block(step)
+		IntroStepType.BLACK_HOLD:
+			await _run_black_hold_block(step)
+		_:
+			await _run_black_hold_block(step)
+
+func _run_intro_text_block(step: Dictionary) -> void:
+	var lines: PackedStringArray = step.get("lines", _active_payload.get("intro_text_lines", intro_text_lines))
 	if lines.is_empty():
 		return
+	var hold_time: float = float(step.get("hold_time", _active_payload.get("intro_text_hold_time", intro_text_hold_time)))
+	var fade_time: float = float(step.get("fade_time", _active_payload.get("intro_text_fade_time", intro_text_fade_time)))
 	for line_text in lines:
 		if line_text.strip_edges() == "":
 			continue
@@ -342,24 +382,26 @@ func _run_intro_text_sequence() -> void:
 		var fade_in := create_tween()
 		fade_in.set_trans(Tween.TRANS_SINE)
 		fade_in.set_ease(Tween.EASE_OUT)
-		fade_in.tween_property(_text_label, "modulate:a", 1.0, maxf(intro_text_fade_time, 0.01))
+		fade_in.tween_property(_text_label, "modulate:a", 1.0, maxf(fade_time, 0.01))
 		await fade_in.finished
-		await get_tree().create_timer(maxf(intro_text_hold_time, 0.01)).timeout
+		await get_tree().create_timer(maxf(hold_time, 0.01)).timeout
 		var fade_out := create_tween()
 		fade_out.set_trans(Tween.TRANS_SINE)
 		fade_out.set_ease(Tween.EASE_IN)
-		fade_out.tween_property(_text_label, "modulate:a", 0.0, maxf(intro_text_fade_time, 0.01))
+		fade_out.tween_property(_text_label, "modulate:a", 0.0, maxf(fade_time, 0.01))
 		await fade_out.finished
 	_text_label.visible = false
 	_text_label.text = ""
 
-func _run_intro_visual_sequence() -> void:
+func _run_intro_visual_block(step: Dictionary) -> void:
 	if not is_instance_valid(_visual_rect):
 		return
-	var visual_frames: Array[Texture2D] = _active_payload.get("intro_visual_frames", intro_visual_frames)
+	var visual_frames: Array[Texture2D] = step.get("frames", _active_payload.get("intro_visual_frames", intro_visual_frames))
 	if visual_frames.is_empty():
 		return
-	var frame_durations: PackedFloat32Array = _active_payload.get("intro_visual_frame_durations", intro_visual_frame_durations)
+	var frame_durations: PackedFloat32Array = step.get("frame_durations", _active_payload.get("intro_visual_frame_durations", intro_visual_frame_durations))
+	var default_frame_time: float = float(step.get("default_frame_time", _active_payload.get("intro_visual_default_frame_time", intro_visual_default_frame_time)))
+	var fade_time: float = float(step.get("fade_time", _active_payload.get("intro_visual_fade_time", intro_visual_fade_time)))
 	for index in range(visual_frames.size()):
 		var frame_tex: Texture2D = visual_frames[index]
 		if frame_tex == null:
@@ -367,22 +409,31 @@ func _run_intro_visual_sequence() -> void:
 		_visual_rect.texture = frame_tex
 		_visual_rect.visible = true
 		_visual_rect.modulate.a = 0.0
-		var frame_duration: float = intro_visual_default_frame_time
+		var frame_duration: float = default_frame_time
 		if index < frame_durations.size():
 			frame_duration = maxf(float(frame_durations[index]), 0.01)
 		var fade_in := create_tween()
 		fade_in.set_trans(Tween.TRANS_SINE)
 		fade_in.set_ease(Tween.EASE_OUT)
-		fade_in.tween_property(_visual_rect, "modulate:a", 1.0, maxf(intro_visual_fade_time, 0.01))
+		fade_in.tween_property(_visual_rect, "modulate:a", 1.0, maxf(fade_time, 0.01))
 		await fade_in.finished
 		await get_tree().create_timer(frame_duration).timeout
 		var fade_out := create_tween()
 		fade_out.set_trans(Tween.TRANS_SINE)
 		fade_out.set_ease(Tween.EASE_IN)
-		fade_out.tween_property(_visual_rect, "modulate:a", 0.0, maxf(intro_visual_fade_time, 0.01))
+		fade_out.tween_property(_visual_rect, "modulate:a", 0.0, maxf(fade_time, 0.01))
 		await fade_out.finished
 	_visual_rect.visible = false
 	_visual_rect.texture = null
+
+func _run_black_hold_block(step: Dictionary) -> void:
+	if not is_instance_valid(_black_rect):
+		return
+	_black_rect.visible = true
+	_black_rect.color.a = 1.0
+	var hold_time: float = float(step.get("hold_time", 0.35))
+	if hold_time > 0.0:
+		await get_tree().create_timer(hold_time).timeout
 
 func _fade_overlay_to_black() -> void:
 	if not is_instance_valid(_black_rect):

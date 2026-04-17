@@ -67,6 +67,11 @@ func force_fade_in():
 	fade_rect.color = Color(0, 0, 0, 0)
 	fade_rect.visible = false
 
+func force_black():
+	_stop_active_fade_tween()
+	fade_rect.visible = true
+	fade_rect.color = Color(0, 0, 0, 1)
+
 func _stop_active_fade_tween() -> void:
 	if _fade_tween and _fade_tween.is_valid():
 		_fade_tween.kill()

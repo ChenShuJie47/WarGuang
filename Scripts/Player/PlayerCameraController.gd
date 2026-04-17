@@ -48,7 +48,7 @@ const DEFAULT_WARP_CAMERA_HOLD_TIMEOUT: float = 6.0
 @export var focus_capture_max_offset: float = 320.0
 ## 抢夺偏移平滑收敛速度系数。
 ## 值越大越“跟手”，值越小越平滑。
-@export var focus_capture_smooth: float = 12.0
+@export var focus_capture_smooth: float = 24.0
 
 # 当前绑定的 Player 节点引用。
 var player: Player = null
@@ -556,16 +556,17 @@ func _update_normal_follow_anchor(fixed_delta: float) -> void:
 	_ensure_normal_follow_anchor()
 	if not is_instance_valid(normal_follow_anchor):
 		return
-	var lookahead_x := _compute_lookahead_x(fixed_delta)
+	var camera := player.get_viewport().get_camera_2d()
+	var lookahead_x := _compute_lookahead_x(fixed_delta, camera)
 	var focus_offset := _compute_focus_capture_offset(fixed_delta)
 	var desired_offset := Vector2(lookahead_x, 0.0) + focus_offset
 	normal_follow_anchor.global_position = player.global_position + desired_offset
 
-func _compute_lookahead_x(fixed_delta: float) -> float:
+func _compute_lookahead_x(fixed_delta: float, camera: Camera2D) -> float:
 	if not lookahead_enabled:
 		lookahead_current_x = move_toward(lookahead_current_x, 0.0, lookahead_decel * fixed_delta)
 		return lookahead_current_x
-	if not is_instance_valid(player):
+	if not is_instance_valid(player) or camera == null:
 		return 0.0
 	if lookahead_disable_in_air and not player.is_on_floor() and not player.coyote_time_active:
 		lookahead_current_x = move_toward(lookahead_current_x, 0.0, lookahead_decel * fixed_delta)
@@ -576,7 +577,20 @@ func _compute_lookahead_x(fixed_delta: float) -> float:
 	if not control_locked and player.velocity.is_finite():
 		vx = player.velocity.x
 	var speed_abs := absf(vx)
-	if speed_abs < 8.0:
+	var target := 0.0
+	if speed_abs >= maxf(lookahead_velocity_for_max, 1.0):
+		var viewport_size: Vector2 = player.get_viewport_rect().size
+		if viewport_size.x > 0.0 and viewport_size.y > 0.0 and camera.zoom.is_finite() and not is_zero_approx(camera.zoom.x):
+			var half_dead_w: float = viewport_size.x * camera_transition_dead_zone_backup.x * 0.5 / camera.zoom.x
+			var player_offset_x: float = player.global_position.x - camera.global_position.x
+			var pushing_right: bool = vx > 0.0
+			var pushing_left: bool = vx < 0.0
+			if pushing_right and player_offset_x > half_dead_w:
+				target = lookahead_max_x
+			elif pushing_left and player_offset_x < -half_dead_w:
+				target = -lookahead_max_x
+
+	if is_zero_approx(target):
 		lookahead_stop_elapsed += fixed_delta
 		var recover_ratio := 1.0
 		if lookahead_stop_recover_time > 0.0:
@@ -585,9 +599,6 @@ func _compute_lookahead_x(fixed_delta: float) -> float:
 		return lookahead_current_x
 
 	lookahead_stop_elapsed = 0.0
-	var speed_ratio := clampf(speed_abs / maxf(lookahead_velocity_for_max, 1.0), 0.0, 1.0)
-	var target_magnitude := lerpf(lookahead_min_x, lookahead_max_x, speed_ratio)
-	var target := signf(vx) * target_magnitude
 	var accel := lookahead_accel
 	if signf(target) != signf(lookahead_current_x) or absf(target) < absf(lookahead_current_x):
 		accel = lookahead_decel
