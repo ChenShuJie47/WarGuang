@@ -1,6 +1,6 @@
 {
   "servers": {
-    "godotiq": {
+    godotiq": {
       "command": "uvx",
       "args": ["godotiq"],
       "env": {
