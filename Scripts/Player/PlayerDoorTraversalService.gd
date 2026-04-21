@@ -44,7 +44,6 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 		return true
 
 	var target: Vector2 = player.door_autowalk_target_position
-	var previous_position: Vector2 = player.global_position
 	var delta: Vector2 = target - player.global_position
 	var horizontal_distance: float = absf(delta.x)
 	var vertical_distance: float = delta.y
@@ -56,7 +55,8 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 	var acceleration: float = player.ground_acceleration * player.run_move_speed * 1.2
 	player.velocity.x = move_toward(player.velocity.x, horizontal_direction * target_speed, acceleration * fixed_delta)
 
-	if player.is_on_floor() and vertical_distance < -18.0 and not player.door_autowalk_jump_used:
+	var allow_autowalk_jump: bool = horizontal_distance >= 36.0
+	if player.is_on_floor() and allow_autowalk_jump and vertical_distance < -18.0 and not player.door_autowalk_jump_used:
 		var gravity_strength: float = player.gravity * maxf(player.effective_gravity_multiplier, 0.1)
 		var height_needed: float = absf(vertical_distance) + 8.0
 		player.velocity.y = -sqrt(maxf(2.0 * gravity_strength * height_needed, 1.0))

@@ -2,6 +2,7 @@ extends Node
 class_name RoomCinematicEventDirector
 
 const ROOM_DREAM10_FIRST_ENTER_FLAG: String = "room_dream10_first_enter"
+const ROOM_DREAM10_BLACK_HOLD_TAG: String = "room_dream10_first_enter"
 
 @export_category("Binding")
 @export var player_path: NodePath = NodePath("../../Player")
@@ -10,6 +11,7 @@ const ROOM_DREAM10_FIRST_ENTER_FLAG: String = "room_dream10_first_enter"
 @export_category("Room Event")
 @export var roomdream10_first_enter_enabled: bool = true
 @export var roomdream10_event_room_id: String = "RoomDream10"
+@export var roomdream10_pre_event_black_hold_duration: float = 0.35
 
 @export_category("Text Layout & Style")
 @export var intro_text_horizontal_alignment: HorizontalAlignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -64,8 +66,16 @@ func _play_roomdream10_first_enter_event() -> void:
 		return
 
 	_room_event_running = true
+	if FadeManager and FadeManager.has_method("hold_black"):
+		FadeManager.hold_black(ROOM_DREAM10_BLACK_HOLD_TAG)
 	if FadeManager and FadeManager.has_method("force_black"):
 		FadeManager.force_black()
+	if is_inside_tree() and get_tree() != null:
+		await get_tree().process_frame
+		await get_tree().physics_frame
+		var pre_hold: float = maxf(roomdream10_pre_event_black_hold_duration, 0.0)
+		if pre_hold > 0.0:
+			await get_tree().create_timer(pre_hold, true).timeout
 
 	var room_payload: Dictionary = _build_room_event_payload()
 	await boot_cinematic_director.play_blocking_intro_event(player, room_payload)
@@ -85,6 +95,9 @@ func _build_room_event_payload() -> Dictionary:
 	payload["intro_text_font_size"] = intro_text_font_size
 	payload["pause_world"] = true
 	payload["reveal_duration"] = reveal_duration
+	payload["release_global_fade_after_reveal"] = true
+	payload["release_black_hold_tag"] = ROOM_DREAM10_BLACK_HOLD_TAG
+	payload["post_intro_autowalk_room_id"] = roomdream10_event_room_id
 	return payload
 
 func _build_intro_sequence_steps() -> Array:
