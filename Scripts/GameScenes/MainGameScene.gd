@@ -93,6 +93,18 @@ func _exit_tree() -> void:
 		if manager and manager.has_method("scene_changed"):
 			manager.scene_changed()
 
+func _on_room_loaded(room_id: String, _previous_room: String) -> void:
+	if not is_instance_valid(room_container):
+		return
+	if not RoomManager:
+		return
+	var current_room_data: Dictionary = RoomManager.get_current_room_data()
+	if current_room_data.is_empty():
+		return
+	var global_canvas: CanvasModulate = $GlobalCanvasModulate
+	if global_canvas:
+		global_canvas.color = current_room_data.get("color", Color.WHITE)
+
 func _cleanup_runtime_camera_viewfinder_overlays() -> void:
 	var root := get_tree().root
 	if root == null:

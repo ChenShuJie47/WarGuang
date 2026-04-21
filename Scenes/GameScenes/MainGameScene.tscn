@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://cytmqowp6nqi7" path="res://Scenes/GameScenes/Room3.tscn" id="5_545fw"]
 [ext_resource type="PackedScene" uid="uid://cpl4se47i7uk6" path="res://Scenes/GameScenes/RoomDream10.tscn" id="6_rbrij"]
 [ext_resource type="PackedScene" uid="uid://bq2thpcuuy615" path="res://Scenes/GameScenes/VignetteEffect.tscn" id="8_jbabp"]
-[ext_resource type="Script" uid="uid://dvqwec3j18pnf" path="res://Scripts/GameScenes/BootCinematicDirector.gd" id="9_boot_cinematic"]
+[ext_resource type="Script" uid="uid://dvqwec3j18pnf" path="res://Scripts/Events/BootCinematicDirector.gd" id="9_boot_cinematic"]
 [ext_resource type="Script" uid="uid://ujho0n07mac4" path="res://Scripts/Events/NewSaveOpeningEventDirector.gd" id="10_new_save_opening"]
 [ext_resource type="Script" path="res://Scripts/Events/RoomCinematicEventDirector.gd" id="11_room_cinematic"]
 [ext_resource type="Texture2D" uid="uid://dnua3kkv0wkqj" path="res://Assets/Textures/Backgrounds/4.png" id="11_70mj8"]

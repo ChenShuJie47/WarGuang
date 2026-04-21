@@ -1,6 +1,6 @@
-																											extends RefCounted
+﻿extends RefCounted
 class_name PlayerDoorTraversalService
-# 初始化 Door 自动走位状态。
+# 鍒濆鍖?Door 鑷姩璧颁綅鐘舵€併€?
 static func begin_autowalk(player: Node, room_id: String, door_position: Vector2, facing_right: bool, allow_jump: bool = true, timeout: float = 1.4) -> bool:
 	if not DynamicCheckpointManager:
 		return false
@@ -28,7 +28,7 @@ static func begin_autowalk(player: Node, room_id: String, door_position: Vector2
 	player.set_process_input(false)
 	return true
 
-# 每帧更新 Door 自动走位，返回 true 表示完成。
+# 姣忓抚鏇存柊 Door 鑷姩璧颁綅锛岃繑鍥?true 琛ㄧず瀹屾垚銆?
 static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 	if not player.door_autowalk_active:
 		return true
@@ -55,7 +55,7 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 		var gravity_strength: float = player.gravity * maxf(player.effective_gravity_multiplier, 0.1)
 		var height_needed: float = absf(vertical_distance) + 8.0
 		player.velocity.y = -sqrt(maxf(2.0 * gravity_strength * height_needed, 1.0))
-		# 目标高且水平较远时，按估算滞空时间提升水平初速度，避免“只够抬高不够前进”。
+		# 鐩爣楂樹笖姘村钩杈冭繙鏃讹紝鎸変及绠楁粸绌烘椂闂存彁鍗囨按骞冲垵閫熷害锛岄伩鍏嶁€滃彧澶熸姮楂樹笉澶熷墠杩涒€濄€?
 		if horizontal_direction != 0.0 and horizontal_distance > 48.0:
 			var estimated_air_time: float = (2.0 * absf(player.velocity.y)) / maxf(gravity_strength, 1.0)
 			var required_horizontal_speed: float = horizontal_distance / maxf(estimated_air_time, 0.08)
@@ -90,7 +90,7 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 
 	return false
 
-# 结束 Door 自动走位并恢复输入。
+# 缁撴潫 Door 鑷姩璧颁綅骞舵仮澶嶈緭鍏ャ€?
 static func finish_autowalk(player: Node) -> void:
 	player.door_autowalk_active = false
 	player.door_autowalk_timeout = 0.0
