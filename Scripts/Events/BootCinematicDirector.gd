@@ -244,16 +244,7 @@ func _start_drop_flow() -> void:
 		visual_ready_wait += 1.0 / maxf(float(Engine.physics_ticks_per_second), 30.0)
 
 	var reveal_duration: float = maxf(float(_active_payload.get("reveal_duration", DEFAULT_REVEAL_DURATION)), 0.0)
-	if bool(_active_payload.get("release_global_fade_after_reveal", false)):
-		_release_black_hold_if_needed()
-		if FadeManager and FadeManager.has_method("force_black"):
-			FadeManager.force_black()
-		if is_instance_valid(_overlay_root):
-			_overlay_root.visible = false
-		if FadeManager and FadeManager.has_method("fade_in"):
-			await FadeManager.fade_in(reveal_duration)
-	else:
-		await reveal_overlay_to_gameplay(reveal_duration)
+		await _run_reveal_phase(reveal_duration)
 
 ## 执行掉落运动与收尾。
 func _run_drop_motion_flow() -> void:
@@ -294,6 +285,9 @@ func _run_drop_motion_flow() -> void:
 			break
 		while tree != null and tree.paused:
 			await tree.process_frame
+			if not is_inside_tree():
+				aborted = true
+				break
 			tree = get_tree()
 			if _shutting_down or tree == null or not is_instance_valid(_player) or not _player.is_inside_tree() or _player.get_world_2d() == null:
 				aborted = true
@@ -301,6 +295,9 @@ func _run_drop_motion_flow() -> void:
 		if aborted:
 			break
 		await tree.physics_frame
+		if not is_inside_tree():
+			aborted = true
+			break
 		tree = get_tree()
 		if _shutting_down or tree == null or not is_instance_valid(_player) or not _player.is_inside_tree() or _player.get_world_2d() == null:
 			aborted = true
@@ -674,6 +671,22 @@ func _fade_overlay_to_black() -> void:
 	fade.tween_property(_black_rect, "color:a", 1.0, maxf(unified_step_fade_duration, 0.01))
 	await fade.finished
 
+func _run_reveal_phase(reveal_duration: float) -> void:
+	if bool(_active_payload.get("release_global_fade_after_reveal", false)):
+		_release_black_hold_if_needed()
+		if FadeManager and FadeManager.has_method("force_black"):
+			FadeManager.force_black()
+		if is_instance_valid(_overlay_root):
+			_overlay_root.visible = false
+		if FadeManager and FadeManager.has_method("fade_in"):
+			# Some systems may still keep a black hold. Fall back to local overlay reveal so duration always applies.
+			if FadeManager.has_method("has_black_hold") and FadeManager.has_black_hold():
+				await reveal_overlay_to_gameplay(reveal_duration)
+			else:
+				await FadeManager.fade_in(reveal_duration)
+			return
+	await reveal_overlay_to_gameplay(reveal_duration)
+
 ## 从黑幕揭开到游戏画面。
 func reveal_overlay_to_gameplay(duration: float = -1.0) -> void:
 	if not is_instance_valid(_overlay_root) or not is_instance_valid(_black_rect):
@@ -752,16 +765,7 @@ func play_blocking_intro_event(player_ref: Player, payload: Dictionary = {}) -> 
 		if is_inside_tree():
 			await get_tree().process_frame
 	var reveal_duration: float = maxf(float(_active_payload.get("reveal_duration", DEFAULT_REVEAL_DURATION)), 0.0)
-	if bool(_active_payload.get("release_global_fade_after_reveal", false)):
-		_release_black_hold_if_needed()
-		if FadeManager and FadeManager.has_method("force_black"):
-			FadeManager.force_black()
-		if is_instance_valid(_overlay_root):
-			_overlay_root.visible = false
-		if FadeManager and FadeManager.has_method("fade_in"):
-			await FadeManager.fade_in(reveal_duration)
-	else:
-		await reveal_overlay_to_gameplay(reveal_duration)
+	await _run_reveal_phase(reveal_duration)
 	if pause_world and tree and not started_room_autowalk:
 		tree.paused = paused_backup
 	if not runtime_restored_before_reveal:
@@ -801,6 +805,8 @@ func _wait_seconds_respecting_pause(seconds: float) -> void:
 		return
 	var step: float = 1.0 / maxf(float(Engine.physics_ticks_per_second), 30.0)
 	while remaining > 0.0:
+		if not is_inside_tree():
+			return
 		tree = get_tree()
 		if tree == null:
 			return

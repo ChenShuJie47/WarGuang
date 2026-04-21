@@ -97,32 +97,40 @@ func get_best_checkpoint_for_room(room_id: String, origin_position: Vector2, fac
 		return {}
 
 	var best_candidate: Dictionary = {}
-	var best_distance_sq: float = INF
+	var best_score: float = INF
 	var best_facing_score: float = -INF
 	var facing_direction := Vector2.RIGHT if facing_right else Vector2.LEFT
-	var facing_tolerance_sq := tie_distance * tie_distance
+	var tie_tolerance: float = tie_distance * tie_distance
+	var up_penalty_threshold: float = 20.0
+	var up_penalty_weight: float = 6.0
+	var vertical_penalty_weight: float = 0.12
 
 	for candidate in candidates:
 		var candidate_pos: Vector2 = candidate.get("position", Vector2.ZERO)
 		var delta: Vector2 = candidate_pos - origin_position
 		var distance_sq: float = delta.length_squared()
+		var vertical_delta: float = candidate_pos.y - origin_position.y
+		var upward_amount: float = maxf(-(vertical_delta + up_penalty_threshold), 0.0)
+		var upward_penalty: float = upward_amount * upward_amount * up_penalty_weight
+		var vertical_penalty: float = absf(vertical_delta) * vertical_penalty_weight
+		var score: float = distance_sq + upward_penalty + vertical_penalty
 		var facing_score: float = delta.normalized().dot(facing_direction) if delta.length_squared() > 0.0001 else 1.0
 
 		if best_candidate.is_empty():
 			best_candidate = candidate
-			best_distance_sq = distance_sq
+			best_score = score
 			best_facing_score = facing_score
 			continue
 
-		if distance_sq + 0.001 < best_distance_sq:
+		if score + 0.001 < best_score:
 			best_candidate = candidate
-			best_distance_sq = distance_sq
+			best_score = score
 			best_facing_score = facing_score
 			continue
 
-		if absf(distance_sq - best_distance_sq) <= facing_tolerance_sq and facing_score > best_facing_score:
+		if absf(score - best_score) <= tie_tolerance and facing_score > best_facing_score:
 			best_candidate = candidate
-			best_distance_sq = distance_sq
+			best_score = score
 			best_facing_score = facing_score
 
 	return best_candidate

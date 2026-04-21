@@ -76,7 +76,6 @@ func _ready():
 	_set_menu_buttons_enabled(true)
 
 func _close_menu():
-	get_tree().paused = false
 	is_open = false
 	
 	if continue_button is Control:
