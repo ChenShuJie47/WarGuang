@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://b03jaomk2cnqd"]
+[gd_scene load_steps=17 format=3 uid="uid://b03jaomk2cnqd"]
 
 [ext_resource type="Script" uid="uid://bgd4cnk4b8qrx" path="res://Scripts/GameScenes/MainGameScene.gd" id="1_dcv5v"]
 [ext_resource type="PackedScene" uid="uid://dwj2ydwabq3n0" path="res://Scenes/Player/Player.tscn" id="1_wdg0h"]
@@ -10,8 +10,8 @@
 [ext_resource type="PackedScene" uid="uid://bq2thpcuuy615" path="res://Scenes/GameScenes/VignetteEffect.tscn" id="8_jbabp"]
 [ext_resource type="Script" uid="uid://dvqwec3j18pnf" path="res://Scripts/Events/BootCinematicDirector.gd" id="9_boot_cinematic"]
 [ext_resource type="Script" uid="uid://ujho0n07mac4" path="res://Scripts/Events/NewSaveOpeningEventDirector.gd" id="10_new_save_opening"]
-[ext_resource type="Script" path="res://Scripts/Events/RoomCinematicEventDirector.gd" id="11_room_cinematic"]
 [ext_resource type="Texture2D" uid="uid://dnua3kkv0wkqj" path="res://Assets/Textures/Backgrounds/4.png" id="11_70mj8"]
+[ext_resource type="Script" uid="uid://dij1xd6xmfvis" path="res://Scripts/Events/RoomCinematicEventDirector.gd" id="11_room_cinematic"]
 [ext_resource type="Texture2D" uid="uid://dvi0fwdkqjh2u" path="res://Assets/Textures/Backgrounds/1.png" id="12_dcv5v"]
 [ext_resource type="Texture2D" uid="uid://fl5mcf6y1aa3" path="res://Assets/Textures/Tiles/new tiles 16×16-01.png" id="13_cqkxv"]
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="18_iaaki"]
@@ -68,7 +68,6 @@ script = ExtResource("10_new_save_opening")
 intro_text_lines = PackedStringArray("序章", "黑暗正在退去", "新的旅程开始了")
 intro_visual_frames = Array[Texture2D]([ExtResource("11_70mj8"), ExtResource("12_dcv5v"), ExtResource("13_cqkxv")])
 intro_visual_frame_durations = PackedFloat32Array(3, 1, 2)
-intro_sequence_order = PackedStringArray("TEXT", "TEXT", "VISUAL", "TEXT", "BLACK_HOLD")
 
 [node name="RoomCinematicEventDirector" type="Node" parent="EventDirectors"]
 script = ExtResource("11_room_cinematic")

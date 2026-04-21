@@ -24,8 +24,8 @@ var _scene_input_locked: bool = true
 @export var slot_hover_outline_color: Color = Color(1, 1, 1, 1)
 
 @export_category("SaveSlot 填充纹理按区域映射")
-## 按房间ID配置填充纹理，点击数组右侧 + 新增元素，元素类型选 SaveSlotRoomTextureBinding，再拖拽纹理。
-@export var room_filled_texture_bindings: Array[SaveSlotRoomTextureBinding] = []
+## 按房间ID配置填充纹理（键为房间ID，值为 Texture2D）。
+@export var room_filled_texture_map: Dictionary = {}
 
 @onready var ui_transition_animator: UITransitionAnimator = $UITransitionAnimator
 
@@ -203,14 +203,13 @@ func _on_save_slot_pressed(slot_index: int):
 ## 重建房间到纹理的查询表
 func _rebuild_room_texture_lookup() -> void:
 	_room_texture_lookup.clear()
-	for binding in room_filled_texture_bindings:
-		if binding == null:
-			continue
-		var key: String = binding.room_id.strip_edges()
+	for key_variant in room_filled_texture_map.keys():
+		var key: String = str(key_variant).strip_edges()
 		if key == "":
 			continue
-		if binding.filled_texture:
-			_room_texture_lookup[key] = binding.filled_texture
+		var tex_variant: Variant = room_filled_texture_map.get(key_variant)
+		if tex_variant is Texture2D:
+			_room_texture_lookup[key] = tex_variant
 
 ## 按房间ID解析填充纹理
 ## 根据房间ID选择填充纹理

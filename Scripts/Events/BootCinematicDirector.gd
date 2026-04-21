@@ -672,20 +672,15 @@ func _fade_overlay_to_black() -> void:
 	await fade.finished
 
 func _run_reveal_phase(reveal_duration: float) -> void:
-	if bool(_active_payload.get("release_global_fade_after_reveal", false)):
+	var release_global_fade: bool = bool(_active_payload.get("release_global_fade_after_reveal", false))
+	if release_global_fade:
 		_release_black_hold_if_needed()
 		if FadeManager and FadeManager.has_method("force_black"):
 			FadeManager.force_black()
-		if is_instance_valid(_overlay_root):
-			_overlay_root.visible = false
-		if FadeManager and FadeManager.has_method("fade_in"):
-			# Some systems may still keep a black hold. Fall back to local overlay reveal so duration always applies.
-			if FadeManager.has_method("has_black_hold") and FadeManager.has_black_hold():
-				await reveal_overlay_to_gameplay(reveal_duration)
-			else:
-				await FadeManager.fade_in(reveal_duration)
-			return
+	# 始终使用本地覆盖层揭黑，确保 reveal_duration 可见且可控。
 	await reveal_overlay_to_gameplay(reveal_duration)
+	if release_global_fade and FadeManager and FadeManager.has_method("force_fade_in"):
+		FadeManager.force_fade_in()
 
 ## 从黑幕揭开到游戏画面。
 func reveal_overlay_to_gameplay(duration: float = -1.0) -> void:

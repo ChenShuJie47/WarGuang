@@ -96,6 +96,15 @@ func get_best_checkpoint_for_room(room_id: String, origin_position: Vector2, fac
 	if candidates.is_empty():
 		return {}
 
+	# 优先使用不高于门位太多的候选点，避免门后出生在空中 DOWN。
+	var near_ground_candidates: Array = []
+	for candidate in candidates:
+		var candidate_pos: Vector2 = candidate.get("position", Vector2.ZERO)
+		if candidate_pos.y >= origin_position.y - 12.0:
+			near_ground_candidates.append(candidate)
+	if not near_ground_candidates.is_empty():
+		candidates = near_ground_candidates
+
 	var best_candidate: Dictionary = {}
 	var best_score: float = INF
 	var best_facing_score: float = -INF

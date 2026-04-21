@@ -110,7 +110,7 @@ func _create_game_setting_button_layer():
 	if game_setting_button and game_setting_button.get_parent():
 		game_setting_button.get_parent().remove_child(game_setting_button)
 		game_setting_button_layer.add_child(game_setting_button)
-		get_tree().root.add_child(game_setting_button_layer)
+		get_tree().root.call_deferred("add_child", game_setting_button_layer)
 
 func _process(_delta):
 	# 处理钱币延迟递增
@@ -492,9 +492,6 @@ func _on_game_setting_closed():
 	# 重新显示 GameSettingButton
 	if game_setting_button:
 		game_setting_button.visible = true
-	
-	# 确保游戏恢复运行 - 关键修复
-	get_tree().paused = false
 
 # PlayerUI.gd - 移除 ESC 防抖
 func _input(event):

@@ -9,9 +9,14 @@ static func begin_autowalk(player: Node, room_id: String, door_position: Vector2
 	var best_checkpoint: Dictionary = DynamicCheckpointManager.get_best_checkpoint_for_room(room_id, door_position, facing_right)
 	if best_checkpoint.is_empty():
 		return false
+	var target_position: Vector2 = best_checkpoint.get("position", door_position)
+	if target_position.y < door_position.y - 6.0:
+		target_position.y = door_position.y
+	if absf(target_position.x - door_position.x) < 18.0:
+		return false
 
 	player.door_autowalk_active = true
-	player.door_autowalk_target_position = best_checkpoint.get("position", door_position)
+	player.door_autowalk_target_position = target_position
 	player.door_autowalk_timeout = maxf(timeout, 0.35)
 	var target_delta_x: float = float(player.door_autowalk_target_position.x - door_position.x)
 	var resolved_facing_right: bool = facing_right

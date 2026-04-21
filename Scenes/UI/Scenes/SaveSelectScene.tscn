@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://cwp2nnedkebnl"]
+[gd_scene load_steps=15 format=3 uid="uid://cwp2nnedkebnl"]
 
 [ext_resource type="Script" uid="uid://c8ybqtmdpgils" path="res://Scripts/UI/Scenes/SaveSelectScene.gd" id="1_6ahw5"]
 [ext_resource type="Script" uid="uid://c6yjpi17utwg8" path="res://Scripts/UI/Scenes/UITransitionAnimator.gd" id="1_transition_animator"]
@@ -15,26 +15,15 @@
 [ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭2.tres" id="11_xxd4s"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="14_c6mq1"]
 
-[sub_resource type="SaveSlotRoomTextureBinding" id="SaveSlotRoomTextureBinding_room1"]
-room_id = "Room1"
-filled_texture = ExtResource("3_283jm")
-
-[sub_resource type="SaveSlotRoomTextureBinding" id="SaveSlotRoomTextureBinding_room2"]
-room_id = "Room2"
-filled_texture = ExtResource("2_1iexe")
-
-[sub_resource type="SaveSlotRoomTextureBinding" id="SaveSlotRoomTextureBinding_room3"]
-room_id = "Room3"
-filled_texture = ExtResource("3_283jm")
-
-[sub_resource type="SaveSlotRoomTextureBinding" id="SaveSlotRoomTextureBinding_roomdream10"]
-room_id = "RoomDream10"
-filled_texture = ExtResource("2_1iexe")
-
 [node name="SaveSelectScene" type="CanvasLayer"]
 script = ExtResource("1_6ahw5")
 delete_confirm_scene = ExtResource("2_axbvp")
-room_filled_texture_bindings = Array[Resource]([SubResource("SaveSlotRoomTextureBinding_room1"), SubResource("SaveSlotRoomTextureBinding_room2"), SubResource("SaveSlotRoomTextureBinding_room3"), SubResource("SaveSlotRoomTextureBinding_roomdream10")])
+room_filled_texture_map = {
+"Room1": ExtResource("3_283jm"),
+"Room2": ExtResource("2_1iexe"),
+"Room3": ExtResource("3_283jm"),
+"RoomDream10": ExtResource("2_1iexe")
+}
 
 [node name="UITransitionAnimator" type="Node" parent="."]
 script = ExtResource("1_transition_animator")
