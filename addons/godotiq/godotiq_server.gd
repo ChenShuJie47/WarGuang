@@ -4,7 +4,7 @@ extends Node
 ## dispatches requests to editor handlers or forwards to the running game.
 
 const DEFAULT_PORT := 6007
-const ADDON_VERSION := "0.4.1"
+const ADDON_VERSION := "0.5.1"
 const SCREENSHOT_TIMEOUT_MS := 30000
 const PERF_TIMEOUT_MS := 5000
 const INPUT_TIMEOUT_MS := 65000
@@ -124,17 +124,37 @@ func _on_update_check_completed(result: int, response_code: int, _headers: Packe
 
 
 func _is_newer_version(remote: String, local: String) -> bool:
-	var r := remote.split(".")
-	var l := local.split(".")
+	# PEP 440 pre-release / dev / post suffixes collapse to the base
+	# triple — we never want the editor panel to nag stable users that
+	# a "0.5.1rc0" is newer than "0.5.0". A prerelease published to
+	# PyPI by mistake simply does not trigger the popup.
+	var r := _version_triple(remote)
+	var l := _version_triple(local)
 	var max_len := max(r.size(), l.size())
 	for i in range(max_len):
-		var rv: int = int(r[i]) if i < r.size() else 0
-		var lv: int = int(l[i]) if i < l.size() else 0
+		var rv: int = r[i] if i < r.size() else 0
+		var lv: int = l[i] if i < l.size() else 0
 		if rv > lv:
 			return true
 		if rv < lv:
 			return false
 	return false
+
+
+func _version_triple(v: String) -> Array:
+	# Strip build-metadata ("+...") and hyphen-local-suffix ("-...").
+	var clean := v.split("-", true, 1)[0].split("+", true, 1)[0]
+	var parts := clean.split(".")
+	var out: Array = []
+	var pre_re := RegEx.new()
+	pre_re.compile("(?i)(a|alpha|b|beta|c|rc|dev|pre|preview|post)\\d*$")
+	for part in parts:
+		var stripped := pre_re.sub(part, "", true)
+		if stripped.is_empty():
+			out.append(0)
+		else:
+			out.append(int(stripped))
+	return out
 
 
 func get_port() -> int:

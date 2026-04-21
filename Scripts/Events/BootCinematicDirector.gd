@@ -244,7 +244,7 @@ func _start_drop_flow() -> void:
 		visual_ready_wait += 1.0 / maxf(float(Engine.physics_ticks_per_second), 30.0)
 
 	var reveal_duration: float = maxf(float(_active_payload.get("reveal_duration", DEFAULT_REVEAL_DURATION)), 0.0)
-		await _run_reveal_phase(reveal_duration)
+	await _run_reveal_phase(reveal_duration)
 
 ## 执行掉落运动与收尾。
 func _run_drop_motion_flow() -> void:
