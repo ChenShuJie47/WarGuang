@@ -79,8 +79,9 @@ intro_sequence_order = Array[int]([0, 1, 1, 0, 0])
 
 [node name="RoomCinematicEventDirector" type="Node" parent="EventDirectors"]
 script = ExtResource("11_room_cinematic")
-intro_text_lines = PackedStringArray()
 intro_text_theme = ExtResource("11_om4ip")
+intro_text_lines = PackedStringArray("")
+intro_text_line_hold_times = PackedFloat32Array(0)
 intro_visual_frames = Array[Texture2D]([ExtResource("11_70mj8")])
 intro_visual_frame_durations = PackedFloat32Array(1)
-intro_sequence_order = Array[int]([1, 1, 2])
+intro_sequence_order = Array[int]([1, 0, 2])
