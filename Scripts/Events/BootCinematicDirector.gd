@@ -675,18 +675,18 @@ func _run_reveal_phase(reveal_duration: float) -> void:
 	var release_global_fade: bool = bool(_active_payload.get("release_global_fade_after_reveal", false))
 	var debug_reveal_flow: bool = bool(_active_payload.get("debug_reveal_flow", false))
 	var reveal_start_ms: int = Time.get_ticks_msec()
+	var global_alpha_before: float = FadeManager.get_black_alpha() if FadeManager and FadeManager.has_method("get_black_alpha") else -1.0
 	if debug_reveal_flow:
-		print("BootCinematicDirector: reveal begin, duration=", reveal_duration, ", release_global_fade=", release_global_fade, ", has_black_hold=", FadeManager.has_black_hold() if FadeManager else false)
+		print("BootCinematicDirector: reveal begin, duration=", reveal_duration, ", release_global_fade=", release_global_fade, ", has_black_hold=", FadeManager.has_black_hold() if FadeManager else false, ", global_alpha_before=", global_alpha_before)
 	if release_global_fade:
 		_release_black_hold_if_needed()
-		if FadeManager and FadeManager.has_method("force_black"):
-			FadeManager.force_black()
+		if FadeManager and FadeManager.has_method("force_fade_in"):
+			FadeManager.force_fade_in()
 	# 始终使用本地覆盖层揭黑，确保 reveal_duration 可见且可控。
 	await reveal_overlay_to_gameplay(reveal_duration)
-	if release_global_fade and FadeManager and FadeManager.has_method("force_fade_in"):
-		FadeManager.force_fade_in()
+	var global_alpha_after: float = FadeManager.get_black_alpha() if FadeManager and FadeManager.has_method("get_black_alpha") else -1.0
 	if debug_reveal_flow:
-		print("BootCinematicDirector: reveal finished, elapsed_ms=", Time.get_ticks_msec() - reveal_start_ms)
+		print("BootCinematicDirector: reveal finished, elapsed_ms=", Time.get_ticks_msec() - reveal_start_ms, ", global_alpha_after=", global_alpha_after)
 
 ## 从黑幕揭开到游戏画面。
 func reveal_overlay_to_gameplay(duration: float = -1.0) -> void:
