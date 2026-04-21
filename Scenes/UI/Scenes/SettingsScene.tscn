@@ -128,12 +128,11 @@ texture_hover = ExtResource("16_ihv7n")
 texture_disabled = ExtResource("15_leam6")
 
 [node name="PagesRoot" type="Control" parent="SettingsRoot"]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 45.0
-offset_top = 44.0
-offset_right = 645.0
-offset_bottom = 644.0
+layout_mode = 0
+offset_left = 40.0
+offset_top = 42.0
+offset_right = 640.0
+offset_bottom = 642.0
 pivot_offset = Vector2(300, 300)
 
 [node name="ControlsPage" type="Node2D" parent="SettingsRoot/PagesRoot"]

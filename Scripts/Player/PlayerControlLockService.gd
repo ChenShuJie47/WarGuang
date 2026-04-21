@@ -18,7 +18,10 @@ static func handle_locked_physics(player: Node, fixed_delta: float) -> bool:
 	if player.door_autowalk_active:
 		PlayerDoorTraversalService.update_autowalk(player, fixed_delta)
 	else:
-		player.apply_gravity(fixed_delta)
+		if player.is_wall_bump_stun and player.has_method("handle_wall_bump_stun"):
+			player.handle_wall_bump_stun(fixed_delta)
+		else:
+			player.apply_gravity(fixed_delta)
 		player.move_and_slide()
 	player.update_animation()
 	return true

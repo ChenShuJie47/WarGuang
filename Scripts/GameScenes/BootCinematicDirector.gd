@@ -1,5 +1,5 @@
 extends CanvasLayer
-class_name BootCinematicDirector
+# Legacy fallback script. Keep it non-global to avoid class_name conflicts with Scripts/Events/BootCinematicDirector.gd.
 
 signal intro_sequence_finished
 signal gameplay_drop_started

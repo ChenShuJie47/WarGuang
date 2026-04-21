@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://cwp2nnedkebnl"]
+[gd_scene load_steps=19 format=3 uid="uid://cwp2nnedkebnl"]
 
 [ext_resource type="Script" uid="uid://c8ybqtmdpgils" path="res://Scripts/UI/Scenes/SaveSelectScene.gd" id="1_6ahw5"]
 [ext_resource type="Script" uid="uid://c6yjpi17utwg8" path="res://Scripts/UI/Scenes/UITransitionAnimator.gd" id="1_transition_animator"]
@@ -6,11 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://b81s4uybrdtsf" path="res://Scenes/UI/Scenes/DeleteConfirmDialog.tscn" id="2_axbvp"]
 [ext_resource type="Texture2D" uid="uid://dtkgdvtvivq4r" path="res://Assets/Lights/2d_lights.webp" id="3_1ibob"]
 [ext_resource type="Texture2D" uid="uid://c1v56vyheog76" path="res://Assets/Textures/UIs/SaveSlotRed.tres" id="3_283jm"]
-[ext_resource type="Script" uid="uid://coskdyt8pxmxj" path="res://Scripts/UI/Scenes/SaveSlotRoomTextureBinding.gd" id="3_pv5mx"]
-[ext_resource type="Texture2D" uid="uid://bhu6b58wdr7hr" path="res://Assets/Textures/UIs/warma1.tres" id="5_ohahd"]
 [ext_resource type="Texture2D" uid="uid://lv2f6kd1slvx" path="res://Assets/Textures/UIs/SceneUIs/3.png" id="5_xxd4s"]
-[ext_resource type="Texture2D" uid="uid://fl5mcf6y1aa3" path="res://Assets/Textures/Tiles/new tiles 16×16-01.png" id="6_uoh5f"]
-[ext_resource type="Texture2D" uid="uid://dsyolv1vx0smy" path="res://Assets/Textures/UIs/Apple.tres" id="7_6ol7e"]
 [ext_resource type="Texture2D" uid="uid://xygjp77wxevl" path="res://Assets/Textures/UIs/SceneUIs/tres/回退1.tres" id="7_nc2wn"]
 [ext_resource type="Texture2D" uid="uid://40v6kkfpqldt" path="res://Assets/Textures/UIs/SceneUIs/tres/回退3.tres" id="8_xxd4s"]
 [ext_resource type="Texture2D" uid="uid://bv4wcsihjxeaa" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭1.tres" id="9_1ibob"]
@@ -18,36 +14,27 @@
 [ext_resource type="Texture2D" uid="uid://kxm2uujj5ma4" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭3.tres" id="10_nc2wn"]
 [ext_resource type="Texture2D" uid="uid://byixw77mgxbb1" path="res://Assets/Textures/UIs/SceneUIs/tres/关闭2.tres" id="11_xxd4s"]
 [ext_resource type="Theme" uid="uid://x6qv7hs1dfnn" path="res://Assets/Themes/Theme9x9.tres" id="14_c6mq1"]
-[ext_resource type="Texture2D" uid="uid://dt0k8iplo1ouj" path="res://Assets/Textures/UIs/MyBalloonBackground.tres" id="14_ohahd"]
 
-[sub_resource type="Resource" id="Resource_tv67x"]
-script = ExtResource("3_pv5mx")
+[sub_resource type="SaveSlotRoomTextureBinding" id="SaveSlotRoomTextureBinding_room1"]
 room_id = "Room1"
-filled_texture = ExtResource("2_1iexe")
-metadata/_custom_type_script = "uid://coskdyt8pxmxj"
+filled_texture = ExtResource("3_283jm")
 
-[sub_resource type="Resource" id="Resource_64bsl"]
-script = ExtResource("3_pv5mx")
+[sub_resource type="SaveSlotRoomTextureBinding" id="SaveSlotRoomTextureBinding_room2"]
 room_id = "Room2"
-filled_texture = ExtResource("5_ohahd")
-metadata/_custom_type_script = "uid://coskdyt8pxmxj"
+filled_texture = ExtResource("2_1iexe")
 
-[sub_resource type="Resource" id="Resource_iun5d"]
-script = ExtResource("3_pv5mx")
+[sub_resource type="SaveSlotRoomTextureBinding" id="SaveSlotRoomTextureBinding_room3"]
 room_id = "Room3"
-filled_texture = ExtResource("6_uoh5f")
-metadata/_custom_type_script = "uid://coskdyt8pxmxj"
+filled_texture = ExtResource("3_283jm")
 
-[sub_resource type="Resource" id="Resource_3657c"]
-script = ExtResource("3_pv5mx")
+[sub_resource type="SaveSlotRoomTextureBinding" id="SaveSlotRoomTextureBinding_roomdream10"]
 room_id = "RoomDream10"
-filled_texture = ExtResource("7_6ol7e")
-metadata/_custom_type_script = "uid://coskdyt8pxmxj"
+filled_texture = ExtResource("2_1iexe")
 
 [node name="SaveSelectScene" type="CanvasLayer"]
 script = ExtResource("1_6ahw5")
 delete_confirm_scene = ExtResource("2_axbvp")
-room_filled_texture_bindings = Array[ExtResource("3_pv5mx")]([SubResource("Resource_tv67x"), SubResource("Resource_64bsl"), SubResource("Resource_iun5d"), SubResource("Resource_3657c")])
+room_filled_texture_bindings = Array[Resource]([SubResource("SaveSlotRoomTextureBinding_room1"), SubResource("SaveSlotRoomTextureBinding_room2"), SubResource("SaveSlotRoomTextureBinding_room3"), SubResource("SaveSlotRoomTextureBinding_roomdream10")])
 
 [node name="UITransitionAnimator" type="Node" parent="."]
 script = ExtResource("1_transition_animator")
@@ -92,7 +79,7 @@ pivot_offset = Vector2(89, 100)
 [node name="EmptySlot" type="Sprite2D" parent="SaveSlot1"]
 position = Vector2(93, 102)
 scale = Vector2(6, 6)
-texture = ExtResource("14_ohahd")
+texture = ExtResource("2_1iexe")
 
 [node name="FilledSlot" type="Sprite2D" parent="SaveSlot1"]
 position = Vector2(93, 102)
@@ -130,7 +117,7 @@ offset_bottom = 354.0
 [node name="EmptySlot" type="Sprite2D" parent="SaveSlot2"]
 position = Vector2(93, 102)
 scale = Vector2(6, 6)
-texture = ExtResource("14_ohahd")
+texture = ExtResource("2_1iexe")
 
 [node name="FilledSlot" type="Sprite2D" parent="SaveSlot2"]
 position = Vector2(93, 102)
@@ -168,7 +155,7 @@ offset_bottom = 354.0
 [node name="EmptySlot" type="Sprite2D" parent="SaveSlot3"]
 position = Vector2(93, 102)
 scale = Vector2(6, 6)
-texture = ExtResource("14_ohahd")
+texture = ExtResource("2_1iexe")
 
 [node name="FilledSlot" type="Sprite2D" parent="SaveSlot3"]
 position = Vector2(93, 102)

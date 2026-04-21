@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://cnx8rqa13bm26"]
+[gd_scene load_steps=20 format=3 uid="uid://cnx8rqa13bm26"]
 
 [ext_resource type="Script" uid="uid://2jv58grmryqa" path="res://Scripts/UI/Scenes/TitleScene.gd" id="1_25ulu"]
 [ext_resource type="PackedScene" uid="uid://8vv4frjt0qmt" path="res://Scenes/UI/Scenes/SettingsScene.tscn" id="2_fkiff"]
@@ -7,7 +7,6 @@
 [ext_resource type="Texture2D" uid="uid://b8m7xj4t4q3ic" path="res://Assets/Textures/UIs/SceneUIs/2.png" id="5_iwgkb"]
 [ext_resource type="Texture2D" uid="uid://1xy7xygxqlmf" path="res://Assets/Textures/UIs/SceneUIs/title沃光标题01.tres" id="6_iwgkb"]
 [ext_resource type="Texture2D" uid="uid://norhspdvctlf" path="res://Assets/Textures/UIs/SceneUIs/title开始游戏01.tres" id="7_kvyf1"]
-[ext_resource type="Texture2D" uid="uid://dosd0gvafei6y" path="res://Assets/Textures/UIs/SceneUIs/title沃光标题02.tres" id="7_syapl"]
 [ext_resource type="Texture2D" uid="uid://ho0xrtpie15r" path="res://Assets/Textures/UIs/SceneUIs/title开始游戏03.tres" id="8_lcuoq"]
 [ext_resource type="Texture2D" uid="uid://cyinqwyo2a28j" path="res://Assets/Textures/UIs/SceneUIs/title开始游戏02.tres" id="9_s4mlw"]
 [ext_resource type="Texture2D" uid="uid://bjw3vmf4u7cyw" path="res://Assets/Textures/UIs/SceneUIs/title游戏设置01.tres" id="10_hapmd"]
@@ -74,23 +73,25 @@ texture = ExtResource("6_iwgkb")
 region_rect = Rect2(208, 192, 144, 64)
 
 [node name="TitleB" type="Sprite2D" parent="."]
+visible = false
 position = Vector2(656, 137)
 scale = Vector2(2.5, 2.5)
-texture = ExtResource("7_syapl")
+texture = ExtResource("6_iwgkb")
 region_rect = Rect2(208, 192, 144, 64)
 
 [node name="TitleClickAreaA" type="TextureButton" parent="."]
-offset_left = 607.0
-offset_top = 182.0
-offset_right = 630.0
-offset_bottom = 200.0
+offset_left = 550.0
+offset_top = 80.0
+offset_right = 760.0
+offset_bottom = 205.0
 mouse_filter = 1
 
 [node name="TitleClickAreaB" type="TextureButton" parent="."]
-offset_left = 664.0
-offset_top = 174.0
-offset_right = 688.0
-offset_bottom = 192.0
+visible = false
+offset_left = 550.0
+offset_top = 80.0
+offset_right = 760.0
+offset_bottom = 205.0
 mouse_filter = 1
 
 [node name="UI" type="VBoxContainer" parent="."]

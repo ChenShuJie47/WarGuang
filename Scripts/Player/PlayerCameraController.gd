@@ -1,1 +1,923 @@
-class_name PlayerCameraControllerextends Node# 相机限制在传送后会临时放开到极大范围，避免被边界夹回�?const CAMERA_LIMIT_DISABLED: int = 10000000# 调试开关，用于追踪传送或抖动后的相机同步问题�?const CAMERA_TELEPORT_DEBUG: bool = false# 复用玩家相机数学工具，统一处理中心点与边界裁剪�?const PlayerCameraMathUtil = preload("res://Scripts/Player/PlayerCameraMath.gd")# Warp 追镜在等待玩家真正落位时的默认超时（秒）�?const DEFAULT_WARP_CAMERA_HOLD_TIMEOUT: float = 6.0@export_category("Focus Capture")## 是否启用焦点抢夺系统�?## 关闭后所�?Beacon 区域都不会影响相机目标�?@export var focus_capture_enabled: bool = true## 焦点抢夺全局倍率�?## >1.0 会增�?Beacon 影响�?1.0 会减弱�?@export var focus_capture_global_blend: float = 0.9## 焦点抢夺单帧目标偏移上限（像素）�?## 防止目标过远导致镜头跳变�?@export var focus_capture_max_offset: float = 160.0## 抢夺偏移平滑收敛速度系数�?## 值越大越“跟手”，值越小越平滑�?@export var focus_capture_smooth: float = 14.0# 当前绑定�?Player 节点引用�?var player: Player = null# 当前绑定�?PhantomCamera2D 节点引用�?var phantom_camera: Node = null# 传送守卫剩余时长（秒）�?var camera_transition_guard_timer: float = 0.0# 是否启用传送守卫流程�?var camera_transition_guard_active: bool = false# 传送守卫前 dead zone 备份（x=width, y=height）�?var camera_transition_dead_zone_backup: Vector2 = Vector2(0.125, 0.1)# 当前守卫已运行时长（秒）�?var camera_transition_guard_elapsed: float = 0.0# 守卫最短持续时长（秒）�?var camera_transition_guard_min_duration: float = 0.12# setup 是否已经执行完成�?var setup_completed: bool = false# 相机异常日志节流用时间戳（毫秒）�?var invalid_camera_debug_last_log_ms: int = -1000000# Warp 追镜是否正在运行�?var warp_camera_catchup_active: bool = false# Warp 追镜�?dead zone 备份（x=width, y=height）�?var warp_camera_dead_zone_backup: Vector2 = Vector2.ZERO# Warp dead zone 备份是否有效�?var warp_camera_dead_zone_backup_valid: bool = false# Warp 追镜前的 follow_target 备份�?var warp_camera_follow_target_backup: Node = null# Warp 追镜使用的临时锚点节点�?var warp_camera_anchor: Node2D = null# 是否正在等待玩家完成最终落位�?var warp_camera_waiting_for_player_teleport: bool = false# 等待玩家落位的剩余时间（秒）�?var warp_camera_wait_timeout: float = 0.0## 传送伤害追镜的最长等待时间�?@export var warp_camera_hold_timeout: float = DEFAULT_WARP_CAMERA_HOLD_TIMEOUT# Door 追镜模式是否激活�?var door_camera_catchup_active: bool = false# Door 追镜�?dead zone 备份（x=width, y=height）�?var door_camera_dead_zone_backup: Vector2 = Vector2.ZERO# Door 追镜�?Phantom 限制备份�?var door_limits_backup := {	"left": -CAMERA_LIMIT_DISABLED,	"top": -CAMERA_LIMIT_DISABLED,	"right": CAMERA_LIMIT_DISABLED,	"bottom": CAMERA_LIMIT_DISABLED}# 死亡冻结镜头是否接管相机更新�?var death_camera_freeze_active: bool = false# 死亡冻结使用的相机中心位置�?var death_camera_freeze_position: Vector2 = Vector2.ZERO# 黑屏过场是否正在接管相机状态�?var blackout_transition_active: bool = false# 黑屏过场期间的限制与状态备份�?var blackout_transition_backup := {	"valid": false,	"pcam": {		"left": -CAMERA_LIMIT_DISABLED,		"top": -CAMERA_LIMIT_DISABLED,		"right": CAMERA_LIMIT_DISABLED,		"bottom": CAMERA_LIMIT_DISABLED	},	"camera": {		"left": -CAMERA_LIMIT_DISABLED,		"top": -CAMERA_LIMIT_DISABLED,		"right": CAMERA_LIMIT_DISABLED,		"bottom": CAMERA_LIMIT_DISABLED	}}# 调试轨迹日志的上次输出时间戳（毫秒）�?var camera_trace_last_tick_ms: int = -1000000# 调试轨迹日志最小刷新间隔（毫秒）�?const CAMERA_TRACE_TICK_INTERVAL_MS: int = 240# 常规跟随模式使用的中间锚点�?var normal_follow_anchor: Node2D = null# 当前注册到控制器的焦点区列表�?var active_focus_zones: Array[Node] = []# 当前帧平滑后的焦点抢夺偏移�?var focus_capture_current_offset: Vector2 = Vector2.ZERO# 初始化相机控制器的绑定对象�?func setup(player_ref: Player) -> void:	player = player_ref	phantom_camera = player.get_node_or_null("PhantomCamera2D")	_ensure_normal_follow_anchor()	if phantom_camera:		if phantom_camera.follow_target == null:			_set_normal_follow_target()		camera_transition_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)	setup_completed = true	_debug_camera_trace("setup")# 每帧检查传送守卫是否应该结束�?func physics_process(fixed_delta: float) -> void:	if not setup_completed:		return	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):		return	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():		return	_update_normal_follow_anchor(fixed_delta)	_ensure_valid_follow_target()	var camera := player.get_viewport().get_camera_2d()	if (camera and (not camera.global_position.is_finite() or not camera.offset.is_finite())) or not phantom_camera.global_position.is_finite():		_recover_from_invalid_camera_position()	if death_camera_freeze_active:		var frozen_center := _clamp_camera_center_by_limits(death_camera_freeze_position, phantom_camera, camera)		if not frozen_center.is_finite():			frozen_center = death_camera_freeze_position if death_camera_freeze_position.is_finite() else player.global_position		phantom_camera.global_position = frozen_center		if camera:			camera.global_position = frozen_center			camera.offset = Vector2.ZERO		return	if warp_camera_waiting_for_player_teleport:		warp_camera_wait_timeout -= fixed_delta		if warp_camera_wait_timeout <= 0.0:			_release_warp_camera_hold(true)	_update_camera_transition_guard(fixed_delta)	_enforce_runtime_limit_guard(camera)	_debug_camera_tick(camera)# 将相�?follow_offset 平滑回零�?func reset_camera_position() -> void:	if not player or not phantom_camera:		return	var tween = player.create_tween()	tween.set_trans(Tween.TRANS_SINE)	tween.set_ease(Tween.EASE_IN_OUT)	tween.tween_property(phantom_camera, "follow_offset", Vector2.ZERO, player.camera_offset_transition_duration)# 开启传送后的临时守卫，避免相机立刻回落到错�?dead zone�?func start_camera_transition_guard(duration: float = 0.18, max_duration: float = 1.0) -> void:	if not phantom_camera:		return	camera_transition_guard_active = true	camera_transition_guard_elapsed = 0.0	camera_transition_guard_min_duration = maxf(duration, 0.01)	camera_transition_guard_timer = maxf(max_duration, camera_transition_guard_min_duration)	if CAMERA_TELEPORT_DEBUG:		print("[CameraGuard] lock begin min=", camera_transition_guard_min_duration, " max=", camera_transition_guard_timer)# 处理传送后相机轴锁恢复与回位时机�?func _update_camera_transition_guard(fixed_delta: float) -> void:	if not camera_transition_guard_active:		return	camera_transition_guard_elapsed += fixed_delta	camera_transition_guard_timer -= fixed_delta	if camera_transition_guard_elapsed < camera_transition_guard_min_duration:		return	if camera_transition_guard_timer > 0.0 and not _is_player_inside_normal_camera_dead_zone():		return	camera_transition_guard_active = false	if phantom_camera:		_safe_teleport_phantom_camera()	if CAMERA_TELEPORT_DEBUG:		print("[CameraGuard] lock end elapsed=", camera_transition_guard_elapsed, " timeout_left=", camera_transition_guard_timer)# 同步房间传送后的相机最终位置�?func sync_camera_after_room_teleport() -> void:	if not setup_completed:		return	if not player or not phantom_camera:		return	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():		return	if phantom_camera.follow_target == null:		_set_normal_follow_target()	var camera := player.get_viewport().get_camera_2d()	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):		CameraShakeManager.stop_shake(phantom_camera)	if camera:		camera.offset = Vector2.ZERO	var desired_center: Vector2 = player.global_position + phantom_camera.follow_offset	var clamped_center := _clamp_camera_center_by_limits(desired_center, phantom_camera, camera)	if not clamped_center.is_finite():		clamped_center = desired_center if desired_center.is_finite() else player.global_position	phantom_camera.global_position = clamped_center	_safe_teleport_phantom_camera()	if camera:		camera.global_position = clamped_center		if camera.has_method("reset_smoothing"):			camera.reset_smoothing()		if camera.has_method("reset_physics_interpolation"):			camera.reset_physics_interpolation()	if CAMERA_TELEPORT_DEBUG:		print("[CameraTeleportSync] desired=", desired_center, " clamped=", clamped_center)	_debug_camera_trace("sync_camera_after_room_teleport", {		"desired": desired_center,		"clamped": clamped_center	})	start_camera_transition_guard(0.10, 0.65)# 黑屏期间用于重生/远距离回档点：优先让相机以玩家为中心（受房间限制时自动夹取）�?func sync_camera_to_player_center() -> void:	if not setup_completed:		return	if not player or not phantom_camera:		return	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():		return	end_death_camera_freeze()	# 重生同步时强制退�?warp 追镜模式，避�?follow_target 残留在锚点导致镜头静止�?	warp_camera_catchup_active = false	warp_camera_waiting_for_player_teleport = false	warp_camera_wait_timeout = 0.0	if warp_camera_dead_zone_backup_valid:		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y		warp_camera_dead_zone_backup_valid = false	_set_normal_follow_target()	# 重生场景不需要观察偏移，直接回归零偏移保证“尽量以玩家为中心”�?	if phantom_camera.has_method("set_follow_offset"):		phantom_camera.set_follow_offset(Vector2.ZERO)	else:		phantom_camera.follow_offset = Vector2.ZERO	var camera := player.get_viewport().get_camera_2d()	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):		CameraShakeManager.stop_shake(phantom_camera)	if camera:		camera.offset = Vector2.ZERO	var desired_center: Vector2 = player.global_position	var clamped_center := _clamp_camera_center_by_limits(desired_center, phantom_camera, camera)	if not clamped_center.is_finite():		clamped_center = desired_center if desired_center.is_finite() else player.global_position	phantom_camera.global_position = clamped_center	# 重生黑屏同步阶段不调�?teleport_position，避免越界对焦后再被限制拉回�?	if camera:		camera.global_position = clamped_center		if camera.has_method("reset_smoothing"):			camera.reset_smoothing()		if camera.has_method("reset_physics_interpolation"):			camera.reset_physics_interpolation()	_debug_camera_trace("sync_camera_to_player_center", {		"desired": desired_center,		"clamped": clamped_center,		"immediate": false	})func begin_blackout_camera_transition() -> void:	if not setup_completed or blackout_transition_active:		return	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):		return	blackout_transition_backup.valid = false	blackout_transition_active = true	death_camera_freeze_active = false	warp_camera_catchup_active = false	warp_camera_waiting_for_player_teleport = false	warp_camera_wait_timeout = 0.0	warp_camera_dead_zone_backup_valid = false	if phantom_camera:		_set_normal_follow_target()		phantom_camera.follow_offset = Vector2.ZERO	var camera := player.get_viewport().get_camera_2d()	if camera:		camera.offset = Vector2.ZEROfunc restore_blackout_camera_transition() -> void:	if not blackout_transition_active:		return	blackout_transition_active = false	blackout_transition_backup.valid = false# 黑屏阶段使用：在中心同步后立即刷�?Phantom 跟随锚点，避免淡入后仍出现补偿滑动�?func sync_camera_to_player_center_immediate() -> void:	sync_camera_to_player_center()	_safe_teleport_phantom_camera()	_debug_camera_trace("sync_camera_to_player_center_immediate")func begin_death_camera_freeze() -> void:	if not setup_completed:		return	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):		return	var camera := player.get_viewport().get_camera_2d()	death_camera_freeze_position = camera.global_position if camera and camera.global_position.is_finite() else phantom_camera.global_position	if not death_camera_freeze_position.is_finite():		death_camera_freeze_position = player.global_position	death_camera_freeze_active = true	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):		CameraShakeManager.stop_shake(phantom_camera)func end_death_camera_freeze() -> void:	death_camera_freeze_active = false# 在极端情况下强制�?Camera2D 放到目标位置�?func force_sync_camera_position_after_teleport() -> void:	if not setup_completed:		return	if not player or not phantom_camera:		return	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():		return	var camera = player.get_viewport().get_camera_2d()	if not camera:		return	var desired_position = player.global_position + phantom_camera.follow_offset	var original_left = camera.limit_left	var original_top = camera.limit_top	var original_right = camera.limit_right	var original_bottom = camera.limit_bottom	if CAMERA_TELEPORT_DEBUG:		print("DEBUG: 传送后强制同步相机 - 玩家位置:", player.global_position, " 期望相机位置:", desired_position, " 限制:", original_left, ",", original_top, ",", original_right, ",", original_bottom)	camera.limit_left = -CAMERA_LIMIT_DISABLED	camera.limit_top = -CAMERA_LIMIT_DISABLED	camera.limit_right = CAMERA_LIMIT_DISABLED	camera.limit_bottom = CAMERA_LIMIT_DISABLED	camera.global_position = desired_position	await player.get_tree().process_frame	camera.limit_left = original_left	camera.limit_top = original_top	camera.limit_right = original_right	camera.limit_bottom = original_bottom	if CAMERA_TELEPORT_DEBUG:		print("DEBUG: 相机位置设置�?", camera.global_position)# 传送伤害后使用快速追镜，而不是瞬移相机�?func start_warp_damage_camera_catchup(duration: float = 0.22) -> void:	start_warp_damage_camera_follow(duration)# 传送伤害飞行期间：压缩 dead zone 并持续跟随玩家�?func start_warp_damage_camera_follow(_duration: float = 0.22) -> void:	if not setup_completed:		return	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):		return	warp_camera_waiting_for_player_teleport = false	warp_camera_wait_timeout = 0.0	warp_camera_catchup_active = false	warp_camera_follow_target_backup = phantom_camera.follow_target	warp_camera_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)	warp_camera_dead_zone_backup_valid = false	phantom_camera.follow_target = player	# Warp 受伤跟随不再收缩 dead zone，也不触�?guard/teleport，彻底避免瞬移对焦�?func start_warp_damage_camera_catchup_to_position(target_position: Vector2, duration: float = 0.22) -> void:	if not setup_completed:		return	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):		return	if warp_camera_catchup_active:		return	var camera := player.get_viewport().get_camera_2d()	if camera == null:		return	if not _ensure_warp_camera_anchor():		return	warp_camera_catchup_active = true	warp_camera_waiting_for_player_teleport = false	warp_camera_wait_timeout = 0.0	warp_camera_follow_target_backup = phantom_camera.follow_target	warp_camera_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)	# 临时接管相机，使用有效锚点避�?PhantomCamera follow_target 为空�?	phantom_camera.follow_target = warp_camera_anchor	phantom_camera.dead_zone_width = 0.02	phantom_camera.dead_zone_height = 0.02	var start_center: Vector2 = camera.global_position	if not start_center.is_finite():		start_center = phantom_camera.global_position if phantom_camera.global_position.is_finite() else player.global_position	var end_center: Vector2 = target_position + phantom_camera.follow_offset	if not end_center.is_finite():		end_center = target_position if target_position.is_finite() else start_center	warp_camera_anchor.global_position = start_center	var tween := player.create_tween()	tween.set_trans(Tween.TRANS_QUAD)	tween.set_ease(Tween.EASE_OUT)	tween.tween_method(Callable(self, "_set_warp_camera_center"), start_center, end_center, maxf(duration, 0.05))	start_camera_transition_guard(0.06, maxf(duration + 0.25, 0.3))	tween.finished.connect(func():		if not is_instance_valid(phantom_camera):			warp_camera_catchup_active = false			warp_camera_waiting_for_player_teleport = false			return		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y		# 追镜到目标后先保持在目标，不要在玩家真正传送前回弹到玩家当前位置�?		if is_instance_valid(warp_camera_anchor):			phantom_camera.follow_target = warp_camera_anchor		warp_camera_waiting_for_player_teleport = true		warp_camera_wait_timeout = maxf(warp_camera_hold_timeout, 0.5)		warp_camera_catchup_active = false	)# 玩家实际完成传送后调用，恢复正常跟随�?func notify_warp_player_teleported() -> void:	if not has_pending_warp_camera_hold():		return	_release_warp_camera_hold(true)func has_pending_warp_camera_hold() -> bool:	return warp_camera_dead_zone_backup_valid or warp_camera_catchup_active or warp_camera_waiting_for_player_teleportfunc _set_warp_camera_center(center: Vector2) -> void:	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):		return	if not center.is_finite():		return	if is_instance_valid(warp_camera_anchor):		warp_camera_anchor.global_position = center	phantom_camera.global_position = center	var camera := player.get_viewport().get_camera_2d()	if camera:		camera.global_position = centerfunc is_warp_camera_catchup_active() -> bool:	return warp_camera_catchup_activefunc _safe_teleport_phantom_camera() -> void:	if not is_instance_valid(phantom_camera):		return	if phantom_camera.follow_target == null and is_instance_valid(player):		phantom_camera.follow_target = player	if phantom_camera.follow_target == null:		return	if phantom_camera.has_method("teleport_position"):		phantom_camera.teleport_position()func _release_warp_camera_hold(follow_player: bool) -> void:	warp_camera_waiting_for_player_teleport = false	warp_camera_wait_timeout = 0.0	if not is_instance_valid(phantom_camera):		return	if warp_camera_dead_zone_backup_valid:		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y		warp_camera_dead_zone_backup_valid = false	if follow_player and is_instance_valid(player):		_set_normal_follow_target()		_safe_teleport_phantom_camera()	elif is_instance_valid(warp_camera_follow_target_backup):		phantom_camera.follow_target = warp_camera_follow_target_backupfunc _ensure_warp_camera_anchor() -> bool:	if is_instance_valid(warp_camera_anchor):		return true	if not is_instance_valid(player):		return false	var parent_node := player.get_parent()	if parent_node == null:		return false	warp_camera_anchor = Node2D.new()	warp_camera_anchor.name = "WarpCameraAnchor"	parent_node.add_child(warp_camera_anchor)	return truefunc _ensure_valid_follow_target() -> void:	if not is_instance_valid(phantom_camera):		return	if int(phantom_camera.follow_axis_lock) != int(PhantomCamera2D.FollowLockAxis.NONE):		phantom_camera.follow_axis_lock = PhantomCamera2D.FollowLockAxis.NONE	if (warp_camera_catchup_active or warp_camera_waiting_for_player_teleport) and is_instance_valid(warp_camera_anchor):		if phantom_camera.follow_target != warp_camera_anchor:			phantom_camera.follow_target = warp_camera_anchor		return	_set_normal_follow_target()func _ensure_normal_follow_anchor() -> void:	if not is_instance_valid(player):		return	if is_instance_valid(normal_follow_anchor):		return	var parent_node := player.get_parent()	if parent_node == null:		return	normal_follow_anchor = Node2D.new()	normal_follow_anchor.name = "PlayerCameraFollowAnchor"	parent_node.add_child(normal_follow_anchor)	normal_follow_anchor.global_position = player.global_positionfunc _set_normal_follow_target() -> void:	if not is_instance_valid(phantom_camera):		return	_ensure_normal_follow_anchor()	if is_instance_valid(normal_follow_anchor):		phantom_camera.follow_target = normal_follow_anchor	elif is_instance_valid(player):		phantom_camera.follow_target = playerfunc _update_normal_follow_anchor(fixed_delta: float) -> void:	if not is_instance_valid(player):		return	_ensure_normal_follow_anchor()	if not is_instance_valid(normal_follow_anchor):		return	var focus_offset := _compute_focus_capture_offset(fixed_delta)	var desired_offset := focus_offset	normal_follow_anchor.global_position = player.global_position + desired_offsetfunc _compute_focus_capture_offset(fixed_delta: float) -> Vector2:	if not focus_capture_enabled:		focus_capture_current_offset = focus_capture_current_offset.lerp(Vector2.ZERO, clampf(focus_capture_smooth * fixed_delta, 0.0, 1.0))		return focus_capture_current_offset	var best_weight := -1.0	var best_offset := Vector2.ZERO	var stale_zones: Array[Node] = []	for zone in active_focus_zones:		if not is_instance_valid(zone):			stale_zones.append(zone)			continue		if not zone.has_method("get_focus_capture_sample_for_player"):			continue		var sample: Dictionary = zone.get_focus_capture_sample_for_player(player)		if not bool(sample.get("valid", false)):			continue		var weight: float = float(sample.get("weight", 0.0))		if weight > best_weight:			best_weight = weight			best_offset = sample.get("offset", Vector2.ZERO)	for stale_zone in stale_zones:		active_focus_zones.erase(stale_zone)	var target_offset := Vector2.ZERO	if best_weight > 0.0:		target_offset = best_offset * maxf(focus_capture_global_blend, 0.0)		if focus_capture_max_offset > 0.0 and target_offset.length() > focus_capture_max_offset:			target_offset = target_offset.normalized() * focus_capture_max_offset	var smooth := clampf(focus_capture_smooth * fixed_delta, 0.0, 1.0)	focus_capture_current_offset = focus_capture_current_offset.lerp(target_offset, smooth)	return focus_capture_current_offsetfunc register_focus_capture_zone(zone: Node) -> void:	if zone == null:		return	if active_focus_zones.has(zone):		return	active_focus_zones.append(zone)func unregister_focus_capture_zone(zone: Node) -> void:	if zone == null:		return	active_focus_zones.erase(zone)# Door 传送测试路径：短时解限 + 快速追�?+ 自动恢复目标房间限制�?func start_door_teleport_camera_catchup(catchup_duration: float = 0.20, unlock_duration: float = 0.32) -> void:	if not setup_completed:		return	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):		return	if door_camera_catchup_active:		return		door_camera_catchup_active = true	door_camera_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)	door_limits_backup.left = int(phantom_camera.get("limit_left"))	door_limits_backup.top = int(phantom_camera.get("limit_top"))	door_limits_backup.right = int(phantom_camera.get("limit_right"))	door_limits_backup.bottom = int(phantom_camera.get("limit_bottom"))		phantom_camera.dead_zone_width = 0.02	phantom_camera.dead_zone_height = 0.02	phantom_camera.set("limit_left", -CAMERA_LIMIT_DISABLED)	phantom_camera.set("limit_top", -CAMERA_LIMIT_DISABLED)	phantom_camera.set("limit_right", CAMERA_LIMIT_DISABLED)	phantom_camera.set("limit_bottom", CAMERA_LIMIT_DISABLED)		var camera := player.get_viewport().get_camera_2d()	var camera_limits_backup := {		"left": 0,		"top": 0,		"right": 0,		"bottom": 0	}	if camera:		camera_limits_backup.left = camera.limit_left		camera_limits_backup.top = camera.limit_top		camera_limits_backup.right = camera.limit_right		camera_limits_backup.bottom = camera.limit_bottom		camera.limit_left = -CAMERA_LIMIT_DISABLED		camera.limit_top = -CAMERA_LIMIT_DISABLED		camera.limit_right = CAMERA_LIMIT_DISABLED		camera.limit_bottom = CAMERA_LIMIT_DISABLED		start_camera_transition_guard(0.06, maxf(catchup_duration + unlock_duration, 0.35))		var dead_zone_timer := player.get_tree().create_timer(maxf(catchup_duration, 0.05))	dead_zone_timer.timeout.connect(func():		if not is_instance_valid(phantom_camera):			return		phantom_camera.dead_zone_width = door_camera_dead_zone_backup.x		phantom_camera.dead_zone_height = door_camera_dead_zone_backup.y	)		var restore_timer := player.get_tree().create_timer(maxf(unlock_duration, catchup_duration))	restore_timer.timeout.connect(func():		if not is_instance_valid(phantom_camera):			door_camera_catchup_active = false			return		phantom_camera.set("limit_left", int(door_limits_backup.left))		phantom_camera.set("limit_top", int(door_limits_backup.top))		phantom_camera.set("limit_right", int(door_limits_backup.right))		phantom_camera.set("limit_bottom", int(door_limits_backup.bottom))		if camera and is_instance_valid(camera):			camera.limit_left = int(camera_limits_backup.left)			camera.limit_top = int(camera_limits_backup.top)			camera.limit_right = int(camera_limits_backup.right)			camera.limit_bottom = int(camera_limits_backup.bottom)		door_camera_catchup_active = false		)# 返回当前相机守卫和跟随状态的调试快照�?func get_debug_snapshot() -> Dictionary:	return {		"setup_completed": setup_completed,		"guard_active": camera_transition_guard_active,		"guard_elapsed": camera_transition_guard_elapsed,		"guard_remaining": camera_transition_guard_timer,		"axis_lock": int(phantom_camera.follow_axis_lock) if phantom_camera else -1,		"player_inside_tree": is_instance_valid(player) and player.is_inside_tree() if player else false,		"camera_inside_tree": is_instance_valid(phantom_camera) and phantom_camera.is_inside_tree() if phantom_camera else false,		"camera_pos": phantom_camera.global_position if phantom_camera else Vector2.ZERO,		"follow_offset": phantom_camera.get_follow_offset() if phantom_camera and phantom_camera.has_method("get_follow_offset") else Vector2.ZERO	}# 通过限制范围把目标中心点夹回可用区域�?func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: Camera2D) -> Vector2:	return PlayerCameraMathUtil.clamp_camera_center_by_limits(		target_center,		pcam,		camera,		player.get_viewport_rect().size,		CAMERA_LIMIT_DISABLED	)# 判断玩家是否已经回到正常 dead zone 内，允许守卫结束�?func _is_player_inside_normal_camera_dead_zone() -> bool:	if not phantom_camera or not player:		return true	var camera := player.get_viewport().get_camera_2d()	if camera == null:		return true	var target_world: Vector2 = player.global_position + phantom_camera.follow_offset	var camera_center: Vector2 = camera.global_position	var viewport_size: Vector2 = player.get_viewport_rect().size	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:		return true	var zoom: Vector2 = camera.zoom	if not target_world.is_finite() or not camera_center.is_finite() or not zoom.is_finite():		return true	if is_zero_approx(zoom.x) or is_zero_approx(zoom.y):		return true	var half_dead_w: float = viewport_size.x * camera_transition_dead_zone_backup.x * 0.5 / zoom.x	var half_dead_h: float = viewport_size.y * camera_transition_dead_zone_backup.y * 0.5 / zoom.y	var half_view_w: float = viewport_size.x * 0.5 / zoom.x	var half_view_h: float = viewport_size.y * 0.5 / zoom.y	var limit_left: float = float(int(phantom_camera.get("limit_left")))	var limit_top: float = float(int(phantom_camera.get("limit_top")))	var limit_right: float = float(int(phantom_camera.get("limit_right")))	var limit_bottom: float = float(int(phantom_camera.get("limit_bottom")))	if limit_left <= -CAMERA_LIMIT_DISABLED + 1 and limit_right >= CAMERA_LIMIT_DISABLED - 1 and limit_top <= -CAMERA_LIMIT_DISABLED + 1 and limit_bottom >= CAMERA_LIMIT_DISABLED - 1:		return true	var inside_x: bool = absf(target_world.x - camera_center.x) <= half_dead_w	var inside_y: bool = absf(target_world.y - camera_center.y) <= half_dead_h	var free_min_x: float = limit_left + half_view_w + half_dead_w	var free_max_x: float = limit_right - half_view_w - half_dead_w	var free_min_y: float = limit_top + half_view_h + half_dead_h	var free_max_y: float = limit_bottom - half_view_h - half_dead_h	if free_min_x > free_max_x:		inside_x = true	if free_min_y > free_max_y:		inside_y = true	if CAMERA_TELEPORT_DEBUG:		print("[CameraGuard] target=", target_world, " cam=", camera_center, " dead=", half_dead_w, ",", half_dead_h, " freeX=", free_min_x, "..", free_max_x, " freeY=", free_min_y, "..", free_max_y, " inside=", inside_x and inside_y)	return inside_x and inside_y# 当相机坐标出�?NaN/Inf 时，立即重置到玩家附近并刷新相机同步�?func _recover_from_invalid_camera_position() -> void:	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):		return	var camera := player.get_viewport().get_camera_2d()	var camera_before := camera.global_position if camera else Vector2.ZERO	var offset_before := camera.offset if camera else Vector2.ZERO	var pcam_before: Vector2 = phantom_camera.global_position	var now_ms := Time.get_ticks_msec()	if player.camera_damage_debug and now_ms - invalid_camera_debug_last_log_ms >= 250:		invalid_camera_debug_last_log_ms = now_ms		var room_name := RoomManager.current_room if RoomManager else ""		print("[CameraInvalidRecover] room=", room_name,			" player_pos=", player.global_position,			" pcam_before=", pcam_before,			" cam_before=", camera_before,			" cam_offset_before=", offset_before,			" state=", player.current_state,			" anim=", player.current_animation,			" warp=", player.is_warp_damage)	var safe_center: Vector2 = player.global_position + phantom_camera.follow_offset	if not phantom_camera.follow_offset.is_finite():		phantom_camera.follow_offset = Vector2.ZERO		safe_center = player.global_position	if not safe_center.is_finite():		safe_center = player.global_position if player.global_position.is_finite() else Vector2.ZERO	if camera:		safe_center = _clamp_camera_center_by_limits(safe_center, phantom_camera, camera)	phantom_camera.global_position = safe_center	if phantom_camera.has_method("teleport_position"):		phantom_camera.teleport_position()	if camera:		if not camera.offset.is_finite():			camera.offset = Vector2.ZERO		camera.global_position = safe_center		if camera.has_method("reset_smoothing"):			camera.reset_smoothing()		if camera.has_method("reset_physics_interpolation"):			camera.reset_physics_interpolation()	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):		CameraShakeManager.stop_shake(phantom_camera)	start_camera_transition_guard(0.10, 0.65)	_debug_camera_trace("recover_invalid_camera", {		"safe_center": safe_center	})func _is_full_black_now() -> bool:	if FadeManager == null:		return false	if FadeManager.has_method("is_fully_black"):		return FadeManager.is_fully_black()	return falsefunc _is_strict_limit_phase() -> bool:	if blackout_transition_active and _is_full_black_now():		return false	return truefunc _enforce_runtime_limit_guard(camera: Camera2D) -> void:	if not _is_strict_limit_phase():		return	if not is_instance_valid(phantom_camera):		return	_restore_room_limits_if_needed(camera)	var pcam_center: Vector2 = phantom_camera.global_position	if pcam_center.is_finite():		var pcam_clamped: Vector2 = _clamp_camera_center_by_limits(pcam_center, phantom_camera, camera)		if pcam_clamped.is_finite() and pcam_clamped.distance_squared_to(pcam_center) > 0.0001:			phantom_camera.global_position = pcam_clamped	if camera:		var camera_center: Vector2 = camera.global_position		if camera_center.is_finite():			var cam_clamped: Vector2 = _clamp_camera_center_by_limits(camera_center, phantom_camera, camera)			if cam_clamped.is_finite() and cam_clamped.distance_squared_to(camera_center) > 0.0001:				camera.global_position = cam_clamped		if not camera.offset.is_finite():			camera.offset = Vector2.ZERO		camera.offset = _clamp_offset_to_camera_limits(camera, camera.offset)func _clamp_offset_to_camera_limits(camera: Camera2D, raw_offset: Vector2) -> Vector2:	if camera == null:		return raw_offset	var limit_left: int = camera.limit_left	var limit_top: int = camera.limit_top	var limit_right: int = camera.limit_right	var limit_bottom: int = camera.limit_bottom	if limit_left <= -CAMERA_LIMIT_DISABLED + 1 and limit_top <= -CAMERA_LIMIT_DISABLED + 1 and limit_right >= CAMERA_LIMIT_DISABLED - 1 and limit_bottom >= CAMERA_LIMIT_DISABLED - 1:		return raw_offset	var viewport := camera.get_viewport()	if viewport == null:		return raw_offset	var viewport_size: Vector2 = viewport.get_visible_rect().size	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:		return raw_offset	var zoom: Vector2 = camera.zoom	if is_zero_approx(zoom.x) or is_zero_approx(zoom.y):		return raw_offset	var half_w: float = viewport_size.x * 0.5 / zoom.x	var half_h: float = viewport_size.y * 0.5 / zoom.y	var min_x: float = float(limit_left) + half_w	var max_x: float = float(limit_right) - half_w	var min_y: float = float(limit_top) + half_h	var max_y: float = float(limit_bottom) - half_h	if min_x > max_x:		min_x = (float(limit_left) + float(limit_right)) * 0.5		max_x = min_x	if min_y > max_y:		min_y = (float(limit_top) + float(limit_bottom)) * 0.5		max_y = min_y	var center: Vector2 = camera.global_position	if not center.is_finite():		return Vector2.ZERO	var center_x: float = clampf(center.x, min_x, max_x)	var center_y: float = clampf(center.y, min_y, max_y)	var dx_min: float = min_x - center_x	var dx_max: float = max_x - center_x	var dy_min: float = min_y - center_y	var dy_max: float = max_y - center_y	return Vector2(clampf(raw_offset.x, dx_min, dx_max), clampf(raw_offset.y, dy_min, dy_max))func _restore_room_limits_if_needed(camera: Camera2D) -> void:	if RoomManager == null or not RoomManager.has_method("get_current_room_data"):		return	var room_data = RoomManager.get_current_room_data()	if typeof(room_data) != TYPE_DICTIONARY:		return	var room_node = room_data.get("node", null)	if room_node == null or not room_node.has_method("get_camera_limits"):		return	var limits: Rect2 = room_node.get_camera_limits()	if not limits.has_area():		return	var left := int(limits.position.x)	var top := int(limits.position.y)	var right := int(limits.end.x)	var bottom := int(limits.end.y)	var changed: bool = false	if int(phantom_camera.get("limit_left")) != left:		phantom_camera.set("limit_left", left)		changed = true	if int(phantom_camera.get("limit_top")) != top:		phantom_camera.set("limit_top", top)		changed = true	if int(phantom_camera.get("limit_right")) != right:		phantom_camera.set("limit_right", right)		changed = true	if int(phantom_camera.get("limit_bottom")) != bottom:		phantom_camera.set("limit_bottom", bottom)		changed = true	if camera:		if not camera.limit_enabled:			camera.limit_enabled = true			changed = true		if camera.limit_left != left:			camera.limit_left = left			changed = true		if camera.limit_top != top:			camera.limit_top = top			changed = true		if camera.limit_right != right:			camera.limit_right = right			changed = true		if camera.limit_bottom != bottom:			camera.limit_bottom = bottom			changed = true	if changed:		_debug_camera_trace("restore_room_limits", {			"limits": Vector4(left, top, right, bottom)		})func _is_camera_debug_enabled() -> bool:	return is_instance_valid(player) and player.camera_damage_debugfunc _debug_camera_tick(camera: Camera2D) -> void:	if not _is_camera_debug_enabled():		return	var now_ms := Time.get_ticks_msec()	if now_ms - camera_trace_last_tick_ms < CAMERA_TRACE_TICK_INTERVAL_MS:		return	camera_trace_last_tick_ms = now_ms	_debug_camera_trace("tick", {		"strict_limit_phase": _is_strict_limit_phase(),		"guard_active": camera_transition_guard_active,		"blackout_transition_active": blackout_transition_active,		"camera_offset": camera.offset if camera else Vector2.ZERO	})func _debug_camera_trace(tag: String, payload: Dictionary = {}) -> void:	if not _is_camera_debug_enabled():		return	var room_name := RoomManager.current_room if RoomManager else ""	var camera := player.get_viewport().get_camera_2d() if player and player.get_viewport() else null	var follow_target_name := "null"	if phantom_camera and phantom_camera.follow_target:		follow_target_name = String(phantom_camera.follow_target.name)	print("[CameraTrace] ", tag, " room=", room_name,		" player=", player.global_position if player else Vector2.ZERO,		" pcam=", phantom_camera.global_position if phantom_camera else Vector2.ZERO,		" cam=", camera.global_position if camera else Vector2.ZERO,		" follow_target=", follow_target_name,		" payload=", payload)
+class_name PlayerCameraController
+extends Node
+
+# 相机限制在传送后会临时放开到极大范围，避免被边界夹回。
+const CAMERA_LIMIT_DISABLED: int = 10000000
+# 调试开关，用于追踪传送或抖动后的相机同步问题。
+const CAMERA_TELEPORT_DEBUG: bool = false
+# 复用玩家相机数学工具，统一处理中心点与边界裁剪。
+const PlayerCameraMathUtil = preload("res://Scripts/Player/PlayerCameraMath.gd")
+# Warp 追镜在等待玩家真正落位时的默认超时（秒）。
+const DEFAULT_WARP_CAMERA_HOLD_TIMEOUT: float = 6.0
+
+@export_category("Focus Capture")
+## 是否启用焦点抢夺系统。
+## 关闭后所有 Beacon 区域都不会影响相机目标。
+@export var focus_capture_enabled: bool = true
+## 焦点抢夺全局倍率。
+## >1.0 会增强 Beacon 影响；<1.0 会减弱。
+@export var focus_capture_global_blend: float = 1.2
+## 焦点抢夺单帧目标偏移上限（像素）。
+## 防止目标过远导致镜头跳变。
+@export var focus_capture_max_offset: float = 320.0
+## 抢夺偏移平滑收敛速度系数。
+## 值越大越“跟手”，值越小越平滑。
+@export var focus_capture_smooth: float = 16.0
+
+# 当前绑定的 Player 节点引用。
+var player: Player = null
+# 当前绑定的 PhantomCamera2D 节点引用。
+var phantom_camera: Node = null
+# 传送守卫剩余时长（秒）。
+var camera_transition_guard_timer: float = 0.0
+# 是否启用传送守卫流程。
+var camera_transition_guard_active: bool = false
+# 传送守卫前 dead zone 备份（x=width, y=height）。
+var camera_transition_dead_zone_backup: Vector2 = Vector2(0.125, 0.1)
+# 当前守卫已运行时长（秒）。
+var camera_transition_guard_elapsed: float = 0.0
+# 守卫最短持续时长（秒）。
+var camera_transition_guard_min_duration: float = 0.12
+# setup 是否已经执行完成。
+var setup_completed: bool = false
+# 相机异常日志节流用时间戳（毫秒）。
+var invalid_camera_debug_last_log_ms: int = -1000000
+# Warp 追镜是否正在运行。
+var warp_camera_catchup_active: bool = false
+# Warp 追镜前 dead zone 备份（x=width, y=height）。
+var warp_camera_dead_zone_backup: Vector2 = Vector2.ZERO
+# Warp dead zone 备份是否有效。
+var warp_camera_dead_zone_backup_valid: bool = false
+# Warp 追镜前的 follow_target 备份。
+var warp_camera_follow_target_backup: Node = null
+# Warp 追镜使用的临时锚点节点。
+var warp_camera_anchor: Node2D = null
+# 是否正在等待玩家完成最终落位。
+var warp_camera_waiting_for_player_teleport: bool = false
+# 等待玩家落位的剩余时间（秒）。
+var warp_camera_wait_timeout: float = 0.0
+## 传送伤害追镜的最长等待时间。
+@export var warp_camera_hold_timeout: float = DEFAULT_WARP_CAMERA_HOLD_TIMEOUT
+# Door 追镜模式是否激活。
+var door_camera_catchup_active: bool = false
+# Door 追镜前 dead zone 备份（x=width, y=height）。
+var door_camera_dead_zone_backup: Vector2 = Vector2.ZERO
+# Door 追镜前 Phantom 限制备份。
+var door_limits_backup := {
+	"left": -CAMERA_LIMIT_DISABLED,
+	"top": -CAMERA_LIMIT_DISABLED,
+	"right": CAMERA_LIMIT_DISABLED,
+	"bottom": CAMERA_LIMIT_DISABLED
+}
+# 死亡冻结镜头是否接管相机更新。
+var death_camera_freeze_active: bool = false
+# 死亡冻结使用的相机中心位置。
+var death_camera_freeze_position: Vector2 = Vector2.ZERO
+# 黑屏过场是否正在接管相机状态。
+var blackout_transition_active: bool = false
+# 黑屏过场期间的限制与状态备份。
+var blackout_transition_backup := {
+	"valid": false,
+	"pcam": {
+		"left": -CAMERA_LIMIT_DISABLED,
+		"top": -CAMERA_LIMIT_DISABLED,
+		"right": CAMERA_LIMIT_DISABLED,
+		"bottom": CAMERA_LIMIT_DISABLED
+	},
+	"camera": {
+		"left": -CAMERA_LIMIT_DISABLED,
+		"top": -CAMERA_LIMIT_DISABLED,
+		"right": CAMERA_LIMIT_DISABLED,
+		"bottom": CAMERA_LIMIT_DISABLED
+	}
+}
+# 调试轨迹日志的上次输出时间戳（毫秒）。
+var camera_trace_last_tick_ms: int = -1000000
+# 调试轨迹日志最小刷新间隔（毫秒）。
+const CAMERA_TRACE_TICK_INTERVAL_MS: int = 240
+# 常规跟随模式使用的中间锚点。
+var normal_follow_anchor: Node2D = null
+# 当前注册到控制器的焦点区列表。
+var active_focus_zones: Array[Node] = []
+# 当前帧平滑后的焦点抢夺偏移。
+var focus_capture_current_offset: Vector2 = Vector2.ZERO
+
+# 初始化相机控制器的绑定对象。
+func setup(player_ref: Player) -> void:
+	player = player_ref
+	phantom_camera = player.get_node_or_null("PhantomCamera2D")
+	_ensure_normal_follow_anchor()
+	if phantom_camera:
+		if phantom_camera.follow_target == null:
+			_set_normal_follow_target()
+		camera_transition_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
+	setup_completed = true
+	_debug_camera_trace("setup")
+
+# 每帧检查传送守卫是否应该结束。
+func physics_process(fixed_delta: float) -> void:
+	if not setup_completed:
+		return
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
+		return
+	_update_normal_follow_anchor(fixed_delta)
+	_ensure_valid_follow_target()
+	var camera := player.get_viewport().get_camera_2d()
+	if (camera and (not camera.global_position.is_finite() or not camera.offset.is_finite())) or not phantom_camera.global_position.is_finite():
+		_recover_from_invalid_camera_position()
+	if death_camera_freeze_active:
+		var frozen_center := _clamp_camera_center_by_limits(death_camera_freeze_position, phantom_camera, camera)
+		if not frozen_center.is_finite():
+			frozen_center = death_camera_freeze_position if death_camera_freeze_position.is_finite() else player.global_position
+		phantom_camera.global_position = frozen_center
+		if camera:
+			camera.global_position = frozen_center
+			camera.offset = Vector2.ZERO
+		return
+	if warp_camera_waiting_for_player_teleport:
+		warp_camera_wait_timeout -= fixed_delta
+		if warp_camera_wait_timeout <= 0.0:
+			_release_warp_camera_hold(true)
+	_update_camera_transition_guard(fixed_delta)
+	_enforce_runtime_limit_guard(camera)
+	_debug_camera_tick(camera)
+
+# 将相机 follow_offset 平滑回零。
+func reset_camera_position() -> void:
+	if not player or not phantom_camera:
+		return
+	var tween = player.create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(phantom_camera, "follow_offset", Vector2.ZERO, player.camera_offset_transition_duration)
+
+# 开启传送后的临时守卫，避免相机立刻回落到错误 dead zone。
+func start_camera_transition_guard(duration: float = 0.18, max_duration: float = 1.0) -> void:
+	if not phantom_camera:
+		return
+	camera_transition_guard_active = true
+	camera_transition_guard_elapsed = 0.0
+	camera_transition_guard_min_duration = maxf(duration, 0.01)
+	camera_transition_guard_timer = maxf(max_duration, camera_transition_guard_min_duration)
+	if CAMERA_TELEPORT_DEBUG:
+		print("[CameraGuard] lock begin min=", camera_transition_guard_min_duration, " max=", camera_transition_guard_timer)
+
+# 处理传送后相机轴锁恢复与回位时机。
+func _update_camera_transition_guard(fixed_delta: float) -> void:
+	if not camera_transition_guard_active:
+		return
+	camera_transition_guard_elapsed += fixed_delta
+	camera_transition_guard_timer -= fixed_delta
+	if camera_transition_guard_elapsed < camera_transition_guard_min_duration:
+		return
+
+	if camera_transition_guard_timer > 0.0 and not _is_player_inside_normal_camera_dead_zone():
+		return
+	camera_transition_guard_active = false
+	if phantom_camera:
+		_safe_teleport_phantom_camera()
+	if CAMERA_TELEPORT_DEBUG:
+		print("[CameraGuard] lock end elapsed=", camera_transition_guard_elapsed, " timeout_left=", camera_transition_guard_timer)
+
+# 同步房间传送后的相机最终位置。
+func sync_camera_after_room_teleport() -> void:
+	if not setup_completed:
+		return
+	if not player or not phantom_camera:
+		return
+	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
+		return
+	if phantom_camera.follow_target == null:
+		_set_normal_follow_target()
+
+	var camera := player.get_viewport().get_camera_2d()
+	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
+		CameraShakeManager.stop_shake(phantom_camera)
+	if camera:
+		camera.offset = Vector2.ZERO
+
+	var desired_center: Vector2 = player.global_position + phantom_camera.follow_offset
+	var clamped_center := _clamp_camera_center_by_limits(desired_center, phantom_camera, camera)
+	if not clamped_center.is_finite():
+		clamped_center = desired_center if desired_center.is_finite() else player.global_position
+
+	phantom_camera.global_position = clamped_center
+	_safe_teleport_phantom_camera()
+
+	if camera:
+		camera.global_position = clamped_center
+		if camera.has_method("reset_smoothing"):
+			camera.reset_smoothing()
+		if camera.has_method("reset_physics_interpolation"):
+			camera.reset_physics_interpolation()
+
+	if CAMERA_TELEPORT_DEBUG:
+		print("[CameraTeleportSync] desired=", desired_center, " clamped=", clamped_center)
+	_debug_camera_trace("sync_camera_after_room_teleport", {
+		"desired": desired_center,
+		"clamped": clamped_center
+	})
+
+	start_camera_transition_guard(0.10, 0.65)
+
+# 黑屏期间用于重生/远距离回档点：优先让相机以玩家为中心（受房间限制时自动夹取）。
+func sync_camera_to_player_center() -> void:
+	if not setup_completed:
+		return
+	if not player or not phantom_camera:
+		return
+	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
+		return
+	end_death_camera_freeze()
+
+	# 重生同步时强制退出 warp 追镜模式，避免 follow_target 残留在锚点导致镜头静止。
+	warp_camera_catchup_active = false
+	warp_camera_waiting_for_player_teleport = false
+	warp_camera_wait_timeout = 0.0
+	if warp_camera_dead_zone_backup_valid:
+		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x
+		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y
+		warp_camera_dead_zone_backup_valid = false
+	_set_normal_follow_target()
+
+	# 重生场景不需要观察偏移，直接回归零偏移保证“尽量以玩家为中心”。
+	if phantom_camera.has_method("set_follow_offset"):
+		phantom_camera.set_follow_offset(Vector2.ZERO)
+	else:
+		phantom_camera.follow_offset = Vector2.ZERO
+
+	var camera := player.get_viewport().get_camera_2d()
+	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
+		CameraShakeManager.stop_shake(phantom_camera)
+	if camera:
+		camera.offset = Vector2.ZERO
+
+	var desired_center: Vector2 = player.global_position
+	var clamped_center := _clamp_camera_center_by_limits(desired_center, phantom_camera, camera)
+	if not clamped_center.is_finite():
+		clamped_center = desired_center if desired_center.is_finite() else player.global_position
+
+	phantom_camera.global_position = clamped_center
+	# 重生黑屏同步阶段不调用 teleport_position，避免越界对焦后再被限制拉回。
+
+	if camera:
+		camera.global_position = clamped_center
+		if camera.has_method("reset_smoothing"):
+			camera.reset_smoothing()
+		if camera.has_method("reset_physics_interpolation"):
+			camera.reset_physics_interpolation()
+	_debug_camera_trace("sync_camera_to_player_center", {
+		"desired": desired_center,
+		"clamped": clamped_center,
+		"immediate": false
+	})
+
+func begin_blackout_camera_transition() -> void:
+	if not setup_completed or blackout_transition_active:
+		return
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	blackout_transition_backup.valid = false
+	blackout_transition_active = true
+	death_camera_freeze_active = false
+	warp_camera_catchup_active = false
+	warp_camera_waiting_for_player_teleport = false
+	warp_camera_wait_timeout = 0.0
+	warp_camera_dead_zone_backup_valid = false
+	if phantom_camera:
+		_set_normal_follow_target()
+		phantom_camera.follow_offset = Vector2.ZERO
+	var camera := player.get_viewport().get_camera_2d()
+	if camera:
+		camera.offset = Vector2.ZERO
+
+func restore_blackout_camera_transition() -> void:
+	if not blackout_transition_active:
+		return
+	blackout_transition_active = false
+	blackout_transition_backup.valid = false
+
+# 黑屏阶段使用：在中心同步后立即刷新 Phantom 跟随锚点，避免淡入后仍出现补偿滑动。
+func sync_camera_to_player_center_immediate() -> void:
+	sync_camera_to_player_center()
+	_safe_teleport_phantom_camera()
+	_debug_camera_trace("sync_camera_to_player_center_immediate")
+
+func begin_death_camera_freeze() -> void:
+	if not setup_completed:
+		return
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	var camera := player.get_viewport().get_camera_2d()
+	death_camera_freeze_position = camera.global_position if camera and camera.global_position.is_finite() else phantom_camera.global_position
+	if not death_camera_freeze_position.is_finite():
+		death_camera_freeze_position = player.global_position
+	death_camera_freeze_active = true
+	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
+		CameraShakeManager.stop_shake(phantom_camera)
+
+func end_death_camera_freeze() -> void:
+	death_camera_freeze_active = false
+
+# 在极端情况下强制把 Camera2D 放到目标位置。
+func force_sync_camera_position_after_teleport() -> void:
+	if not setup_completed:
+		return
+	if not player or not phantom_camera:
+		return
+	if not player.is_inside_tree() or not phantom_camera.is_inside_tree():
+		return
+	var camera = player.get_viewport().get_camera_2d()
+	if not camera:
+		return
+
+	var desired_position = player.global_position + phantom_camera.follow_offset
+	var original_left = camera.limit_left
+	var original_top = camera.limit_top
+	var original_right = camera.limit_right
+	var original_bottom = camera.limit_bottom
+
+	if CAMERA_TELEPORT_DEBUG:
+		print("DEBUG: 传送后强制同步相机 - 玩家位置:", player.global_position, " 期望相机位置:", desired_position, " 限制:", original_left, ",", original_top, ",", original_right, ",", original_bottom)
+
+	camera.limit_left = -CAMERA_LIMIT_DISABLED
+	camera.limit_top = -CAMERA_LIMIT_DISABLED
+	camera.limit_right = CAMERA_LIMIT_DISABLED
+	camera.limit_bottom = CAMERA_LIMIT_DISABLED
+	camera.global_position = desired_position
+	await player.get_tree().process_frame
+	camera.limit_left = original_left
+	camera.limit_top = original_top
+	camera.limit_right = original_right
+	camera.limit_bottom = original_bottom
+
+	if CAMERA_TELEPORT_DEBUG:
+		print("DEBUG: 相机位置设置后:", camera.global_position)
+
+# 传送伤害后使用快速追镜，而不是瞬移相机。
+func start_warp_damage_camera_catchup(duration: float = 0.22) -> void:
+	start_warp_damage_camera_follow(duration)
+
+# 传送伤害飞行期间：压缩 dead zone 并持续跟随玩家。
+func start_warp_damage_camera_follow(_duration: float = 0.22) -> void:
+	if not setup_completed:
+		return
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+
+	warp_camera_waiting_for_player_teleport = false
+	warp_camera_wait_timeout = 0.0
+	warp_camera_catchup_active = false
+	warp_camera_follow_target_backup = phantom_camera.follow_target
+	warp_camera_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
+	warp_camera_dead_zone_backup_valid = false
+
+	phantom_camera.follow_target = player
+	# Warp 受伤跟随不再收缩 dead zone，也不触发 guard/teleport，彻底避免瞬移对焦。
+
+func start_warp_damage_camera_catchup_to_position(target_position: Vector2, duration: float = 0.22) -> void:
+	if not setup_completed:
+		return
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	if warp_camera_catchup_active:
+		return
+	var camera := player.get_viewport().get_camera_2d()
+	if camera == null:
+		return
+	if not _ensure_warp_camera_anchor():
+		return
+	warp_camera_catchup_active = true
+	warp_camera_waiting_for_player_teleport = false
+	warp_camera_wait_timeout = 0.0
+	warp_camera_follow_target_backup = phantom_camera.follow_target
+	warp_camera_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
+	# 临时接管相机，使用有效锚点避免 PhantomCamera follow_target 为空。
+	phantom_camera.follow_target = warp_camera_anchor
+	phantom_camera.dead_zone_width = 0.02
+	phantom_camera.dead_zone_height = 0.02
+	var start_center: Vector2 = camera.global_position
+	if not start_center.is_finite():
+		start_center = phantom_camera.global_position if phantom_camera.global_position.is_finite() else player.global_position
+	var end_center: Vector2 = target_position + phantom_camera.follow_offset
+	if not end_center.is_finite():
+		end_center = target_position if target_position.is_finite() else start_center
+	warp_camera_anchor.global_position = start_center
+	var tween := player.create_tween()
+	tween.set_trans(Tween.TRANS_QUAD)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_method(Callable(self, "_set_warp_camera_center"), start_center, end_center, maxf(duration, 0.05))
+	start_camera_transition_guard(0.06, maxf(duration + 0.25, 0.3))
+	tween.finished.connect(func():
+		if not is_instance_valid(phantom_camera):
+			warp_camera_catchup_active = false
+			warp_camera_waiting_for_player_teleport = false
+			return
+		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x
+		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y
+		# 追镜到目标后先保持在目标，不要在玩家真正传送前回弹到玩家当前位置。
+		if is_instance_valid(warp_camera_anchor):
+			phantom_camera.follow_target = warp_camera_anchor
+		warp_camera_waiting_for_player_teleport = true
+		warp_camera_wait_timeout = maxf(warp_camera_hold_timeout, 0.5)
+		warp_camera_catchup_active = false
+	)
+
+# 玩家实际完成传送后调用，恢复正常跟随。
+func notify_warp_player_teleported() -> void:
+	if not has_pending_warp_camera_hold():
+		return
+	_release_warp_camera_hold(true)
+
+func has_pending_warp_camera_hold() -> bool:
+	return warp_camera_dead_zone_backup_valid or warp_camera_catchup_active or warp_camera_waiting_for_player_teleport
+
+func _set_warp_camera_center(center: Vector2) -> void:
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	if not center.is_finite():
+		return
+	if is_instance_valid(warp_camera_anchor):
+		warp_camera_anchor.global_position = center
+	phantom_camera.global_position = center
+	var camera := player.get_viewport().get_camera_2d()
+	if camera:
+		camera.global_position = center
+
+func is_warp_camera_catchup_active() -> bool:
+	return warp_camera_catchup_active
+
+func _safe_teleport_phantom_camera() -> void:
+	if not is_instance_valid(phantom_camera):
+		return
+	if phantom_camera.follow_target == null and is_instance_valid(player):
+		phantom_camera.follow_target = player
+	if phantom_camera.follow_target == null:
+		return
+	if phantom_camera.has_method("teleport_position"):
+		phantom_camera.teleport_position()
+
+func _release_warp_camera_hold(follow_player: bool) -> void:
+	warp_camera_waiting_for_player_teleport = false
+	warp_camera_wait_timeout = 0.0
+	if not is_instance_valid(phantom_camera):
+		return
+	if warp_camera_dead_zone_backup_valid:
+		phantom_camera.dead_zone_width = warp_camera_dead_zone_backup.x
+		phantom_camera.dead_zone_height = warp_camera_dead_zone_backup.y
+		warp_camera_dead_zone_backup_valid = false
+	if follow_player and is_instance_valid(player):
+		_set_normal_follow_target()
+		_safe_teleport_phantom_camera()
+	elif is_instance_valid(warp_camera_follow_target_backup):
+		phantom_camera.follow_target = warp_camera_follow_target_backup
+
+func _ensure_warp_camera_anchor() -> bool:
+	if is_instance_valid(warp_camera_anchor):
+		return true
+	if not is_instance_valid(player):
+		return false
+	var parent_node := player.get_parent()
+	if parent_node == null:
+		return false
+	warp_camera_anchor = Node2D.new()
+	warp_camera_anchor.name = "WarpCameraAnchor"
+	parent_node.add_child(warp_camera_anchor)
+	return true
+
+func _ensure_valid_follow_target() -> void:
+	if not is_instance_valid(phantom_camera):
+		return
+	if int(phantom_camera.follow_axis_lock) != int(PhantomCamera2D.FollowLockAxis.NONE):
+		phantom_camera.follow_axis_lock = PhantomCamera2D.FollowLockAxis.NONE
+	if (warp_camera_catchup_active or warp_camera_waiting_for_player_teleport) and is_instance_valid(warp_camera_anchor):
+		if phantom_camera.follow_target != warp_camera_anchor:
+			phantom_camera.follow_target = warp_camera_anchor
+		return
+	_set_normal_follow_target()
+
+func _ensure_normal_follow_anchor() -> void:
+	if not is_instance_valid(player):
+		return
+	if is_instance_valid(normal_follow_anchor):
+		return
+	var parent_node := player.get_parent()
+	if parent_node == null:
+		return
+	normal_follow_anchor = Node2D.new()
+	normal_follow_anchor.name = "PlayerCameraFollowAnchor"
+	parent_node.add_child(normal_follow_anchor)
+	normal_follow_anchor.global_position = player.global_position
+
+func _set_normal_follow_target() -> void:
+	if not is_instance_valid(phantom_camera):
+		return
+	_ensure_normal_follow_anchor()
+	if is_instance_valid(normal_follow_anchor):
+		phantom_camera.follow_target = normal_follow_anchor
+	elif is_instance_valid(player):
+		phantom_camera.follow_target = player
+
+func _update_normal_follow_anchor(fixed_delta: float) -> void:
+	if not is_instance_valid(player):
+		return
+	_ensure_normal_follow_anchor()
+	if not is_instance_valid(normal_follow_anchor):
+		return
+	var focus_offset := _compute_focus_capture_offset(fixed_delta)
+	var desired_offset := focus_offset
+	normal_follow_anchor.global_position = player.global_position + desired_offset
+
+func _compute_focus_capture_offset(fixed_delta: float) -> Vector2:
+	if not focus_capture_enabled:
+		focus_capture_current_offset = focus_capture_current_offset.lerp(Vector2.ZERO, clampf(focus_capture_smooth * fixed_delta, 0.0, 1.0))
+		return focus_capture_current_offset
+
+	var best_weight := -1.0
+	var best_offset := Vector2.ZERO
+	var stale_zones: Array[Node] = []
+	for zone in active_focus_zones:
+		if not is_instance_valid(zone):
+			stale_zones.append(zone)
+			continue
+		if not zone.has_method("get_focus_capture_sample_for_player"):
+			continue
+		var sample: Dictionary = zone.get_focus_capture_sample_for_player(player)
+		if not bool(sample.get("valid", false)):
+			continue
+		var weight: float = float(sample.get("weight", 0.0))
+		if weight > best_weight:
+			best_weight = weight
+			best_offset = sample.get("offset", Vector2.ZERO)
+
+	for stale_zone in stale_zones:
+		active_focus_zones.erase(stale_zone)
+
+	var target_offset := Vector2.ZERO
+	if best_weight > 0.0:
+		target_offset = best_offset * maxf(focus_capture_global_blend, 0.0)
+		if focus_capture_max_offset > 0.0 and target_offset.length() > focus_capture_max_offset:
+			target_offset = target_offset.normalized() * focus_capture_max_offset
+
+	var smooth := clampf(focus_capture_smooth * fixed_delta, 0.0, 1.0)
+	focus_capture_current_offset = focus_capture_current_offset.lerp(target_offset, smooth)
+	return focus_capture_current_offset
+
+func register_focus_capture_zone(zone: Node) -> void:
+	if zone == null:
+		return
+	if active_focus_zones.has(zone):
+		return
+	active_focus_zones.append(zone)
+
+func unregister_focus_capture_zone(zone: Node) -> void:
+	if zone == null:
+		return
+	active_focus_zones.erase(zone)
+
+# Door 传送测试路径：短时解限 + 快速追镜 + 自动恢复目标房间限制。
+func start_door_teleport_camera_catchup(catchup_duration: float = 0.20, unlock_duration: float = 0.32) -> void:
+	if not setup_completed:
+		return
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	if door_camera_catchup_active:
+		return
+	
+	door_camera_catchup_active = true
+	door_camera_dead_zone_backup = Vector2(phantom_camera.dead_zone_width, phantom_camera.dead_zone_height)
+	door_limits_backup.left = int(phantom_camera.get("limit_left"))
+	door_limits_backup.top = int(phantom_camera.get("limit_top"))
+	door_limits_backup.right = int(phantom_camera.get("limit_right"))
+	door_limits_backup.bottom = int(phantom_camera.get("limit_bottom"))
+	
+	phantom_camera.dead_zone_width = 0.02
+	phantom_camera.dead_zone_height = 0.02
+	phantom_camera.set("limit_left", -CAMERA_LIMIT_DISABLED)
+	phantom_camera.set("limit_top", -CAMERA_LIMIT_DISABLED)
+	phantom_camera.set("limit_right", CAMERA_LIMIT_DISABLED)
+	phantom_camera.set("limit_bottom", CAMERA_LIMIT_DISABLED)
+	
+	var camera := player.get_viewport().get_camera_2d()
+	var camera_limits_backup := {
+		"left": 0,
+		"top": 0,
+		"right": 0,
+		"bottom": 0
+	}
+	if camera:
+		camera_limits_backup.left = camera.limit_left
+		camera_limits_backup.top = camera.limit_top
+		camera_limits_backup.right = camera.limit_right
+		camera_limits_backup.bottom = camera.limit_bottom
+		camera.limit_left = -CAMERA_LIMIT_DISABLED
+		camera.limit_top = -CAMERA_LIMIT_DISABLED
+		camera.limit_right = CAMERA_LIMIT_DISABLED
+		camera.limit_bottom = CAMERA_LIMIT_DISABLED
+	
+	start_camera_transition_guard(0.06, maxf(catchup_duration + unlock_duration, 0.35))
+	
+	var dead_zone_timer := player.get_tree().create_timer(maxf(catchup_duration, 0.05))
+	dead_zone_timer.timeout.connect(func():
+		if not is_instance_valid(phantom_camera):
+			return
+		phantom_camera.dead_zone_width = door_camera_dead_zone_backup.x
+		phantom_camera.dead_zone_height = door_camera_dead_zone_backup.y
+	)
+	
+	var restore_timer := player.get_tree().create_timer(maxf(unlock_duration, catchup_duration))
+	restore_timer.timeout.connect(func():
+		if not is_instance_valid(phantom_camera):
+			door_camera_catchup_active = false
+			return
+		phantom_camera.set("limit_left", int(door_limits_backup.left))
+		phantom_camera.set("limit_top", int(door_limits_backup.top))
+		phantom_camera.set("limit_right", int(door_limits_backup.right))
+		phantom_camera.set("limit_bottom", int(door_limits_backup.bottom))
+		if camera and is_instance_valid(camera):
+			camera.limit_left = int(camera_limits_backup.left)
+			camera.limit_top = int(camera_limits_backup.top)
+			camera.limit_right = int(camera_limits_backup.right)
+			camera.limit_bottom = int(camera_limits_backup.bottom)
+		door_camera_catchup_active = false
+	
+	)
+
+# 返回当前相机守卫和跟随状态的调试快照。
+func get_debug_snapshot() -> Dictionary:
+	return {
+		"setup_completed": setup_completed,
+		"guard_active": camera_transition_guard_active,
+		"guard_elapsed": camera_transition_guard_elapsed,
+		"guard_remaining": camera_transition_guard_timer,
+		"axis_lock": int(phantom_camera.follow_axis_lock) if phantom_camera else -1,
+		"player_inside_tree": is_instance_valid(player) and player.is_inside_tree() if player else false,
+		"camera_inside_tree": is_instance_valid(phantom_camera) and phantom_camera.is_inside_tree() if phantom_camera else false,
+		"camera_pos": phantom_camera.global_position if phantom_camera else Vector2.ZERO,
+		"follow_offset": phantom_camera.get_follow_offset() if phantom_camera and phantom_camera.has_method("get_follow_offset") else Vector2.ZERO
+	}
+
+# 通过限制范围把目标中心点夹回可用区域。
+func _clamp_camera_center_by_limits(target_center: Vector2, pcam: Node, camera: Camera2D) -> Vector2:
+	return PlayerCameraMathUtil.clamp_camera_center_by_limits(
+		target_center,
+		pcam,
+		camera,
+		player.get_viewport_rect().size,
+		CAMERA_LIMIT_DISABLED
+	)
+
+# 判断玩家是否已经回到正常 dead zone 内，允许守卫结束。
+func _is_player_inside_normal_camera_dead_zone() -> bool:
+	if not phantom_camera or not player:
+		return true
+	var camera := player.get_viewport().get_camera_2d()
+	if camera == null:
+		return true
+
+	var target_world: Vector2 = player.global_position + phantom_camera.follow_offset
+	var camera_center: Vector2 = camera.global_position
+	var viewport_size: Vector2 = player.get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return true
+
+	var zoom: Vector2 = camera.zoom
+	if not target_world.is_finite() or not camera_center.is_finite() or not zoom.is_finite():
+		return true
+	if is_zero_approx(zoom.x) or is_zero_approx(zoom.y):
+		return true
+	var half_dead_w: float = viewport_size.x * camera_transition_dead_zone_backup.x * 0.5 / zoom.x
+	var half_dead_h: float = viewport_size.y * camera_transition_dead_zone_backup.y * 0.5 / zoom.y
+	var half_view_w: float = viewport_size.x * 0.5 / zoom.x
+	var half_view_h: float = viewport_size.y * 0.5 / zoom.y
+
+	var limit_left: float = float(int(phantom_camera.get("limit_left")))
+	var limit_top: float = float(int(phantom_camera.get("limit_top")))
+	var limit_right: float = float(int(phantom_camera.get("limit_right")))
+	var limit_bottom: float = float(int(phantom_camera.get("limit_bottom")))
+
+	if limit_left <= -CAMERA_LIMIT_DISABLED + 1 and limit_right >= CAMERA_LIMIT_DISABLED - 1 and limit_top <= -CAMERA_LIMIT_DISABLED + 1 and limit_bottom >= CAMERA_LIMIT_DISABLED - 1:
+		return true
+
+	var inside_x: bool = absf(target_world.x - camera_center.x) <= half_dead_w
+	var inside_y: bool = absf(target_world.y - camera_center.y) <= half_dead_h
+
+	var free_min_x: float = limit_left + half_view_w + half_dead_w
+	var free_max_x: float = limit_right - half_view_w - half_dead_w
+	var free_min_y: float = limit_top + half_view_h + half_dead_h
+	var free_max_y: float = limit_bottom - half_view_h - half_dead_h
+	if free_min_x > free_max_x:
+		inside_x = true
+	if free_min_y > free_max_y:
+		inside_y = true
+
+	if CAMERA_TELEPORT_DEBUG:
+		print("[CameraGuard] target=", target_world, " cam=", camera_center, " dead=", half_dead_w, ",", half_dead_h, " freeX=", free_min_x, "..", free_max_x, " freeY=", free_min_y, "..", free_max_y, " inside=", inside_x and inside_y)
+
+	return inside_x and inside_y
+
+# 当相机坐标出现 NaN/Inf 时，立即重置到玩家附近并刷新相机同步。
+func _recover_from_invalid_camera_position() -> void:
+	if not is_instance_valid(player) or not is_instance_valid(phantom_camera):
+		return
+	var camera := player.get_viewport().get_camera_2d()
+	var camera_before := camera.global_position if camera else Vector2.ZERO
+	var offset_before := camera.offset if camera else Vector2.ZERO
+	var pcam_before: Vector2 = phantom_camera.global_position
+	var now_ms := Time.get_ticks_msec()
+	if player.camera_damage_debug and now_ms - invalid_camera_debug_last_log_ms >= 250:
+		invalid_camera_debug_last_log_ms = now_ms
+		var room_name := RoomManager.current_room if RoomManager else ""
+		print("[CameraInvalidRecover] room=", room_name,
+			" player_pos=", player.global_position,
+			" pcam_before=", pcam_before,
+			" cam_before=", camera_before,
+			" cam_offset_before=", offset_before,
+			" state=", player.current_state,
+			" anim=", player.current_animation,
+			" warp=", player.is_warp_damage)
+	var safe_center: Vector2 = player.global_position + phantom_camera.follow_offset
+	if not phantom_camera.follow_offset.is_finite():
+		phantom_camera.follow_offset = Vector2.ZERO
+		safe_center = player.global_position
+	if not safe_center.is_finite():
+		safe_center = player.global_position if player.global_position.is_finite() else Vector2.ZERO
+	if camera:
+		safe_center = _clamp_camera_center_by_limits(safe_center, phantom_camera, camera)
+	phantom_camera.global_position = safe_center
+	if phantom_camera.has_method("teleport_position"):
+		phantom_camera.teleport_position()
+	if camera:
+		if not camera.offset.is_finite():
+			camera.offset = Vector2.ZERO
+		camera.global_position = safe_center
+		if camera.has_method("reset_smoothing"):
+			camera.reset_smoothing()
+		if camera.has_method("reset_physics_interpolation"):
+			camera.reset_physics_interpolation()
+	if CameraShakeManager and CameraShakeManager.has_method("stop_shake"):
+		CameraShakeManager.stop_shake(phantom_camera)
+	start_camera_transition_guard(0.10, 0.65)
+	_debug_camera_trace("recover_invalid_camera", {
+		"safe_center": safe_center
+	})
+
+func _is_full_black_now() -> bool:
+	if FadeManager == null:
+		return false
+	if FadeManager.has_method("is_fully_black"):
+		return FadeManager.is_fully_black()
+	return false
+
+func _is_strict_limit_phase() -> bool:
+	if blackout_transition_active and _is_full_black_now():
+		return false
+	return true
+
+func _enforce_runtime_limit_guard(camera: Camera2D) -> void:
+	if not _is_strict_limit_phase():
+		return
+	if not is_instance_valid(phantom_camera):
+		return
+	_restore_room_limits_if_needed(camera)
+
+	var pcam_center: Vector2 = phantom_camera.global_position
+	if pcam_center.is_finite():
+		var pcam_clamped: Vector2 = _clamp_camera_center_by_limits(pcam_center, phantom_camera, camera)
+		if pcam_clamped.is_finite() and pcam_clamped.distance_squared_to(pcam_center) > 0.0001:
+			phantom_camera.global_position = pcam_clamped
+
+	if camera:
+		var camera_center: Vector2 = camera.global_position
+		if camera_center.is_finite():
+			var cam_clamped: Vector2 = _clamp_camera_center_by_limits(camera_center, phantom_camera, camera)
+			if cam_clamped.is_finite() and cam_clamped.distance_squared_to(camera_center) > 0.0001:
+				camera.global_position = cam_clamped
+		if not camera.offset.is_finite():
+			camera.offset = Vector2.ZERO
+		camera.offset = _clamp_offset_to_camera_limits(camera, camera.offset)
+
+func _clamp_offset_to_camera_limits(camera: Camera2D, raw_offset: Vector2) -> Vector2:
+	if camera == null:
+		return raw_offset
+	var limit_left: int = camera.limit_left
+	var limit_top: int = camera.limit_top
+	var limit_right: int = camera.limit_right
+	var limit_bottom: int = camera.limit_bottom
+	if limit_left <= -CAMERA_LIMIT_DISABLED + 1 and limit_top <= -CAMERA_LIMIT_DISABLED + 1 and limit_right >= CAMERA_LIMIT_DISABLED - 1 and limit_bottom >= CAMERA_LIMIT_DISABLED - 1:
+		return raw_offset
+	var viewport := camera.get_viewport()
+	if viewport == null:
+		return raw_offset
+	var viewport_size: Vector2 = viewport.get_visible_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return raw_offset
+	var zoom: Vector2 = camera.zoom
+	if is_zero_approx(zoom.x) or is_zero_approx(zoom.y):
+		return raw_offset
+	var half_w: float = viewport_size.x * 0.5 / zoom.x
+	var half_h: float = viewport_size.y * 0.5 / zoom.y
+	var min_x: float = float(limit_left) + half_w
+	var max_x: float = float(limit_right) - half_w
+	var min_y: float = float(limit_top) + half_h
+	var max_y: float = float(limit_bottom) - half_h
+	if min_x > max_x:
+		min_x = (float(limit_left) + float(limit_right)) * 0.5
+		max_x = min_x
+	if min_y > max_y:
+		min_y = (float(limit_top) + float(limit_bottom)) * 0.5
+		max_y = min_y
+	var center: Vector2 = camera.global_position
+	if not center.is_finite():
+		return Vector2.ZERO
+	var center_x: float = clampf(center.x, min_x, max_x)
+	var center_y: float = clampf(center.y, min_y, max_y)
+	var dx_min: float = min_x - center_x
+	var dx_max: float = max_x - center_x
+	var dy_min: float = min_y - center_y
+	var dy_max: float = max_y - center_y
+	return Vector2(clampf(raw_offset.x, dx_min, dx_max), clampf(raw_offset.y, dy_min, dy_max))
+
+func _restore_room_limits_if_needed(camera: Camera2D) -> void:
+	if RoomManager == null or not RoomManager.has_method("get_current_room_data"):
+		return
+	var room_data = RoomManager.get_current_room_data()
+	if typeof(room_data) != TYPE_DICTIONARY:
+		return
+	var room_node = room_data.get("node", null)
+	if room_node == null or not room_node.has_method("get_camera_limits"):
+		return
+	var limits: Rect2 = room_node.get_camera_limits()
+	if not limits.has_area():
+		return
+	var left := int(limits.position.x)
+	var top := int(limits.position.y)
+	var right := int(limits.end.x)
+	var bottom := int(limits.end.y)
+	var changed: bool = false
+	if int(phantom_camera.get("limit_left")) != left:
+		phantom_camera.set("limit_left", left)
+		changed = true
+	if int(phantom_camera.get("limit_top")) != top:
+		phantom_camera.set("limit_top", top)
+		changed = true
+	if int(phantom_camera.get("limit_right")) != right:
+		phantom_camera.set("limit_right", right)
+		changed = true
+	if int(phantom_camera.get("limit_bottom")) != bottom:
+		phantom_camera.set("limit_bottom", bottom)
+		changed = true
+	if camera:
+		if not camera.limit_enabled:
+			camera.limit_enabled = true
+			changed = true
+		if camera.limit_left != left:
+			camera.limit_left = left
+			changed = true
+		if camera.limit_top != top:
+			camera.limit_top = top
+			changed = true
+		if camera.limit_right != right:
+			camera.limit_right = right
+			changed = true
+		if camera.limit_bottom != bottom:
+			camera.limit_bottom = bottom
+			changed = true
+	if changed:
+		_debug_camera_trace("restore_room_limits", {
+			"limits": Vector4(left, top, right, bottom)
+		})
+
+func _is_camera_debug_enabled() -> bool:
+	return is_instance_valid(player) and player.camera_damage_debug
+
+func _debug_camera_tick(camera: Camera2D) -> void:
+	if not _is_camera_debug_enabled():
+		return
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - camera_trace_last_tick_ms < CAMERA_TRACE_TICK_INTERVAL_MS:
+		return
+	camera_trace_last_tick_ms = now_ms
+	_debug_camera_trace("tick", {
+		"strict_limit_phase": _is_strict_limit_phase(),
+		"guard_active": camera_transition_guard_active,
+		"blackout_transition_active": blackout_transition_active,
+		"camera_offset": camera.offset if camera else Vector2.ZERO
+	})
+
+func _debug_camera_trace(tag: String, payload: Dictionary = {}) -> void:
+	if not _is_camera_debug_enabled():
+		return
+	var room_name := RoomManager.current_room if RoomManager else ""
+	var camera := player.get_viewport().get_camera_2d() if player and player.get_viewport() else null
+	var follow_target_name := "null"
+	if phantom_camera and phantom_camera.follow_target:
+		follow_target_name = String(phantom_camera.follow_target.name)
+	print("[CameraTrace] ", tag, " room=", room_name,
+		" player=", player.global_position if player else Vector2.ZERO,
+		" pcam=", phantom_camera.global_position if phantom_camera else Vector2.ZERO,
+		" cam=", camera.global_position if camera else Vector2.ZERO,
+		" follow_target=", follow_target_name,
+		" payload=", payload)

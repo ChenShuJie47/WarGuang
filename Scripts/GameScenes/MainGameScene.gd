@@ -1,1 +1,197 @@
-# MainGameScene.gdextends Node2Dsignal boot_visual_readyconst ROOM_DREAM10_FIRST_ENTER_FLAG: String = "room_dream10_first_enter"# 启动阶段是否已经准备好让场景切换流程继续�?var _boot_visual_ready: bool = falsevar _room_event_running: bool = false@export_category("Room Event Cinematic")## 是否启用首次进入 RoomDream10 的事件演出�?@export var roomdream10_first_enter_enabled: bool = true## 首入事件目标房间 ID�?@export var roomdream10_event_room_id: String = "RoomDream10"## 首入事件高级步骤序列（仅高级模式使用）�?@export var roomdream10_event_sequence_steps: Array[Dictionary] = []## 是否启用高级步骤模式（Dictionary）�?@export var roomdream10_event_use_advanced_steps: bool = false## 首入事件简化顺序（VISUAL/VISUAL/BLACK_HOLD）�?@export var roomdream10_event_order: PackedStringArray = PackedStringArray(["VISUAL", "VISUAL", "BLACK_HOLD"])## 首入事件图片序列（按顺序）�?@export var roomdream10_event_visual_frames: Array[Texture2D] = []## 首入事件图片时长（秒），数量不足时使用默认值�?@export var roomdream10_event_visual_frame_durations: PackedFloat32Array = PackedFloat32Array([1.8, 2.1])## 首入事件图片默认时长（秒）�?@export var roomdream10_event_default_frame_time: float = 2.0## 首入事件图片淡入淡出时长（秒）�?@export var roomdream10_event_fade_time: float = 0.35## 首入事件黑屏停留时长（秒）�?@export var roomdream10_event_black_hold_time: float = 0.2## 首入事件结束后黑幕淡出时长（秒）�?@export var roomdream10_event_reveal_duration: float = 0.55@onready var room_container = $RoomContainer@onready var player = $Player# 新存档开场与后续事件演出的独立导演节点�?@onready var boot_cinematic_director = $BootCinematicDirector@onready var new_save_opening_event_director = $EventDirectors/NewSaveOpeningEventDirectorfunc _ready():	_cleanup_runtime_camera_viewfinder_overlays()	if RoomManager and RoomManager.has_method("reset_runtime_state"):		RoomManager.reset_runtime_state()	if RoomManager and RoomManager.has_signal("room_loaded") and not RoomManager.room_loaded.is_connected(_on_room_loaded):		RoomManager.room_loaded.connect(_on_room_loaded)	# 当前启动是否携带一次性的新存档开场请求�?	var boot_cinematic_request: Dictionary = {}	if Global and Global.has_method("peek_boot_cinematic_request"):		boot_cinematic_request = Global.peek_boot_cinematic_request()	# 是否需要走开场导演流程，而不是常规存档睡眠同步�?	var should_play_opening: bool = boot_cinematic_request.get("id", "") == "new_save_opening"	# 初始化房间系�?	initialize_room_system()		# 设置玩家引用	RoomManager.set_player(player)	if Global.current_save_slot >= 0 and not should_play_opening:		_preposition_player_and_camera_for_save()		# 确保 CanvasModulate 节点正确引用	var global_canvas = $GlobalCanvasModulate	if global_canvas:		# 直接设置 RoomManager 的全局 CanvasModulate 引用		RoomManager.global_canvas_modulate = global_canvas		# 初始化颜色为当前房间的颜色（如果已经加载了房间）		var current_room_data = RoomManager.get_current_room_data()		if current_room_data:			global_canvas.color = current_room_data.get("color", Color.WHITE)	else:		print("MainGameScene: 错误：未找到 GlobalCanvasModulate")		await get_tree().process_frame	await get_tree().process_frame		RoomManager.auto_calculate_room_connections()		# 如果是从存档加载，设置玩家位置和状�?	if Global.current_save_slot >= 0:		if should_play_opening:			await _play_new_game_opening_sequence()		else:			await _load_from_save()	else:		await get_tree().process_frame		RoomManager.load_room("Room1")		# 连接玩家死亡信号	var player_ui = get_tree().get_first_node_in_group("player_ui")	if player_ui:		player_ui.player_died.connect(_on_player_died)	_boot_visual_ready = true	boot_visual_ready.emit()func _play_new_game_opening_sequence() -> void:	if FadeManager and FadeManager.has_method("force_black"):		FadeManager.force_black()	else:		await FadeManager.fade_out(0.0)	if RoomManager:		RoomManager.load_room("Room1")	await get_tree().process_frame	if FadeManager and FadeManager.has_method("force_black"):		FadeManager.force_black()	var boot_cinematic_request: Dictionary = {}	if Global and Global.has_method("consume_boot_cinematic_request"):		boot_cinematic_request = Global.consume_boot_cinematic_request()	if new_save_opening_event_director and new_save_opening_event_director.has_method("play_opening"):		await new_save_opening_event_director.play_opening(boot_cinematic_request)	elif boot_cinematic_director and boot_cinematic_director.has_method("play_intro_sequence"):		await boot_cinematic_director.play_intro_sequence(boot_cinematic_request)func _exit_tree() -> void:	_cleanup_runtime_camera_viewfinder_overlays()	if Engine.has_singleton("PhantomCameraManager"):		var manager = Engine.get_singleton("PhantomCameraManager")		if manager and manager.has_method("scene_changed"):			manager.scene_changed()func _cleanup_runtime_camera_viewfinder_overlays() -> void:	var root := get_tree().root	if root == null:		return	for child in root.get_children():		if child is CanvasLayer:			for grand in child.get_children():				if grand is Control and grand.name == "ViewfinderPanel":					child.queue_free()					breakfunc wait_until_boot_visual_ready() -> void:	if _boot_visual_ready:		return	await boot_visual_readyfunc initialize_room_system():	# 自动注册所有房�?	for room_node in room_container.get_children():		if room_node.has_method("get_room_data"):			var room_data = room_node.get_room_data()						# 关键修改：不传递颜色数据，RoomManager会从CanvasModulate节点获取			RoomManager.register_room(room_data.id, room_node, room_data)## 从存档加�?func _load_from_save():	# 设置玩家位置	var the_player = get_tree().get_first_node_in_group("player")	if the_player:		# 复用死亡重生同款：先切到存档房间再做黑屏居中，避免边界回拉暴露�?		await get_tree().process_frame		var target_room_id := Global.last_save_room		if target_room_id == "":			target_room_id = "Room1"		if the_player.has_method("sync_room_and_camera_for_respawn"):			await the_player.sync_room_and_camera_for_respawn(target_room_id, true)			await get_tree().process_frame			if the_player.has_method("sync_camera_to_player_center"):				the_player.sync_camera_to_player_center(true)		else:			RoomManager.load_room(target_room_id)			RoomManager.update_camera_limits()			_snap_camera_to_player_immediately(the_player)		await get_tree().physics_frame				# 使用传送伤害的禁用时间，也是存档进入游戏开始时的禁用时�?		the_player.lock_control(the_player.warp_control_lock_time, "warp_damage")				# 设置玩家为睡眠状�?		the_player.enter_sleep_state()	# 设置玩家UI状�?	var player_ui = get_tree().get_first_node_in_group("player_ui")	if player_ui:		player_ui.set_max_health(Global.player_max_health)		player_ui.set_health(Global.player_current_health)func _snap_camera_to_player_immediately(the_player: Node) -> void:	if the_player == null:		return	var player_pos: Vector2 = the_player.global_position	var follow_offset := Vector2.ZERO	var phantom_camera = the_player.get_node_or_null("PhantomCamera2D")	if phantom_camera and phantom_camera.has_method("get_follow_offset"):		follow_offset = phantom_camera.get_follow_offset()	var target_camera_pos: Vector2 = player_pos + follow_offset	target_camera_pos = _clamp_camera_target_by_limits(target_camera_pos, phantom_camera)	var main_camera = get_node_or_null("Camera2D")	if main_camera:		main_camera.global_position = target_camera_pos		if main_camera.has_method("reset_smoothing"):			main_camera.reset_smoothing()		if main_camera.has_method("reset_physics_interpolation"):			main_camera.reset_physics_interpolation()	if phantom_camera:		phantom_camera.global_position = target_camera_pos		if phantom_camera.has_method("teleport_position"):			phantom_camera.teleport_position()func _clamp_camera_target_by_limits(target_pos: Vector2, phantom_camera: Node) -> Vector2:	if phantom_camera == null:		return target_pos	var clamped_pos = target_pos	if phantom_camera.has_method("get"):		var limit_left = int(phantom_camera.get("limit_left"))		var limit_top = int(phantom_camera.get("limit_top"))		var limit_right = int(phantom_camera.get("limit_right"))		var limit_bottom = int(phantom_camera.get("limit_bottom"))		clamped_pos.x = clampf(clamped_pos.x, float(limit_left), float(limit_right))		clamped_pos.y = clampf(clamped_pos.y, float(limit_top), float(limit_bottom))	return clamped_posfunc _preposition_player_and_camera_for_save() -> void:	if player == null:		return	player.global_position = Global.get_save_point_position()	# 房间加载与相机同步交�?_load_from_save，保持单路径，避免双重同步竞争�?func _on_player_died():	# 关键修复：死亡时清除动态检查点记录	if DynamicCheckpointManager.has_method("clear_all_checkpoints_on_death"):		DynamicCheckpointManager.clear_all_checkpoints_on_death()func _on_room_loaded(room_id: String, _previous_room: String) -> void:	if not roomdream10_first_enter_enabled:		return	if room_id != roomdream10_event_room_id:		return	if _room_event_running:		return	if Global and Global.has_method("has_cinematic_flag") and Global.has_cinematic_flag(ROOM_DREAM10_FIRST_ENTER_FLAG):		return	call_deferred("_play_roomdream10_first_enter_event")func _play_roomdream10_first_enter_event() -> void:	if _room_event_running:		return	if not is_instance_valid(player):		return	if not is_instance_valid(boot_cinematic_director):		return	_room_event_running = true	if FadeManager and FadeManager.has_method("force_black"):		FadeManager.force_black()	var sequence_steps: Array = _build_roomdream10_event_steps()	await boot_cinematic_director.play_blocking_intro_event(player, {		"sequence_steps": sequence_steps,		"reveal_duration": roomdream10_event_reveal_duration,		"pause_world": true	})	if Global and Global.has_method("set_cinematic_flag"):		Global.set_cinematic_flag(ROOM_DREAM10_FIRST_ENTER_FLAG, true)		if SaveManager and Global.current_save_slot >= 0 and SaveManager.has_method("save_game"):			SaveManager.save_game(Global.current_save_slot, Global.get_save_data())	_room_event_running = falsefunc _build_roomdream10_event_steps() -> Array:	if roomdream10_event_use_advanced_steps:		return roomdream10_event_sequence_steps.duplicate(true)	var frames: Array[Texture2D] = roomdream10_event_visual_frames.duplicate()	if frames.is_empty() and is_instance_valid(boot_cinematic_director):		var fallback_frames: Array[Texture2D] = boot_cinematic_director.intro_visual_frames		if fallback_frames.size() > 0:			frames.append(fallback_frames[0])		if fallback_frames.size() > 1:			frames.append(fallback_frames[1])	var durations: PackedFloat32Array = roomdream10_event_visual_frame_durations	var frame_index: int = 0	var steps: Array = []	for token_raw in roomdream10_event_order:		var token: String = String(token_raw).strip_edges().to_upper()		if token == "VISUAL":			if frames.is_empty():				continue			var block_frames: Array[Texture2D] = []			var block_durations := PackedFloat32Array([])			if frame_index < frames.size():				block_frames.append(frames[frame_index])				var duration: float = roomdream10_event_default_frame_time				if frame_index < durations.size():					duration = maxf(float(durations[frame_index]), 0.01)				block_durations.append(duration)				frame_index += 1			else:				block_frames = frames				block_durations = durations			steps.append({				"type": "VISUAL",				"frames": block_frames,				"frame_durations": block_durations,				"default_frame_time": roomdream10_event_default_frame_time,				"fade_time": roomdream10_event_fade_time			})		elif token == "BLACK_HOLD":			steps.append({				"type": "BLACK_HOLD",				"hold_time": roomdream10_event_black_hold_time			})	if steps.is_empty():		steps.append({"type": "BLACK_HOLD", "hold_time": 0.1})	return steps
+# MainGameScene.gd
+extends Node2D
+
+signal boot_visual_ready
+
+# 启动阶段是否已经准备好让场景切换流程继续。
+var _boot_visual_ready: bool = false
+
+@onready var room_container = $RoomContainer
+@onready var player = $Player
+# 新存档开场与后续事件演出的独立导演节点。
+@onready var boot_cinematic_director = $BootCinematicDirector
+@onready var new_save_opening_event_director = $EventDirectors/NewSaveOpeningEventDirector
+
+func _ready():
+	_cleanup_runtime_camera_viewfinder_overlays()
+	if RoomManager and RoomManager.has_method("reset_runtime_state"):
+		RoomManager.reset_runtime_state()
+	if RoomManager and RoomManager.has_signal("room_loaded") and not RoomManager.room_loaded.is_connected(_on_room_loaded):
+		RoomManager.room_loaded.connect(_on_room_loaded)
+	# 当前启动是否携带一次性的新存档开场请求。
+	var boot_cinematic_request: Dictionary = {}
+	if Global and Global.has_method("peek_boot_cinematic_request"):
+		boot_cinematic_request = Global.peek_boot_cinematic_request()
+	# 是否需要走开场导演流程，而不是常规存档睡眠同步。
+	var should_play_opening: bool = boot_cinematic_request.get("id", "") == "new_save_opening"
+
+	# 初始化房间系统
+	initialize_room_system()
+	
+	# 设置玩家引用
+	RoomManager.set_player(player)
+	if Global.current_save_slot >= 0 and not should_play_opening:
+		_preposition_player_and_camera_for_save()
+	
+	# 确保 CanvasModulate 节点正确引用
+	var global_canvas = $GlobalCanvasModulate
+	if global_canvas:
+		# 直接设置 RoomManager 的全局 CanvasModulate 引用
+		RoomManager.global_canvas_modulate = global_canvas
+		# 初始化颜色为当前房间的颜色（如果已经加载了房间）
+		var current_room_data = RoomManager.get_current_room_data()
+		if current_room_data:
+			global_canvas.color = current_room_data.get("color", Color.WHITE)
+	else:
+		print("MainGameScene: 错误：未找到 GlobalCanvasModulate")
+	
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	RoomManager.auto_calculate_room_connections()
+	
+	# 如果是从存档加载，设置玩家位置和状态
+	if Global.current_save_slot >= 0:
+		if should_play_opening:
+			await _play_new_game_opening_sequence()
+		else:
+			await _load_from_save()
+	else:
+		await get_tree().process_frame
+		RoomManager.load_room("Room1")
+	
+	# 连接玩家死亡信号
+	var player_ui = get_tree().get_first_node_in_group("player_ui")
+	if player_ui:
+		player_ui.player_died.connect(_on_player_died)
+
+	_boot_visual_ready = true
+	boot_visual_ready.emit()
+
+func _play_new_game_opening_sequence() -> void:
+	if FadeManager and FadeManager.has_method("force_black"):
+		FadeManager.force_black()
+	else:
+		await FadeManager.fade_out(0.0)
+	if RoomManager:
+		RoomManager.load_room("Room1")
+	await get_tree().process_frame
+	if FadeManager and FadeManager.has_method("force_black"):
+		FadeManager.force_black()
+	var boot_cinematic_request: Dictionary = {}
+	if Global and Global.has_method("consume_boot_cinematic_request"):
+		boot_cinematic_request = Global.consume_boot_cinematic_request()
+	if new_save_opening_event_director and new_save_opening_event_director.has_method("play_opening"):
+		await new_save_opening_event_director.play_opening(boot_cinematic_request)
+	elif boot_cinematic_director and boot_cinematic_director.has_method("play_intro_sequence"):
+		await boot_cinematic_director.play_intro_sequence(boot_cinematic_request)
+
+func _exit_tree() -> void:
+	_cleanup_runtime_camera_viewfinder_overlays()
+	if Engine.has_singleton("PhantomCameraManager"):
+		var manager = Engine.get_singleton("PhantomCameraManager")
+		if manager and manager.has_method("scene_changed"):
+			manager.scene_changed()
+
+func _cleanup_runtime_camera_viewfinder_overlays() -> void:
+	var root := get_tree().root
+	if root == null:
+		return
+	for child in root.get_children():
+		if child is CanvasLayer:
+			for grand in child.get_children():
+				if grand is Control and grand.name == "ViewfinderPanel":
+					child.queue_free()
+					break
+
+func wait_until_boot_visual_ready() -> void:
+	if _boot_visual_ready:
+		return
+	await boot_visual_ready
+
+func initialize_room_system():
+	# 自动注册所有房间
+	for room_node in room_container.get_children():
+		if room_node.has_method("get_room_data"):
+			var room_data = room_node.get_room_data()
+			
+			# 关键修改：不传递颜色数据，RoomManager会从CanvasModulate节点获取
+			RoomManager.register_room(room_data.id, room_node, room_data)
+
+## 从存档加载
+func _load_from_save():
+	# 设置玩家位置
+	var the_player = get_tree().get_first_node_in_group("player")
+	if the_player:
+		# 复用死亡重生同款：先切到存档房间再做黑屏居中，避免边界回拉暴露。
+		await get_tree().process_frame
+		var target_room_id := Global.last_save_room
+		if target_room_id == "":
+			target_room_id = "Room1"
+		if the_player.has_method("sync_room_and_camera_for_respawn"):
+			await the_player.sync_room_and_camera_for_respawn(target_room_id, true)
+			await get_tree().process_frame
+			if the_player.has_method("sync_camera_to_player_center"):
+				the_player.sync_camera_to_player_center(true)
+		else:
+			RoomManager.load_room(target_room_id)
+			RoomManager.update_camera_limits()
+			_snap_camera_to_player_immediately(the_player)
+		await get_tree().physics_frame
+		
+		# 使用传送伤害的禁用时间，也是存档进入游戏开始时的禁用时间
+		the_player.lock_control(the_player.warp_control_lock_time, "warp_damage")
+		
+		# 设置玩家为睡眠状态
+		the_player.enter_sleep_state()
+	# 设置玩家UI状态
+	var player_ui = get_tree().get_first_node_in_group("player_ui")
+	if player_ui:
+		player_ui.set_max_health(Global.player_max_health)
+		player_ui.set_health(Global.player_current_health)
+
+func _snap_camera_to_player_immediately(the_player: Node) -> void:
+	if the_player == null:
+		return
+	var player_pos: Vector2 = the_player.global_position
+	var follow_offset := Vector2.ZERO
+	var phantom_camera = the_player.get_node_or_null("PhantomCamera2D")
+	if phantom_camera and phantom_camera.has_method("get_follow_offset"):
+		follow_offset = phantom_camera.get_follow_offset()
+	var target_camera_pos: Vector2 = player_pos + follow_offset
+	target_camera_pos = _clamp_camera_target_by_limits(target_camera_pos, phantom_camera)
+	var main_camera = get_node_or_null("Camera2D")
+	if main_camera:
+		main_camera.global_position = target_camera_pos
+		if main_camera.has_method("reset_smoothing"):
+			main_camera.reset_smoothing()
+		if main_camera.has_method("reset_physics_interpolation"):
+			main_camera.reset_physics_interpolation()
+	if phantom_camera:
+		phantom_camera.global_position = target_camera_pos
+		if phantom_camera.has_method("teleport_position"):
+			phantom_camera.teleport_position()
+
+func _clamp_camera_target_by_limits(target_pos: Vector2, phantom_camera: Node) -> Vector2:
+	if phantom_camera == null:
+		return target_pos
+	var clamped_pos = target_pos
+	if phantom_camera.has_method("get"):
+		var limit_left = int(phantom_camera.get("limit_left"))
+		var limit_top = int(phantom_camera.get("limit_top"))
+		var limit_right = int(phantom_camera.get("limit_right"))
+		var limit_bottom = int(phantom_camera.get("limit_bottom"))
+		clamped_pos.x = clampf(clamped_pos.x, float(limit_left), float(limit_right))
+		clamped_pos.y = clampf(clamped_pos.y, float(limit_top), float(limit_bottom))
+	return clamped_pos
+
+func _preposition_player_and_camera_for_save() -> void:
+	if player == null:
+		return
+	player.global_position = Global.get_save_point_position()
+	# 房间加载与相机同步交给 _load_from_save，保持单路径，避免双重同步竞争。
+
+func _on_player_died():
+	# 关键修复：死亡时清除动态检查点记录
+	if DynamicCheckpointManager.has_method("clear_all_checkpoints_on_death"):
+		DynamicCheckpointManager.clear_all_checkpoints_on_death()

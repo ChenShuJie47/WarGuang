@@ -22,7 +22,6 @@ buses/default_bus_layout="res://Assets/Audios/default_bus_layout.tres"
 
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
 DialogueManager="*res://addons/dialogue_manager/dialogue_manager.gd"
-GodotIQRuntime="*res://addons/godotiq/godotiq_runtime.gd"
 DynamicCheckpointManager="*res://Scripts/Managers/DynamicCheckpointManager.gd"
 EnvironmentManager="*res://Scripts/Managers/EnvironmentManager.gd"
 InputMapManager="*res://Scripts/Managers/InputMapManager.gd"
@@ -51,7 +50,7 @@ window/stretch/scale_mode="integer"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/dialogue_manager/plugin.cfg", "res://addons/godotiq/plugin.cfg", "res://addons/phantom_camera/plugin.cfg")
+enabled=PackedStringArray()
 
 [importer_defaults]
 

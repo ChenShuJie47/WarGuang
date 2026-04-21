@@ -28,6 +28,7 @@ signal fade_out_completed
 signal fade_in_completed
 
 var _fade_tween: Tween = null
+var _black_hold_tags: Dictionary = {}
 
 func _ready():
 	# 设置整个CanvasLayer的暂停模式
@@ -41,7 +42,7 @@ func _ready():
 	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func fade_out(duration: float):
-	var safe_duration: float = clampf(duration, 0.0, 2.0)
+	var safe_duration: float = clampf(duration, 0.0, 30.0)
 	_stop_active_fade_tween()
 	fade_rect.visible = true
 	
@@ -52,7 +53,11 @@ func fade_out(duration: float):
 	fade_out_completed.emit()
 
 func fade_in(duration: float):
-	var safe_duration: float = clampf(duration, 0.0, 2.0)
+	if has_black_hold():
+		force_black()
+		fade_in_completed.emit()
+		return
+	var safe_duration: float = clampf(duration, 0.0, 30.0)
 	_stop_active_fade_tween()
 	
 	_fade_tween = create_tween()
@@ -63,6 +68,9 @@ func fade_in(duration: float):
 	fade_in_completed.emit()
 
 func force_fade_in():
+	if has_black_hold():
+		force_black()
+		return
 	_stop_active_fade_tween()
 	fade_rect.color = Color(0, 0, 0, 0)
 	fade_rect.visible = false
@@ -86,3 +94,20 @@ func is_fully_black(threshold: float = 0.995) -> bool:
 	if not is_instance_valid(fade_rect):
 		return false
 	return fade_rect.visible and get_black_alpha() >= clampf(threshold, 0.0, 1.0)
+
+func hold_black(tag: String) -> void:
+	var key: String = tag.strip_edges()
+	if key == "":
+		key = "default"
+	_black_hold_tags[key] = true
+	force_black()
+
+func release_black_hold(tag: String) -> void:
+	var key: String = tag.strip_edges()
+	if key == "":
+		key = "default"
+	if _black_hold_tags.has(key):
+		_black_hold_tags.erase(key)
+
+func has_black_hold() -> bool:
+	return not _black_hold_tags.is_empty()

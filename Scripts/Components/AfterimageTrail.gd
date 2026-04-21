@@ -38,7 +38,7 @@ class AfterimageConfig:
 
 @export_group("Black Dash")
 ## 黑暗冲刺残影颜色
-@export var black_dash_color: Color = Color(0.038, 0.038, 0.038, 1.0)
+@export var black_dash_color: Color = Color(0.094, 0.094, 0.094, 1.0)
 ## 黑暗冲刺残影生命周期（秒）
 @export var black_dash_lifetime: float = 0.25
 ## 黑暗冲刺残影生成间隔（秒）
@@ -70,9 +70,9 @@ class AfterimageConfig:
 
 @export_group("JumpBox Perfect")
 ## JumpBox完美触发二段跳残影颜色
-@export var jumpbox_perfect_color: Color = Color(0.882, 0.627, 0.98, 1.0)
+@export var jumpbox_perfect_color: Color = Color(0.902, 0.608, 1.0, 1.0)
 ## JumpBox完美触发二段跳残影生命周期（秒）
-@export var jumpbox_perfect_lifetime: float = 0.35
+@export var jumpbox_perfect_lifetime: float = 0.3
 ## JumpBox完美触发二段跳残影生成间隔（秒）
 @export var jumpbox_perfect_interval: float = 0.05
 ## JumpBox完美触发二段跳残影对象池大小
@@ -82,17 +82,17 @@ class AfterimageConfig:
 ## JumpBox完美触发二段跳是否启用淡出缩放效果
 @export var jumpbox_perfect_fade_scale_effect: bool = true
 ## JumpBox完美触发二段跳残影位移强度
-@export var jumpbox_perfect_move_distance: float = 50.0
+@export var jumpbox_perfect_move_distance: float = 40.0
 
 @export_group("JumpBox Normal")
 ## JumpBox普通触发二段跳残影颜色（白色）
 @export var jumpbox_normal_color: Color = Color(1.0, 1.0, 1.0, 1.0)
 ## JumpBox普通触发二段跳残影生命周期（秒）
-@export var jumpbox_normal_lifetime: float = 0.25
+@export var jumpbox_normal_lifetime: float = 0.3
 ## JumpBox普通触发二段跳残影生成间隔（秒）
 @export var jumpbox_normal_interval: float = 0.05
 ## JumpBox普通触发二段跳残影对象池大小
-@export var jumpbox_normal_pool_size: int = 30
+@export var jumpbox_normal_pool_size: int = 40
 ## JumpBox普通触发二段跳是否使用纯色渲染
 @export var jumpbox_normal_solid_color: bool = true
 ## JumpBox普通触发二段跳是否启用淡出缩放效果
@@ -102,7 +102,7 @@ class AfterimageConfig:
 
 @export_group("Maniac Move")
 ## ManiacNPC 移动残影颜色（暗红色系）
-@export var maniac_move_color: Color = Color(0.396, 0.173, 0.184, 0.663)
+@export var maniac_move_color: Color = Color(0.396, 0.173, 0.184, 1.0)
 ## ManiacNPC 移动残影生命周期（秒）
 @export var maniac_move_lifetime: float = 0.6
 ## ManiacNPC 移动残影生成间隔（秒）
