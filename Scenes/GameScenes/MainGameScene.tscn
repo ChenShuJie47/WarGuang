@@ -42,6 +42,7 @@ script = ExtResource("18_iaaki")
 [node name="RoomContainer" type="Node2D" parent="."]
 
 [node name="Room1" parent="RoomContainer" instance=ExtResource("3_mvl1i")]
+position = Vector2(-810, -13)
 
 [node name="Room2" parent="RoomContainer" instance=ExtResource("4_mvl1i")]
 position = Vector2(7978, 1140)
@@ -80,8 +81,8 @@ intro_sequence_order = Array[int]([0, 1, 1, 0, 0])
 [node name="RoomCinematicEventDirector" type="Node" parent="EventDirectors"]
 script = ExtResource("11_room_cinematic")
 intro_text_theme = ExtResource("11_om4ip")
-intro_text_lines = PackedStringArray("")
-intro_text_line_hold_times = PackedFloat32Array(0)
+intro_text_lines = PackedStringArray("1")
+intro_text_line_hold_times = PackedFloat32Array(1)
 intro_visual_frames = Array[Texture2D]([ExtResource("11_70mj8")])
 intro_visual_frame_durations = PackedFloat32Array(1)
-intro_sequence_order = Array[int]([1, 0, 2])
+intro_sequence_order = Array[int]([2, 1, 0, 2])
