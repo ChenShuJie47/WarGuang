@@ -13,6 +13,8 @@ var _boot_visual_ready: bool = false
 @onready var new_save_opening_event_director = $EventDirectors/NewSaveOpeningEventDirector
 
 func _ready():
+	if not is_inside_tree() or get_tree() == null:
+		return
 	_cleanup_runtime_camera_viewfinder_overlays()
 	if RoomManager and RoomManager.has_method("reset_runtime_state"):
 		RoomManager.reset_runtime_state()
@@ -45,8 +47,15 @@ func _ready():
 	else:
 		print("MainGameScene: 错误：未找到 GlobalCanvasModulate")
 	
+	var tree := get_tree()
+	if tree == null:
+		return
+	await tree.process_frame
+	if not is_inside_tree() or get_tree() == null:
+		return
 	await get_tree().process_frame
-	await get_tree().process_frame
+	if not is_inside_tree() or get_tree() == null:
+		return
 	
 	RoomManager.auto_calculate_room_connections()
 	
@@ -57,10 +66,16 @@ func _ready():
 		else:
 			await _load_from_save()
 	else:
+		if get_tree() == null:
+			return
 		await get_tree().process_frame
+		if not is_inside_tree() or get_tree() == null:
+			return
 		RoomManager.load_room("Room1")
 	
 	# 连接玩家死亡信号
+	if not is_inside_tree() or get_tree() == null:
+		return
 	var player_ui = get_tree().get_first_node_in_group("player_ui")
 	if player_ui:
 		player_ui.player_died.connect(_on_player_died)
@@ -93,7 +108,7 @@ func _exit_tree() -> void:
 		if manager and manager.has_method("scene_changed"):
 			manager.scene_changed()
 
-func _on_room_loaded(room_id: String, _previous_room: String) -> void:
+func _on_room_loaded(_room_id: String, _previous_room: String) -> void:
 	if not is_instance_valid(room_container):
 		return
 	if not RoomManager:

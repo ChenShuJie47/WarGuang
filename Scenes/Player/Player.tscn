@@ -1,4 +1,4 @@
-[gd_scene load_steps=148 format=3 uid="uid://dwj2ydwabq3n0"]
+[gd_scene load_steps=152 format=3 uid="uid://dwj2ydwabq3n0"]
 
 [ext_resource type="Script" uid="uid://b641fcmvm5n4c" path="res://Scripts/Player/Player.gd" id="1_kyqiw"]
 [ext_resource type="PackedScene" uid="uid://dq4jgo8v4l7kq" path="res://Scenes/Instances/Afterimage.tscn" id="2_t26db"]
@@ -17,6 +17,22 @@
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_jmcll"]
 closed = false
 polygon = PackedVector2Array(-8, -5, -8, 17, 8, 17, 8, -5, -8, -5)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_epg6k"]
+atlas = ExtResource("8_epg6k")
+region = Rect2(0, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0u84n"]
+atlas = ExtResource("8_epg6k")
+region = Rect2(32, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ftmdd"]
+atlas = ExtResource("8_epg6k")
+region = Rect2(64, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tdw3u"]
+atlas = ExtResource("8_epg6k")
+region = Rect2(96, 128, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_esmjy"]
 atlas = ExtResource("8_epg6k")
@@ -542,6 +558,23 @@ region = Rect2(224, 128, 32, 32)
 animations = [{
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_epg6k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0u84n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ftmdd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tdw3u")
+}],
+"loop": false,
+"name": &"BACKSTEP",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_esmjy")
 }, {
 "duration": 1.0,
@@ -892,40 +925,6 @@ animations = [{
 "name": &"RUN",
 "speed": 6.0
 }, {
-	"frames": [{
-	"duration": 1.0,
-	"texture": SubResource("AtlasTexture_7p2rt")
-}, {
-	"duration": 1.0,
-	"texture": SubResource("AtlasTexture_lbksu")
-}, {
-	"duration": 1.0,
-	"texture": SubResource("AtlasTexture_o0c6g")
-}, {
-	"duration": 1.0,
-	"texture": SubResource("AtlasTexture_6s12t")
-}],
-	"loop": false,
-	"name": &"BACKSTEP_ENTRY",
-	"speed": 12.0
-}, {
-	"frames": [{
-	"duration": 1.0,
-	"texture": SubResource("AtlasTexture_7p2rt")
-}, {
-	"duration": 1.0,
-	"texture": SubResource("AtlasTexture_lbksu")
-}, {
-	"duration": 1.0,
-	"texture": SubResource("AtlasTexture_o0c6g")
-}, {
-	"duration": 1.0,
-	"texture": SubResource("AtlasTexture_6s12t")
-}],
-	"loop": true,
-	"name": &"BACKSTEP_LOOP",
-	"speed": 12.0
-}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_6rkp1")
@@ -1145,7 +1144,7 @@ occluder_light_mask = 0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_jbabp")
-animation = &"BLACKDASH"
+animation = &"BACKSTEP"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visibility_layer = 63

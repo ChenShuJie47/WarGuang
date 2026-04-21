@@ -85,9 +85,8 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 			player.change_state(player.PlayerState.DOWN)
 
 	var horizontal_distance_after_move: float = absf(target.x - player.global_position.x)
-	var crossed_target_x: bool = (previous_position.x - target.x) * (player.global_position.x - target.x) <= 0.0
 	if player.is_on_floor():
-		if horizontal_distance_after_move <= 0.5 or crossed_target_x:
+		if horizontal_distance_after_move <= 1.5:
 			player.global_position = Vector2(target.x, player.global_position.y)
 			player.velocity = Vector2.ZERO
 			finish_autowalk(player)

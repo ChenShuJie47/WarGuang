@@ -694,6 +694,7 @@ func reveal_overlay_to_gameplay(duration: float = -1.0) -> void:
 		_overlay_root.visible = false
 		return
 	var fade := create_tween()
+	fade.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	fade.set_trans(Tween.TRANS_SINE)
 	fade.set_ease(Tween.EASE_OUT)
 	fade.tween_property(_black_rect, "color:a", 0.0, reveal_duration)
