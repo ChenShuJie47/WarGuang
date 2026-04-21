@@ -673,6 +673,10 @@ func _fade_overlay_to_black() -> void:
 
 func _run_reveal_phase(reveal_duration: float) -> void:
 	var release_global_fade: bool = bool(_active_payload.get("release_global_fade_after_reveal", false))
+	var debug_reveal_flow: bool = bool(_active_payload.get("debug_reveal_flow", false))
+	var reveal_start_ms: int = Time.get_ticks_msec()
+	if debug_reveal_flow:
+		print("BootCinematicDirector: reveal begin, duration=", reveal_duration, ", release_global_fade=", release_global_fade, ", has_black_hold=", FadeManager.has_black_hold() if FadeManager else false)
 	if release_global_fade:
 		_release_black_hold_if_needed()
 		if FadeManager and FadeManager.has_method("force_black"):
@@ -681,6 +685,8 @@ func _run_reveal_phase(reveal_duration: float) -> void:
 	await reveal_overlay_to_gameplay(reveal_duration)
 	if release_global_fade and FadeManager and FadeManager.has_method("force_fade_in"):
 		FadeManager.force_fade_in()
+	if debug_reveal_flow:
+		print("BootCinematicDirector: reveal finished, elapsed_ms=", Time.get_ticks_msec() - reveal_start_ms)
 
 ## 从黑幕揭开到游戏画面。
 func reveal_overlay_to_gameplay(duration: float = -1.0) -> void:

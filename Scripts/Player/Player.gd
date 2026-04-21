@@ -404,6 +404,9 @@ var door_autowalk_target_position: Vector2 = Vector2.ZERO  # Door 自动走位�
 var door_autowalk_timeout: float = 0.0          # Door 自动走位超时时间
 var door_autowalk_facing_right: bool = true     # 进入 Door 时的朝向
 var door_autowalk_jump_used: bool = false       # Door 自动走位过程中是否已触发跳跃
+var door_autowalk_jump_velocity: Vector2 = Vector2.ZERO # Door 自动走位跳跃初速度
+var door_autowalk_jump_velocity_ready: bool = false     # Door 自动走位跳跃速度是否已计算
+var door_autowalk_ground_block_frames: int = 0          # Door 自动走位地面受阻帧数
 
 ## 奔跑检测相关
 var last_move_input_time: float = 0.0           # 记录最后移动输入时间，用于快速双击检测
