@@ -134,7 +134,7 @@ shape = SubResource("RectangleShape2D_wall")
 position = Vector2(-32, 28)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_wutf2")
-animation = &"IDLE"
+animation = &"DESTROYED"
 centered = false
 offset = Vector2(0, -32)
 
