@@ -20,7 +20,6 @@ static func begin_autowalk(player: Node, room_id: String, door_position: Vector2
 	player.door_autowalk_jump_velocity = Vector2.ZERO
 	player.door_autowalk_jump_velocity_ready = false
 	player.door_autowalk_ground_block_frames = 0
-	player.door_autowalk_floor_grace_timer = maxf(float(player.door_autowalk_floor_grace_duration), 0.0)
 	var target_delta_x: float = float(player.door_autowalk_target_position.x - door_position.x)
 	var resolved_facing_right: bool = facing_right
 	if absf(target_delta_x) > 0.5:
@@ -44,7 +43,6 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 	if player.door_autowalk_timeout <= 0.0:
 		finish_autowalk(player)
 		return true
-	player.door_autowalk_floor_grace_timer = maxf(player.door_autowalk_floor_grace_timer - fixed_delta, 0.0)
 
 	var target: Vector2 = player.door_autowalk_target_position
 	var delta: Vector2 = target - player.global_position
@@ -64,32 +62,23 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 	var previous_delta_x: float = target.x - previous_position.x
 	var target_speed: float = player.run_move_speed * 0.85
 	var acceleration: float = player.ground_acceleration * player.run_move_speed * 1.2
-	if player.door_autowalk_floor_grace_timer > 0.0 and not player.is_on_floor():
-		player.velocity.x = move_toward(player.velocity.x, horizontal_direction * target_speed, acceleration * fixed_delta)
-		player.apply_gravity(fixed_delta)
-		player.move_and_slide()
-		if player.velocity.y < 0.0:
-			player.change_state(player.PlayerState.JUMP)
-		else:
-			player.change_state(player.PlayerState.DOWN)
-		return false
 	if player.is_on_floor() and not player.door_autowalk_jump_used:
 		player.velocity.x = move_toward(player.velocity.x, horizontal_direction * target_speed, acceleration * fixed_delta)
 		player.velocity.y = 0.0
 		player.move_and_slide()
 		var horizontal_progress: float = absf(player.global_position.x - previous_position.x)
-		var blocked_by_ground: bool = player.is_on_wall() or (horizontal_distance > 24.0 and horizontal_progress < maxf(target_speed * fixed_delta * 0.2, 0.45))
-		if blocked_by_ground:
+		var blocked_by_wall: bool = player.is_on_wall() and horizontal_distance > 20.0
+		var target_is_higher: bool = vertical_distance < -14.0
+		if blocked_by_wall and target_is_higher:
 			player.door_autowalk_jump_used = true
 			player.door_autowalk_jump_velocity_ready = false
 			player.door_autowalk_ground_block_frames += 1
 			if player.door_autowalk_ground_block_frames >= 1:
 				player.change_state(player.PlayerState.IDLE)
 				return false
-		player.door_autowalk_ground_block_frames = 0
-	else:
-		if not player.door_autowalk_jump_used:
-			player.door_autowalk_jump_used = true
+		elif horizontal_progress >= maxf(target_speed * fixed_delta * 0.25, 0.5):
+			player.door_autowalk_ground_block_frames = 0
+	elif player.door_autowalk_jump_used:
 		if not player.door_autowalk_jump_velocity_ready:
 			player.door_autowalk_jump_velocity = _compute_jump_velocity(player, target)
 			player.velocity = player.door_autowalk_jump_velocity
@@ -97,6 +86,11 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 		if not player.is_on_floor():
 			player.apply_gravity(fixed_delta)
 		player.velocity.x = move_toward(player.velocity.x, horizontal_direction * maxf(player.run_move_speed, absf(player.door_autowalk_jump_velocity.x)), player.ground_acceleration * player.run_move_speed * fixed_delta)
+		player.move_and_slide()
+	else:
+		player.velocity.x = move_toward(player.velocity.x, horizontal_direction * target_speed, acceleration * fixed_delta)
+		if not player.is_on_floor():
+			player.apply_gravity(fixed_delta)
 		player.move_and_slide()
 
 	if player.is_on_floor():
@@ -113,8 +107,9 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 	var current_delta_x: float = target.x - player.global_position.x
 	var horizontal_distance_after_move: float = absf(current_delta_x)
 	var crossed_target_x: bool = absf(previous_delta_x) > 0.01 and sign(previous_delta_x) != sign(current_delta_x)
+	var moving_away_from_target: bool = absf(player.velocity.x) > 8.0 and sign(player.velocity.x) != sign(current_delta_x)
 	if player.is_on_floor():
-		if horizontal_distance_after_move <= 1.5 or crossed_target_x:
+		if horizontal_distance_after_move <= 1.5 or crossed_target_x or (player.door_autowalk_jump_used and (horizontal_distance_after_move <= 10.0 or moving_away_from_target)):
 			player.global_position = Vector2(target.x, target.y if absf(target.y - player.global_position.y) <= 12.0 else player.global_position.y)
 			player.velocity = Vector2.ZERO
 			finish_autowalk(player)
@@ -140,7 +135,6 @@ static func finish_autowalk(player: Node) -> void:
 	player.door_autowalk_jump_velocity = Vector2.ZERO
 	player.door_autowalk_jump_velocity_ready = false
 	player.door_autowalk_ground_block_frames = 0
-	player.door_autowalk_floor_grace_timer = 0.0
 	player.velocity = Vector2.ZERO
 	player.control_lock_timer = 0.0
 	player.is_control_locked = false

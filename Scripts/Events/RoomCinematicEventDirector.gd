@@ -131,6 +131,7 @@ func _build_room_event_payload() -> Dictionary:
 	payload["reveal_duration"] = reveal_duration
 	payload["release_global_fade_after_reveal"] = true
 	payload["release_black_hold_tag"] = ROOM_DREAM10_BLACK_HOLD_TAG
+	payload["post_intro_autowalk_room_id"] = roomdream10_event_room_id
 	payload["debug_reveal_flow"] = debug_roomdream10_flow
 	return payload
 

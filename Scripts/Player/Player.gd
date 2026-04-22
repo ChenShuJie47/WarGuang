@@ -396,11 +396,6 @@ var die_slow_motion_active: bool = false        # 标记死亡慢动作是否激
 var is_respawn_invincible: bool = false         # 标记是否为重生无敌（不显示半透明）
 
 ## 内部禁用时间变量
-@export_category("Door 自动走位设置")
-## Door 自动走位开始后，延迟检测是否在地面的宽限时长（秒）。
-@export var door_autowalk_floor_grace_duration: float = 0.2
-
-## 内部禁用时间变量
 var door_teleport_lock_time: float = 0.5        # 门传送后禁用时间（内部变量，由Door设置）
 var control_lock_timer: float = 0.0             # 控制锁定计时器
 var is_control_locked: bool = false             # 标记玩家控制是否被锁定
@@ -412,7 +407,6 @@ var door_autowalk_jump_used: bool = false       # Door 自动走位过程中是�
 var door_autowalk_jump_velocity: Vector2 = Vector2.ZERO # Door 自动走位跳跃初速度
 var door_autowalk_jump_velocity_ready: bool = false     # Door 自动走位跳跃速度是否已计算
 var door_autowalk_ground_block_frames: int = 0          # Door 自动走位地面受阻帧数
-var door_autowalk_floor_grace_timer: float = 0.0        # Door 自动走位开始后地面判定宽限计时
 
 ## 奔跑检测相关
 var last_move_input_time: float = 0.0           # 记录最后移动输入时间，用于快速双击检测
