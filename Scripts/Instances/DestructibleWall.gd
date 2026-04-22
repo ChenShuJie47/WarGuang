@@ -90,6 +90,9 @@ func _on_detector_body_entered(body):
 		return
 	
 	# 2. 检查玩家速度
+	if not body.is_on_floor() or not body.is_running:
+		return
+
 	var player_velocity = Vector2.ZERO
 	if body.has_method("get_velocity"):
 		player_velocity = body.get_velocity()
@@ -104,7 +107,7 @@ func _on_detector_body_entered(body):
 	
 	# 所有条件满足，触发撞击
 	print("DEBUG DestructibleWall: 检测到撞击，玩家速度=", player_velocity.x)
-	_handle_impact()
+	_handle_impact(body)
 
 ## 检查玩家是否在正确的一侧
 func is_player_on_correct_side(body) -> bool:
@@ -120,25 +123,30 @@ func is_player_touching_wall(body) -> bool:
 	return distance < 50  # 距离小于 50 像素算撞墙
 
 ## 处理撞击
-func _handle_impact():
+func _handle_impact(body):
+	if body and body.has_method("handle_wall_bump"):
+		body.handle_wall_bump()
+
 	current_hit_count += 1
 	
 	if current_hit_count >= hit_count_required:
-		# 最后一次撞击，摧毁石墙
+		# 最后一次撞击，先播 HIT，再切到 DESTROYED，最后关闭碰撞体
+		is_destroyed = true
+		await _play_hit_animation(false)
 		_destroy_wall()
 	else:
 		# 播放受击动画
-		_play_hit_animation()
+		await _play_hit_animation(true)
 
 ## 播放受击动画
-func _play_hit_animation():
+func _play_hit_animation(restore_idle: bool = true):
 	if animated_sprite and animated_sprite.sprite_frames:
 		if animated_sprite.sprite_frames.has_animation("HIT"):
 			animated_sprite.play("HIT")
 			# 等待动画播放完成
 			await animated_sprite.animation_finished
-			# 恢复静止动画
-			if animated_sprite.sprite_frames.has_animation("IDLE"):
+			# 恢复静止动画（最终摧毁时保留 DESTROYED）
+			if restore_idle and animated_sprite.sprite_frames.has_animation("IDLE"):
 				animated_sprite.play("IDLE")
 
 ## 摧毁石墙

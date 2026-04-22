@@ -17,9 +17,9 @@ static func begin_autowalk(player: Node, room_id: String, door_position: Vector2
 	player.door_autowalk_target_position = target_position
 	player.door_autowalk_timeout = maxf(timeout, 0.35)
 	player.door_autowalk_jump_used = not allow_jump
+	player.door_autowalk_jump_phase = 0
 	player.door_autowalk_jump_velocity = Vector2.ZERO
 	player.door_autowalk_jump_velocity_ready = false
-	player.door_autowalk_ground_block_frames = 0
 	var target_delta_x: float = float(player.door_autowalk_target_position.x - door_position.x)
 	var resolved_facing_right: bool = facing_right
 	if absf(target_delta_x) > 0.5:
@@ -62,36 +62,47 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 	var previous_delta_x: float = target.x - previous_position.x
 	var target_speed: float = player.run_move_speed * 0.85
 	var acceleration: float = player.ground_acceleration * player.run_move_speed * 1.2
-	if player.is_on_floor() and not player.door_autowalk_jump_used:
+	if player.door_autowalk_jump_used:
+		if player.door_autowalk_jump_phase == 1:
+			if not player.door_autowalk_jump_velocity_ready:
+				player.door_autowalk_jump_velocity = _compute_vertical_jump_velocity(player, target)
+				player.velocity = player.door_autowalk_jump_velocity
+				player.door_autowalk_jump_velocity_ready = true
+			player.velocity.x = 0.0
+			if not player.is_on_floor():
+				player.apply_gravity(fixed_delta)
+			player.move_and_slide()
+			if player.global_position.y <= target.y + 4.0 or player.velocity.y >= 0.0:
+				player.door_autowalk_jump_phase = 2
+				player.door_autowalk_jump_velocity_ready = false
+		elif player.door_autowalk_jump_phase == 2:
+			if not player.door_autowalk_jump_velocity_ready:
+				player.door_autowalk_jump_velocity = _compute_jump_velocity(player, target)
+				player.velocity = player.door_autowalk_jump_velocity
+				player.door_autowalk_jump_velocity_ready = true
+			if not player.is_on_floor():
+				player.apply_gravity(fixed_delta)
+			player.move_and_slide()
+		else:
+			player.door_autowalk_jump_phase = 1
+			player.door_autowalk_jump_velocity_ready = false
+	else:
 		player.velocity.x = move_toward(player.velocity.x, horizontal_direction * target_speed, acceleration * fixed_delta)
-		player.velocity.y = 0.0
+		if not player.is_on_floor():
+			player.apply_gravity(fixed_delta)
 		player.move_and_slide()
 		var horizontal_progress: float = absf(player.global_position.x - previous_position.x)
 		var blocked_by_wall: bool = player.is_on_wall() and horizontal_distance > 20.0
 		var target_is_higher: bool = vertical_distance < -14.0
 		if blocked_by_wall and target_is_higher:
 			player.door_autowalk_jump_used = true
+			player.door_autowalk_jump_phase = 1
 			player.door_autowalk_jump_velocity_ready = false
-			player.door_autowalk_ground_block_frames += 1
-			if player.door_autowalk_ground_block_frames >= 1:
-				player.change_state(player.PlayerState.IDLE)
-				return false
+			player.velocity = Vector2.ZERO
+			player.change_state(player.PlayerState.JUMP)
+			return false
 		elif horizontal_progress >= maxf(target_speed * fixed_delta * 0.25, 0.5):
-			player.door_autowalk_ground_block_frames = 0
-	elif player.door_autowalk_jump_used:
-		if not player.door_autowalk_jump_velocity_ready:
-			player.door_autowalk_jump_velocity = _compute_jump_velocity(player, target)
-			player.velocity = player.door_autowalk_jump_velocity
-			player.door_autowalk_jump_velocity_ready = true
-		if not player.is_on_floor():
-			player.apply_gravity(fixed_delta)
-		player.velocity.x = move_toward(player.velocity.x, horizontal_direction * maxf(player.run_move_speed, absf(player.door_autowalk_jump_velocity.x)), player.ground_acceleration * player.run_move_speed * fixed_delta)
-		player.move_and_slide()
-	else:
-		player.velocity.x = move_toward(player.velocity.x, horizontal_direction * target_speed, acceleration * fixed_delta)
-		if not player.is_on_floor():
-			player.apply_gravity(fixed_delta)
-		player.move_and_slide()
+			pass
 
 	if player.is_on_floor():
 		if absf(player.velocity.x) > 8.0:
@@ -117,6 +128,13 @@ static func update_autowalk(player: Node, fixed_delta: float) -> bool:
 
 	return false
 
+static func _compute_vertical_jump_velocity(player: Node, target: Vector2) -> Vector2:
+	var delta: Vector2 = target - player.global_position
+	var gravity_strength: float = player.gravity * maxf(player.effective_gravity_multiplier, 0.1)
+	var minimum_lift_height: float = maxf(absf(delta.y) + 24.0, 48.0)
+	var launch_speed: float = maxf(absf(player.jump_velocity), sqrt(maxf(2.0 * gravity_strength * minimum_lift_height, 0.0)))
+	return Vector2(0.0, -launch_speed)
+
 static func _compute_jump_velocity(player: Node, target: Vector2) -> Vector2:
 	var delta: Vector2 = target - player.global_position
 	var gravity_strength: float = player.gravity * maxf(player.effective_gravity_multiplier, 0.1)
@@ -132,9 +150,9 @@ static func finish_autowalk(player: Node) -> void:
 	player.door_autowalk_active = false
 	player.door_autowalk_timeout = 0.0
 	player.door_autowalk_jump_used = false
+	player.door_autowalk_jump_phase = 0
 	player.door_autowalk_jump_velocity = Vector2.ZERO
 	player.door_autowalk_jump_velocity_ready = false
-	player.door_autowalk_ground_block_frames = 0
 	player.velocity = Vector2.ZERO
 	player.control_lock_timer = 0.0
 	player.is_control_locked = false
