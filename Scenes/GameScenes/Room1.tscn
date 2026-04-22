@@ -165,7 +165,7 @@ bottom_color = Color(0.2, 0.4, 0.6, 0.8)
 gradient_smoothness = 1.0
 
 [node name="DestructibleWall" parent="." instance=ExtResource("16_5m2yc")]
-position = Vector2(1087, -61)
+position = Vector2(1097, -18)
 wall_id = "1"
 
 [node name="RoomBounds1" type="Node2D" parent="."]
