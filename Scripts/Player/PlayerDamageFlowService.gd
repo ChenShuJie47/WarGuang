@@ -5,15 +5,20 @@ class_name PlayerDamageFlowService
 static func should_ignore_damage(player: Node) -> bool:
 	if player.current_state == player.PlayerState.DIE:
 		return true
-	if player.current_state == player.PlayerState.BACKSTEP:
+	if player.current_state == player.PlayerState.DASH and player.black_dash_unlocked:
 		return true
 	if player.has_method("is_counter_slow_invincible_active") and player.is_counter_slow_invincible_active():
-		return true
-	if player.current_state == player.PlayerState.DASH and player.black_dash_unlocked:
 		return true
 	if player.is_invincible:
 		return true
 	return false
+
+# 慢动作中受击时，先退出慢动作与对应视觉，再进入常规受伤流程。
+static func clear_counter_slow_for_damage(player: Node) -> void:
+	if TimerControlManager and TimerControlManager.has_method("stop_slow_motion"):
+		TimerControlManager.stop_slow_motion()
+	if player.has_method("disable_counter_slow_effects"):
+		player.disable_counter_slow_effects()
 
 # 冲刺中受伤时先强制落地到 HURT，避免状态冲突。
 static func break_dash_for_damage(player: Node) -> void:

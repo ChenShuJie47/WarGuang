@@ -17,3 +17,9 @@ static func tick_invincible(player: Node, fixed_delta: float) -> void:
 	if player.invincible_timer <= 0.0:
 		player.is_invincible = false
 		player.animated_sprite.modulate.a = 1.0
+
+# 更新攀墙起跳后的地面抑制计时器。
+static func tick_wall_grip_floor_lock(player: Node, fixed_delta: float) -> void:
+	if player.wall_grip_floor_lock_timer <= 0.0:
+		return
+	player.wall_grip_floor_lock_timer = maxf(player.wall_grip_floor_lock_timer - fixed_delta, 0.0)

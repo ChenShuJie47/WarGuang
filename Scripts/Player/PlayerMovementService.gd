@@ -66,6 +66,7 @@ static func start_super_dash(player: Node) -> void:
 	player.super_dash_charge_timer = 0.0
 	player.super_dash_accel_timer = 0.0
 	player.super_dash_input_lock_timer = player.super_dash_input_lock_time
+	player.super_dash_afterimage_timer = 0.0
 	player.super_dash_duration_timer = 0.0
 	player.is_in_special_state = true
 	player.change_state(player.PlayerState.SUPERDASH)
@@ -172,6 +173,27 @@ static func try_dash(player: Node, dash_just_pressed: bool) -> bool:
 		print("冲刺能力尚未解锁！")
 	return false
 
+# 处理地面后撤步触发：按住下方向并按下冲刺键，方向固定为当前朝向反方向。
+static func try_backstep(player: Node, dash_just_pressed: bool) -> bool:
+	if not dash_just_pressed:
+		return false
+	if not player.backstep_unlocked:
+		return false
+	if player.counter_slow_compensation_active:
+		return false
+	if not player.can_dash:
+		return false
+	if not player.is_on_floor():
+		return false
+	if not Input.is_action_pressed("down"):
+		return false
+
+	var facing_dir: int = 1 if player.is_facing_right else -1
+	start_backstep(player, facing_dir)
+	player.can_dash = false
+	player.dash_cooldown_timer_node.start(player.dash_cooldown)
+	return true
+
 # 处理站立状态的派生状态切换。
 static func handle_idle_state(player: Node, _delta: float, move_input: float, jump_just_pressed: bool, dash_just_pressed: bool) -> void:
 	if player.sleep_timer >= player.idle_to_sleep_time:
@@ -198,6 +220,9 @@ static func handle_idle_state(player: Node, _delta: float, move_input: float, ju
 			player.change_state(player.PlayerState.DOWN)
 		return
 
+	if try_backstep(player, dash_just_pressed):
+		return
+
 	if try_dash(player, dash_just_pressed):
 		return
 
@@ -220,6 +245,9 @@ static func handle_move_state(player: Node, _delta: float, move_input: float, ju
 			player.change_state(player.PlayerState.JUMP)
 		else:
 			player.change_state(player.PlayerState.DOWN)
+		return
+
+	if try_backstep(player, dash_just_pressed):
 		return
 
 	if try_dash(player, dash_just_pressed):
@@ -257,12 +285,8 @@ static func handle_run_state(player: Node, _delta: float, move_input: float, jum
 			player.change_state(player.PlayerState.DOWN)
 		return
 
-	var facing_dir: int = 1 if player.is_facing_right else -1
-	if player.backstep_unlocked and move_input != 0 and sign(move_input) == -facing_dir:
-		var opposite_just_pressed: bool = (facing_dir > 0 and Input.is_action_just_pressed("left")) or (facing_dir < 0 and Input.is_action_just_pressed("right"))
-		if opposite_just_pressed:
-			start_backstep(player, facing_dir)
-			return
+	if try_backstep(player, dash_just_pressed):
+		return
 
 	if try_dash(player, dash_just_pressed):
 		return
@@ -301,51 +325,35 @@ static func handle_backstep_state(player: Node, fixed_delta: float, move_input: 
 		player.change_state(player.PlayerState.DOWN)
 		return
 	player.backstep_timer += fixed_delta
+	player.velocity.x = player.backstep_direction * player.backstep_move_speed
+	player.velocity.y = 0
 
-	if try_dash(player, Input.is_action_just_pressed("dash")):
-		return
-
-	if PlayerAirAbilityServiceScript.try_jump(player, Input.is_action_just_pressed("jump")):
-		return
-
-	if player.super_dash_unlocked and Input.is_action_pressed("super_dash") and player.current_state != player.PlayerState.DASH:
-		player.is_super_dash_charging = true
-		player.change_state(player.PlayerState.SUPERDASHSTART)
-		return
-
-	if player.is_on_wall() and move_input != 0:
-		var wall_normal: Vector2 = player.get_wall_normal()
-		if wall_normal.dot(Vector2(move_input, 0)) < 0:
-			handle_wall_bump(player)
-			return
-
-	var animation_duration: float = player.get_backstep_animation_duration()
-	var backstep_anim_finished: bool = player.backstep_timer >= animation_duration
-
-	if move_input == 0:
-		player.velocity.x = move_toward(
-			player.velocity.x,
-			0.0,
-			player.ground_deceleration * player.base_move_speed * player.effective_acceleration_multiplier
-		)
-		if backstep_anim_finished:
-			player.change_state(player.PlayerState.IDLE)
-		return
-
-	var target_base_speed: float = player.run_move_speed if player.is_running else player.base_move_speed
-	var target_speed: float = move_input * target_base_speed * player.effective_horizontal_multiplier
-	player.velocity.x = move_toward(
-		player.velocity.x,
-		target_speed,
-		player.ground_acceleration * target_base_speed * player.effective_horizontal_multiplier
-	)
-
-	# 仅在输入方向切离后撤步方向，或动画自然播放完成时，回到常规地面状态机。
-	if sign(move_input) != player.backstep_direction or backstep_anim_finished:
-		if player.is_running:
-			player.change_state(player.PlayerState.RUN)
+	if Input.is_action_pressed("jump"):
+		if player.can_double_jump and not player.has_double_jumped:
+			player.jump_buffer_after_dash = true
+			player.jump_buffer_type = 2
 		else:
-			player.change_state(player.PlayerState.MOVE)
+			player.jump_buffer_after_dash = true
+			player.jump_buffer_type = 1
+
+	if player.backstep_timer >= player.backstep_duration:
+		if player.jump_buffer_after_dash:
+			player.jump_buffer_after_dash = false
+			if player.jump_buffer_type == 1:
+				PlayerAirAbilityServiceScript.try_jump(player, true)
+			elif player.jump_buffer_type == 2:
+				PlayerAirAbilityServiceScript.try_double_jump(player, true)
+			return
+		if player.is_on_floor() or player.coyote_time_active:
+			if move_input == 0:
+				player.change_state(player.PlayerState.IDLE)
+			else:
+				player.change_state(player.PlayerState.MOVE)
+		else:
+			if player.velocity.y < 0:
+				player.change_state(player.PlayerState.JUMP)
+			else:
+				player.change_state(player.PlayerState.DOWN)
 
 # 处理基础冲刺状态的速度锁定。
 static func handle_dash_state(player: Node) -> void:
@@ -369,7 +377,12 @@ static func handle_wallgrip_state(player: Node, fixed_delta: float, move_input: 
 	if try_dash(player, dash_just_pressed):
 		return
 
-	if not player.is_touching_wall or player.is_on_floor():
+	if jump_just_pressed:
+		player.start_wall_jump()
+		return
+
+	if not player.is_touching_wall or (player.is_on_floor() and player.wall_grip_floor_lock_timer <= 0.0):
+		player.wall_grip_reverse_timer_node.start(player.wall_grip_reverse_buffer_time)
 		player.exit_wallgrip()
 		return
 
@@ -402,13 +415,6 @@ static func handle_wallgrip_state(player: Node, fixed_delta: float, move_input: 
 		player.velocity.y = player.current_wall_slide_speed
 		player.velocity.x = 0
 
-	if jump_just_pressed:
-		if toward_wall:
-			player.start_wall_jump()
-		else:
-			player.start_normal_jump_from_wall()
-		return
-
 	if PlayerAirAbilityServiceScript.try_double_jump(player, jump_just_pressed):
 		return
 
@@ -423,7 +429,10 @@ static func handle_walljump_state(player: Node, fixed_delta: float, move_input: 
 	player.wall_jump_timer += fixed_delta
 
 	if player.wall_jump_timer < 0.1:
-		player.velocity.x = player.wall_jump_h_speed * -player.wall_direction * player.effective_horizontal_multiplier
+		var wall_jump_direction: int = -player.wall_direction
+		if player.wall_jump_from_buffer and player.wall_jump_buffer_direction != 0:
+			wall_jump_direction = player.wall_jump_buffer_direction
+		player.velocity.x = player.wall_jump_h_speed * wall_jump_direction * player.effective_horizontal_multiplier
 		player.velocity.y = player.wall_jump_v_speed * player.effective_vertical_multiplier
 	else:
 		if move_input != 0:
@@ -470,6 +479,8 @@ static func handle_wall_bump_stun(player: Node, fixed_delta: float) -> void:
 # 尝试从空中直接进入攀墙状态。
 static func try_enter_wallgrip_from_air(player: Node, move_input: float) -> bool:
 	if player.is_on_floor() or not player.wall_grip_unlocked or not player.is_touching_wall:
+		return false
+	if player.wall_grip_reverse_timer_node.time_left > 0:
 		return false
 
 	if player.current_state != player.PlayerState.JUMP and player.current_state != player.PlayerState.DOWN and player.current_state != player.PlayerState.GLIDE and player.current_state != player.PlayerState.WALLJUMP:

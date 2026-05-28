@@ -15,8 +15,7 @@ static func handle_state(player: Node, fixed_delta: float, move_input: float, ju
 		return
 
 	if player.wall_grip_reverse_timer_node.time_left > 0 and jump_just_pressed:
-		player.start_normal_jump_from_wall()
-		player.wall_grip_reverse_timer_node.stop()
+		player.start_wall_jump_from_buffer(move_input)
 		return
 
 	match player.current_state:
@@ -70,7 +69,7 @@ static func handle_run_state(player: Node, _delta: float, move_input: float, jum
 	PlayerMovementServiceScript.handle_run_state(player, _delta, move_input, jump_just_pressed, dash_just_pressed)
 
 static func handle_jump_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, jump_pressed: bool, jump_just_released: bool, dash_just_pressed: bool) -> void:
-	if player.is_on_floor():
+	if player.is_on_floor() and not (player.wall_grip_floor_lock_timer > 0.0 and player.is_touching_wall):
 		player.handle_landing()
 		return
 
@@ -105,7 +104,7 @@ static func handle_jump_state(player: Node, fixed_delta: float, move_input: floa
 		player.change_state(player.PlayerState.DOWN)
 
 static func handle_down_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, jump_pressed: bool, jump_just_released: bool, dash_just_pressed: bool) -> void:
-	if player.is_on_floor():
+	if player.is_on_floor() and not (player.wall_grip_floor_lock_timer > 0.0 and player.is_touching_wall):
 		player.handle_landing()
 		return
 
@@ -191,9 +190,11 @@ static func handle_super_dash_state(player: Node, fixed_delta: float, jump_just_
 		player.velocity = dash_direction * player.super_dash_speed * player.effective_horizontal_multiplier
 
 	player.super_dash_afterimage_timer += fixed_delta
-	if player.super_dash_afterimage_timer >= player._get_afterimage_interval("super_dash"):
-		player.super_dash_afterimage_timer = 0
-		player.create_afterimage(player.PlayerState.SUPERDASH)
+	if player.super_dash_afterimage_timer >= player.super_dash_afterimage_start_delay:
+		var super_dash_interval: float = player._get_afterimage_interval("super_dash")
+		if player.super_dash_afterimage_timer - player.super_dash_afterimage_start_delay >= super_dash_interval:
+			player.super_dash_afterimage_timer = player.super_dash_afterimage_start_delay
+			player.create_afterimage(player.PlayerState.SUPERDASH)
 
 	if player.is_on_wall() or player.is_on_ceiling():
 		CameraShakeManager.shake("x_strong", player.phantom_camera)

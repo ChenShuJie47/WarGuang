@@ -14,22 +14,24 @@ static func handle_afterimages(player: Node, fixed_delta: float) -> void:
 	match player.current_state:
 		player.PlayerState.DASH:
 			player.afterimage_timer += fixed_delta
-			var dash_type = "black_dash" if player.black_dash_unlocked else "dash"
+			var dash_type = "black" if player.black_dash_unlocked else "normal"
 			var dash_interval = player._get_afterimage_interval(dash_type) * player.afterimage_spawn_rate
 			if player.afterimage_timer >= dash_interval:
 				player.afterimage_timer = 0.0
 				if player.black_dash_unlocked:
-					player.create_afterimage(player.PlayerState.DASH, false, "black_dash")
+					player.create_afterimage(player.PlayerState.DASH, false, "black")
 				else:
-					player.create_afterimage(player.PlayerState.DASH, false)
-		player.PlayerState.SUPERDASH:
-			player.super_dash_afterimage_timer += fixed_delta
-			var super_dash_interval = player._get_afterimage_interval("super_dash") * player.afterimage_spawn_rate
-			if player.super_dash_afterimage_timer >= super_dash_interval:
-				player.super_dash_afterimage_timer = 0.0
-				player.create_afterimage(player.PlayerState.SUPERDASH, false)
+					player.create_afterimage(player.PlayerState.DASH, false, "normal")
+		player.PlayerState.BACKSTEP:
+			player.backstep_afterimage_timer += fixed_delta
+			var backstep_interval = player._get_afterimage_interval("advanced") * player.afterimage_spawn_rate
+			if player.backstep_afterimage_timer >= backstep_interval:
+				player.backstep_afterimage_timer = 0.0
+				player.create_afterimage(player.PlayerState.BACKSTEP, false, "advanced")
 		_:
 			player.afterimage_timer = 0.0
+			player.super_dash_afterimage_timer = 0.0
+			player.backstep_afterimage_timer = 0.0
 
 	if player.has_jumpbox_afterimage and player.current_animation == "JUMP2":
 		player.jump2_afterimage_timer += fixed_delta
@@ -42,20 +44,31 @@ static func handle_afterimages(player: Node, fixed_delta: float) -> void:
 		player.jump2_afterimage_timer = 0.0
 		player.clear_jumpbox_afterimage_pool()
 
-static func return_afterimage(_player: Node, afterimage: Node, _type_name: String = "dash") -> void:
+	if player.counter_slow_compensation_active and not player.is_jumpbox_triggered and not player.has_jumpbox_afterimage and player.current_state != player.PlayerState.DASH and player.current_state != player.PlayerState.SUPERDASH and player.current_state != player.PlayerState.BACKSTEP:
+		player.counter_slow_afterimage_timer += fixed_delta
+		var low_interval = player._get_afterimage_interval("low") * player.afterimage_spawn_rate
+		if player.counter_slow_afterimage_timer >= low_interval:
+			player.counter_slow_afterimage_timer = 0.0
+			player.create_afterimage(player.PlayerState.JUMP, false, "low")
+	else:
+		player.counter_slow_afterimage_timer = 0.0
+
+static func return_afterimage(_player: Node, afterimage: Node, _type_name: String = "normal") -> void:
 	if is_instance_valid(afterimage) and afterimage.has_method("return_to_pool"):
 		afterimage.return_to_pool()
 
 static func get_afterimage_type_name(player: Node, state: int, is_jumpbox: bool = false) -> String:
 	match state:
 		player.PlayerState.DASH:
-			return "dash"
+			return "normal"
 		player.PlayerState.SUPERDASH:
-			return "super_dash"
+			return "advanced"
 		player.PlayerState.JUMP:
-			return player.jumpbox_afterimage_type if is_jumpbox else "dash"
+			return player.jumpbox_afterimage_type if is_jumpbox else "normal"
+		player.PlayerState.BACKSTEP:
+			return "advanced"
 		_:
-			return "dash"
+			return "normal"
 
 static func create_afterimage(player: Node, state: int, is_jumpbox: bool = false, custom_type: String = "") -> void:
 	if Engine.get_frames_per_second() < 45:

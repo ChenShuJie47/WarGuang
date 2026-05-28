@@ -10,6 +10,8 @@ static func try_jump(player: Node, jump_just_pressed: bool) -> bool:
 		if jump_just_pressed or player.jump_buffer_timer.time_left > 0:
 			player.velocity.y = player.jump_velocity
 			player.jump_hold_timer = 0.0
+			if player.is_touching_wall and player.wall_grip_unlocked:
+				player.wall_grip_floor_lock_timer = player.wall_grip_floor_lock_time
 			PlayerAirStateServiceScript.apply_first_jump_state(player)
 
 			if player.current_state == player.PlayerState.RUN or (player.coyote_time_active and player.was_running_before_coyote):
@@ -102,15 +104,37 @@ static func start_wall_jump(player: Node) -> void:
 	player.velocity.x = player.wall_jump_h_speed * -player.wall_direction
 	player.wall_jump_timer = 0.0
 	player.wall_jump_hold_timer = 0.0
+	player.wall_jump_from_buffer = false
+	player.wall_jump_buffer_direction = 0
 	player.can_reattach_to_wall = false
+	player.wall_grip_reverse_timer_node.stop()
+	PlayerAirStateServiceScript.apply_wall_jump_ready_state(player)
+	player.change_state(player.PlayerState.WALLJUMP)
+
+## 离墙短窗内的缓冲墙跳处理，方向按触发瞬间的移动/朝向锁定。
+static func start_wall_jump_from_buffer(player: Node, move_input: float) -> void:
+	var buffer_direction: int = 1 if move_input > 0 else -1 if move_input < 0 else (1 if player.is_facing_right else -1)
+	player.velocity.y = player.wall_jump_v_speed
+	player.velocity.x = player.wall_jump_h_speed * buffer_direction
+	player.jump_hold_timer = 0.0
+	player.wall_jump_timer = 0.0
+	player.wall_jump_hold_timer = 0.0
+	player.wall_jump_from_buffer = true
+	player.wall_jump_buffer_direction = buffer_direction
+	player.is_facing_right = buffer_direction > 0
+	player.animated_sprite.flip_h = not player.is_facing_right
+	player.can_reattach_to_wall = false
+	player.wall_grip_reverse_timer_node.stop()
 	PlayerAirStateServiceScript.apply_wall_jump_ready_state(player)
 	player.change_state(player.PlayerState.WALLJUMP)
 
 static func update_wall_detection(player: Node) -> void:
+	if not player.can_reattach_to_wall:
+		player.is_touching_wall = false
+		return
+
 	player.is_touching_wall = false
 	player.wall_direction = 0
-	if not player.can_reattach_to_wall:
-		return
 	if player.left_wall_ray.is_colliding():
 		player.is_touching_wall = true
 		player.wall_direction = -1
@@ -121,6 +145,7 @@ static func update_wall_detection(player: Node) -> void:
 static func start_wallgrip(player: Node) -> void:
 	if player.wall_grip_unlocked and player.is_touching_wall and not player.is_on_floor() and player.can_reattach_to_wall:
 		player.wall_grip_reverse_timer_node.stop()
+		player.wall_grip_floor_lock_timer = player.wall_grip_floor_lock_time
 		player.is_gliding = false
 		player.glide_timer = 0.0
 		player.change_state(player.PlayerState.WALLGRIP)
@@ -166,7 +191,7 @@ static func start_jumpbox_bounce(player: Node, vertical_force: float, trigger_gr
 
 	player.jumpbox_last_bounce_time_ms = Time.get_ticks_msec()
 	player.jumpbox_trigger_grade = "perfect" if trigger_grade == "perfect" else "normal"
-	player.jumpbox_afterimage_type = "jumpbox_perfect" if player.jumpbox_trigger_grade == "perfect" else "jumpbox_normal"
+	player.jumpbox_afterimage_type = "pink" if player.jumpbox_trigger_grade == "perfect" else "normal"
 	player.jumpbox_horizontal_boost_multiplier = float(effect_overrides.get("horizontal_boost_multiplier", 1.0))
 	player.jumpbox_boost_duration_multiplier = float(effect_overrides.get("boost_duration_multiplier", 1.0))
 	player.jumpbox_max_vertical_force_multiplier = float(effect_overrides.get("max_vertical_force_multiplier", 1.0))
@@ -295,7 +320,7 @@ static func clear_jumpbox_effect(player: Node) -> void:
 
 	player.is_jumpbox_triggered = false
 	player.jumpbox_trigger_grade = "normal"
-	player.jumpbox_afterimage_type = "jumpbox_perfect"
+	player.jumpbox_afterimage_type = "pink"
 	player.jumpbox_horizontal_boost_multiplier = 1.0
 	player.jumpbox_boost_duration_multiplier = 1.0
 	player.jumpbox_max_vertical_force_multiplier = 1.0

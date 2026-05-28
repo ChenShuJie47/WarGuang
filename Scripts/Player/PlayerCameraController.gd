@@ -528,7 +528,8 @@ func _update_normal_follow_anchor(fixed_delta: float) -> void:
 		return
 	var focus_offset := _compute_focus_capture_offset(fixed_delta)
 	var desired_offset := focus_offset
-	normal_follow_anchor.global_position = player.global_position + desired_offset
+	var target_position: Vector2 = player.global_position + desired_offset
+	normal_follow_anchor.global_position = Vector2(round(target_position.x), round(target_position.y))
 
 func _compute_focus_capture_offset(fixed_delta: float) -> Vector2:
 	if not focus_capture_enabled:

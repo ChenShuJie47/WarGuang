@@ -108,19 +108,19 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 跳跃设置
 @export_category("跳跃设置")
 ## 跳跃移动速度（像素/秒）
-@export var jump_move_speed: float = 140.0
+@export var jump_move_speed: float = 120.0
 ## 一段跳初始速度
 @export var jump_velocity: float = -120.0
 ## 二段跳初始速度
 @export var double_jump_velocity: float = -80.0
 ## 最大跳跃按住时间（秒）
-@export var max_jump_hold_time: float = 0.25
+@export var max_jump_hold_time: float = 0.3
 ## 跳跃额外速度（长按期间每帧增加）
-@export var jump_hold_boost: float = -35.0
+@export var jump_hold_boost: float = -30.0
 ## 重力
-@export var gravity: float = 1300.0
+@export var gravity: float = 1320.0
 ## 最大下落速度
-@export var max_fall_speed: float = 500.0
+@export var max_fall_speed: float = 540.0
 ## 土狼时间（离开平台后仍可跳跃的时间）
 @export var coyote_time: float = 0.2
 ## 跳跃缓冲时间（提前按跳跃的有效时间）
@@ -133,22 +133,22 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 进入滑翔的初始水平速度
 @export var glide_init_h_speed: float = 0.0
 ## 滑翔目标水平速度
-@export var glide_target_h_speed: float = 180.0
-## 滑翔水平加速度（按住方向键时每秒逼近目标水平速度的最大变化率，单位近似 px/s^2）
+@export var glide_target_h_speed: float = 120.0
+## 滑翔水平加速度（按住方向键时每秒逼近目标水平速度的最大变化率）
 @export var glide_horizontal_acceleration: float = 600.0
-## 滑翔松开方向键时的水平减速（松手后的缓慢衰减速率）
+## 滑翔松开方向键时的水平减速
 @export var glide_release_deceleration: float = 80.0
 ## 滑翔最大下落速度乘数
-@export var glide_max_fall_multiplier: float = 0.3
-## 进入滑翔后的滞空时间（秒）- 期间下落速度上限为 0
+@export var glide_max_fall_multiplier: float = 0.2
+## 进入滑翔后的滞空时间（秒）
 @export var glide_hover_time: float = 0.2
-## 滑翔下落倍率过渡时间（秒）- 进入滑翔后线性增加
+## 滑翔下落倍率过渡时间（秒）
 @export var glide_fall_accel_time: float = 0.8
 
 ## 受伤设置
 @export_category("受伤设置")
 ## 受伤击退速度
-@export var hurt_knockback_speed: float = 100.0
+@export var hurt_knockback_speed: float = 120.0
 ## 受伤僵直时间（秒）
 @export var hurt_stun_time: float = 0.5
 ## 受伤无敌时间（秒）
@@ -156,9 +156,9 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 进入游戏开始时的禁用时间（秒）
 @export var warp_control_lock_time: float = 1.0
 ## 传送伤害飞行峰值速度（像素/秒）
-@export var warp_flight_peak_speed: float = 900.0
+@export var warp_flight_peak_speed: float = 960.0
 ## 传送伤害飞行最低速度（像素/秒）
-@export var warp_flight_min_speed: float = 50.0
+@export var warp_flight_min_speed: float = 60.0
 ## 传送伤害飞行第一段上升距离（像素）
 @export var warp_flight_lift_distance: float = 64.0
 ## 传送伤害飞行第一段上升速度（像素/秒）
@@ -192,19 +192,37 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 冲刺冷却时间（秒）
 @export var dash_cooldown: float = 0.6
 ## 冲刺后惯性初速度
-@export var dash_inertia_speed: float = 100.0
+@export var dash_inertia_speed: float = 120.0
 ## 冲刺后惯性衰减系数 (0-1，越大衰减越快)
 @export var dash_inertia_decay: float = 0.8
+
+@export_category("后撤步设置")
+## 后撤步持续时间（秒）
+@export var backstep_duration: float = 0.16
+## 后撤步移动速度
+@export var backstep_move_speed: float = 360.0
+## 后撤步防反有效窗口（秒）：<=0 时自动使用后撤步持续时间。
+@export var backstep_counter_window: float = 0.12
+## 后撤步成功防反后仍保持无敌的持续时间（秒）。
+@export var backstep_counter_invincible_time: float = 0.3
+## 防反成功后触发的慢动作预设
+@export var backstep_counter_slow_preset: String = "heavy"
+## 防反成功后的背景暗化透明度（0~1）。
+@export var backstep_counter_darken_alpha: float = 0.4
+## 防反暗化淡入淡出时长（秒）。
+@export var backstep_counter_darken_fade_duration: float = 0.1
 
 @export_category("超级冲刺设置")
 ## 超级冲刺充电时间（秒）
 @export var super_dash_charge_time: float = 1.5
 ## 超级冲刺目标速度
-@export var super_dash_speed: float = 550
+@export var super_dash_speed: float = 480
 ## 超级冲刺加速时间（秒）
 @export var super_dash_accel_time: float = 0.6
 ## 超级冲刺输入锁定时间（秒）
 @export var super_dash_input_lock_time: float = 0.2
+## 超级冲刺开始后允许生成残影的延迟时间（秒）
+@export var super_dash_afterimage_start_delay: float = 0.1
 ## 超级冲刺最大持续时间（秒）
 @export var super_dash_max_duration: float = 4
 
@@ -217,19 +235,7 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 撞墙反弹的X轴速度
 @export var wall_bump_rebound_x: float = 220.0
 ## 撞墙反弹的Y轴速度  
-@export var wall_bump_rebound_y: float = -260.0
-
-@export_category("后撤步设置")
-## 后撤步动画时长兜底（秒）：当动画资源缺失时用于状态收束。
-@export var backstep_animation_duration_fallback: float = 0.2
-## 后撤步防反有效窗口兜底（秒）：<=0 时自动使用整段后撤步动画时长。
-@export var backstep_counter_window: float = 0.0
-## 防反成功后触发的慢动作预设
-@export var backstep_counter_slow_preset: String = "heavy"
-## 防反成功后的背景暗化透明度（0~1）。
-@export var backstep_counter_darken_alpha: float = 0.5
-## 防反暗化淡入淡出时长（秒）。
-@export var backstep_counter_darken_fade_duration: float = 0.1
+@export var wall_bump_rebound_y: float = -280.0
 
 ## 奔跑跳跃设置
 @export_category("奔跑跳跃设置")
@@ -267,27 +273,29 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 
 @export_category("攀墙设置")
 ## 攀墙下滑速度（像素/秒）
-@export var wall_slide_speed: float = 160.0
+@export var wall_slide_speed: float = 240.0
 ## 攀墙缓慢下滑速度（像素/秒）
-@export var wall_slide_slow_speed: float = 30.0
+@export var wall_slide_slow_speed: float = 60.0
 ## 按住向墙方向键的静止时间（秒）
 @export var hold_toward_wall_time: float = 0.3
 ## 不按方向键的过渡时间（秒）  
 @export var no_input_time: float = 0.8
-## 攀墙反方向跳跃缓冲时间（秒）
-@export var wall_grip_reverse_buffer_time: float = 0.25
+## 攀墙反方向跳跃缓冲时间（离墙短窗）
+@export var wall_grip_reverse_buffer_time: float = 0.1
+## 攀墙起跳后抑制地面判定的时间（秒）
+@export var wall_grip_floor_lock_time: float = 0.15
 
 @export_category("墙跳设置")
 ## 墙跳水平初速度（离开墙体的水平速度）
-@export var wall_jump_h_speed: float = 520.0
+@export var wall_jump_h_speed: float = 120.0
 ## 墙跳垂直速度
-@export var wall_jump_v_speed: float = -180.0
+@export var wall_jump_v_speed: float = -240.0
 ## 墙跳后重新附着延迟（秒）
 @export var wall_jump_reattach_delay: float = 0.2
 ## 墙跳最大按住时间（秒）
-@export var wall_jump_max_hold_time: float = 0.25
+@export var wall_jump_max_hold_time: float = 0.3
 ## 墙跳额外垂直速度（长按期间每帧增加）
-@export var wall_jump_hold_boost: float = -35.0
+@export var wall_jump_hold_boost: float = -30.0
 
 @export_category("特殊状态设置")
 ## IDLE状态进入SLEEP状态的时间（秒）
@@ -443,12 +451,13 @@ var is_in_special_state = false                 # 标记是否处于特殊状态
 var backstep_direction: int = 0
 var backstep_timer: float = 0.0
 var backstep_counter_consumed: bool = false
+var backstep_afterimage_timer: float = 0.0
 
 ## 攀墙相关
 var is_touching_wall: bool = false              # 标记是否接触到墙壁
 var wall_direction: int = 0                     # 墙壁方向（1=右，-1=左）
 var current_wall_slide_speed: float = 0.0       # 当前墙壁下滑速度
-var wall_grip_reverse_timer_node: Timer         # 反方向跳跃缓冲计时器
+var wall_grip_reverse_timer_node: Timer         # 攀墙离墙短窗/反方向输入缓冲计时器
 var hold_toward_wall_timer: float = 0.0         # 按住向墙方向键的计时器
 var no_input_timer: float = 0.0                 # 不按方向键的计时器
 
@@ -456,6 +465,9 @@ var no_input_timer: float = 0.0                 # 不按方向键的计时器
 var wall_jump_timer: float = 0.0                # 墙跳状态计时器
 var can_reattach_to_wall: bool = true           # 标记是否可以重新附着到墙壁
 var wall_jump_hold_timer: float = 0.0           # 墙跳按住计时器
+var wall_jump_from_buffer: bool = false         # 标记是否为离墙短窗内触发的镜像墙跳
+var wall_jump_buffer_direction: int = 0         # 短窗墙跳触发时锁定的方向
+var wall_grip_floor_lock_timer: float = 0.0     # 攀墙起跳后的地面抑制计时器
 
 ## 特殊状态变量相关
 var sleep_timer: float = 0.0                    # 进入睡眠状态的计时器
@@ -501,7 +513,7 @@ var jumpbox_last_bounce_time_ms: int = -1000000 # 上次接收 JumpBox 弹跳的
 var jump2_boost_initial_speed: float = 0.0      # 二段跳速度加成的初始速度值
 var jump2_boost_target_speed: float = 0.0       # 二段跳速度加成衰减后的目标速度值
 var jumpbox_trigger_grade: String = "normal"   # 当前JumpBox触发等级（normal/perfect）
-var jumpbox_afterimage_type: String = "jumpbox_perfect"
+var jumpbox_afterimage_type: String = "pink"
 var jumpbox_horizontal_boost_multiplier: float = 1.0
 var jumpbox_boost_duration_multiplier: float = 1.0
 var jumpbox_max_vertical_force_multiplier: float = 1.0
@@ -542,7 +554,7 @@ var saved_time_scale: float = 1.0                # 保存的原始时间缩放�
 ## 全局慢动作补偿（用于防反：玩家不被减速）
 var counter_slow_compensation_active: bool = false
 var counter_slow_compensation_end_time: float = -1.0
-## 防反慢动作期间无敌（不触发防反，仅用于成功防反后的衔接免伤）
+## 防反慢动作期间无敌（成功防反后前段时间保留）。
 var counter_slow_invincible_active: bool = false
 var counter_slow_invincible_end_time: float = -1.0
 var counter_slow_afterimage_timer: float = 0.0
@@ -614,16 +626,8 @@ func _physics_process(delta):
 			fixed_delta = min(delta / time_scale_factor, MAX_FRAME_TIME)
 	if counter_slow_invincible_active and current_real_time >= counter_slow_invincible_end_time:
 		counter_slow_invincible_active = false
-	_update_counter_slow_visuals(counter_slow_compensation_active or counter_slow_invincible_active)
+	_update_counter_slow_visuals(counter_slow_compensation_active)
 	_update_counter_slow_animation_speed()
-	if counter_slow_invincible_active:
-		counter_slow_afterimage_timer += fixed_delta
-		var counter_afterimage_interval: float = maxf(_get_afterimage_interval("jumpbox_normal"), 0.01)
-		if counter_slow_afterimage_timer >= counter_afterimage_interval:
-			counter_slow_afterimage_timer = 0.0
-			create_afterimage(PlayerState.BACKSTEP, false, "jumpbox_normal")
-	else:
-		counter_slow_afterimage_timer = 0.0
 	if camera_controller and camera_controller.has_method("physics_process"):
 		camera_controller.physics_process(fixed_delta)
 	else:
@@ -645,6 +649,8 @@ func _physics_process(delta):
 	update_wall_detection()
 	## 更新无敌状态计时
 	PlayerRuntimeTickServiceScript.tick_invincible(self, fixed_delta)
+	## 更新攀墙起跳后的地面抑制计时
+	PlayerRuntimeTickServiceScript.tick_wall_grip_floor_lock(self, fixed_delta)
 	## 更新水中效果和乘数（新增）
 	update_effective_multipliers()
 	## ========== 阶段8：状态处理前的逻辑 ==========
@@ -847,6 +853,10 @@ func start_normal_jump_from_wall():
 func start_wall_jump():
 	PlayerAirAbilityServiceScript.start_wall_jump(self)
 
+## 使用墙跳初速度进行普通一段跳（用于离墙短窗）。
+func start_wall_jump_from_buffer(move_input: float):
+	PlayerAirAbilityServiceScript.start_wall_jump_from_buffer(self, move_input)
+
 func update_wall_detection():
 	PlayerAirAbilityServiceScript.update_wall_detection(self)
 
@@ -872,7 +882,7 @@ func unregister_feedback_hook(event_name: StringName, callback: Callable) -> voi
 func trigger_feedback_event(event_name: StringName, payload: Dictionary = {}) -> void:
 	PlayerFeedbackServiceScript.trigger_feedback_event(self, event_name, payload)
 
-func return_afterimage(afterimage: Node, _type_name: String = "dash"):
+func return_afterimage(afterimage: Node, _type_name: String = "normal"):
 	PlayerFeedbackServiceScript.return_afterimage(self, afterimage, _type_name)
 
 # 新增：根据状态判断残影类型
@@ -936,7 +946,7 @@ func _on_dash_cooldown_timeout():
 	can_dash = true
 
 func _on_wall_grip_reverse_timeout():
-	pass
+	can_reattach_to_wall = true
 
 #endregion
 
@@ -1105,7 +1115,7 @@ func enable_counter_slow_compensation(real_duration: float) -> void:
 	if real_duration <= 0.0:
 		counter_slow_compensation_active = false
 		counter_slow_compensation_end_time = -1.0
-		_update_counter_slow_visuals(counter_slow_invincible_active)
+		_update_counter_slow_visuals(false)
 		return
 	counter_slow_compensation_active = true
 	counter_slow_compensation_end_time = Time.get_unix_time_from_system() + real_duration
@@ -1114,20 +1124,27 @@ func enable_counter_slow_invincibility(real_duration: float) -> void:
 	if real_duration <= 0.0:
 		counter_slow_invincible_active = false
 		counter_slow_invincible_end_time = -1.0
-		_update_counter_slow_visuals(counter_slow_compensation_active)
 		return
 	counter_slow_invincible_active = true
 	counter_slow_invincible_end_time = Time.get_unix_time_from_system() + real_duration
-	_update_counter_slow_visuals(true)
 
 func is_counter_slow_invincible_active() -> bool:
 	if not counter_slow_invincible_active:
 		return false
 	if Time.get_unix_time_from_system() >= counter_slow_invincible_end_time:
 		counter_slow_invincible_active = false
-		_update_counter_slow_visuals(counter_slow_compensation_active)
+		counter_slow_invincible_end_time = -1.0
 		return false
 	return true
+
+func disable_counter_slow_effects() -> void:
+	counter_slow_compensation_active = false
+	counter_slow_compensation_end_time = -1.0
+	counter_slow_invincible_active = false
+	counter_slow_invincible_end_time = -1.0
+	counter_slow_afterimage_timer = 0.0
+	_update_counter_slow_visuals(false)
+	_update_counter_slow_animation_speed()
 
 func _update_counter_slow_animation_speed() -> void:
 	if not is_instance_valid(animated_sprite):
@@ -1222,16 +1239,6 @@ func _resolve_runtime_room_container() -> CanvasItem:
 			return room_container as CanvasItem
 	return null
 
-func get_backstep_animation_duration() -> float:
-	if is_instance_valid(animated_sprite) and animated_sprite.sprite_frames:
-		var frames: SpriteFrames = animated_sprite.sprite_frames
-		if frames.has_animation("BACKSTEP"):
-			var frame_count: int = frames.get_frame_count("BACKSTEP")
-			var fps: float = maxf(frames.get_animation_speed("BACKSTEP"), 0.01)
-			if frame_count > 0:
-				return maxf(float(frame_count) / fps, 0.01)
-	return maxf(backstep_animation_duration_fallback, 0.01)
-
 func is_backstep_counter_window() -> bool:
 	if current_state != PlayerState.BACKSTEP:
 		return false
@@ -1239,7 +1246,7 @@ func is_backstep_counter_window() -> bool:
 		return false
 	var window: float = backstep_counter_window
 	if window <= 0.0:
-		window = get_backstep_animation_duration()
+		window = backstep_duration
 	window = maxf(window, 0.01)
 	return backstep_timer <= window
 

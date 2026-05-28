@@ -58,7 +58,7 @@ extends Node
 
 @export_category("Slow Motion 预设 （medium）")
 ## 中度慢动作 - 持续时间（秒）
-@export var slow_medium_duration: float = 0.8
+@export var slow_medium_duration: float = 0.5
 ## 中度慢动作 - 时间缩放（0.0-1.0，越小越慢）
 @export var slow_medium_time_scale: float = 0.5
 ## 中度慢动作 - 过渡时间（秒）
@@ -66,7 +66,7 @@ extends Node
 
 @export_category("Slow Motion 预设 （heavy）")
 ## 重度慢动作 - 持续时间（秒）
-@export var slow_heavy_duration: float = 0.8
+@export var slow_heavy_duration: float = 0.6
 ## 重度慢动作 - 时间缩放（0.0-1.0，越小越慢）
 @export var slow_heavy_time_scale: float = 0.3
 ## 重度慢动作 - 过渡时间（秒）
@@ -74,7 +74,7 @@ extends Node
 
 @export_category("Slow Motion 预设 （extreme）")
 ## 极限慢动作 - 持续时间（秒）
-@export var slow_extreme_duration: float = 1.0
+@export var slow_extreme_duration: float = 6.0
 ## 极限慢动作 - 时间缩放（0.0-1.0，越小越慢）
 @export var slow_extreme_time_scale: float = 0.2
 ## 极限慢动作 - 过渡时间（秒）
@@ -178,7 +178,7 @@ func start_counter_slow_motion_for_player(player: Node, preset: String = "light"
 	if is_instance_valid(player) and player.has_method("enable_counter_slow_compensation"):
 		player.enable_counter_slow_compensation(real_time_duration + 0.02)
 	if is_instance_valid(player) and player.has_method("enable_counter_slow_invincibility"):
-		player.enable_counter_slow_invincibility(real_time_duration + 0.02)
+		player.enable_counter_slow_invincibility(minf(player.backstep_counter_invincible_time, real_time_duration + 0.02))
 	start_slow_motion(duration, time_scale, transition)
 
 ## 自定义参数 Slow Motion

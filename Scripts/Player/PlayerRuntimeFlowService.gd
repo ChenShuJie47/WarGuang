@@ -106,6 +106,8 @@ static func finalize_post_physics(player: Node, fixed_delta: float, move_input: 
 	if move_input != 0 and player.current_state != player.PlayerState.DIE and player.current_state != player.PlayerState.HURT and player.current_state != player.PlayerState.DASH and player.current_state != player.PlayerState.BACKSTEP:
 		if player.current_state == player.PlayerState.SUPERDASHSTART or player.current_state == player.PlayerState.SUPERDASH:
 			pass
+		elif player.current_state == player.PlayerState.WALLJUMP and player.wall_jump_from_buffer and player.wall_jump_timer < 0.1:
+			pass
 		else:
 			player.is_facing_right = move_input > 0
 			player.animated_sprite.flip_h = not player.is_facing_right

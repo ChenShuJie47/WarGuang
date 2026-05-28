@@ -28,6 +28,8 @@ static func take_damage_with_type(player: Node, damage_source_position: Vector2,
 	if player.PlayerDamageFlowServiceScript.should_ignore_damage(player):
 		return
 
+	player.PlayerDamageFlowServiceScript.clear_counter_slow_for_damage(player)
+
 	if player.camera_damage_debug:
 		player._debug_camera_damage_state("before_damage", damage_source_position, damage, damage_type, knockback_force)
 
