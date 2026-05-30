@@ -140,7 +140,6 @@ static func update_coyote_time(player: Node) -> void:
 		player.can_glide = false
 		player.is_double_jump_holding = false
 		player.was_gliding_before_dash = false
-		player.wall_grip_reverse_timer_node.stop()
 		player.jump_buffer_after_dash = false
 		player.jump_buffer_type = 0
 	player.was_on_floor = player.is_on_floor()
@@ -381,13 +380,17 @@ static func handle_wallgrip_state(player: Node, fixed_delta: float, move_input: 
 		player.start_wall_jump()
 		return
 
-	if not player.is_touching_wall or (player.is_on_floor() and player.wall_grip_floor_lock_timer <= 0.0):
-		player.wall_grip_reverse_timer_node.start(player.wall_grip_reverse_buffer_time)
+	var locked_wall_direction: int = player.wall_grip_direction if player.wall_grip_direction != 0 else player.wall_direction
+
+	if not player.is_touching_wall:
 		player.exit_wallgrip()
 		return
 
-	var toward_wall = (move_input > 0 and player.wall_direction == 1) or (move_input < 0 and player.wall_direction == -1)
-	var away_from_wall = (move_input < 0 and player.wall_direction == 1) or (move_input > 0 and player.wall_direction == -1)
+	if locked_wall_direction == 0:
+		locked_wall_direction = player.wall_direction
+
+	var toward_wall = (move_input > 0 and locked_wall_direction == 1) or (move_input < 0 and locked_wall_direction == -1)
+	var away_from_wall = (move_input < 0 and locked_wall_direction == 1) or (move_input > 0 and locked_wall_direction == -1)
 
 	if player.is_invincible and player.current_state == player.PlayerState.HURT:
 		player.exit_wallgrip()
@@ -405,7 +408,8 @@ static func handle_wallgrip_state(player: Node, fixed_delta: float, move_input: 
 			player.current_wall_slide_speed = player.wall_slide_slow_speed * player.effective_gravity_multiplier
 		player.velocity.x = 0
 	elif away_from_wall:
-		player.wall_grip_reverse_timer_node.start(player.wall_grip_reverse_buffer_time)
+		# 按离墙方向键：立即脱离攀墙（不再使用延迟）
+		player.wall_jump_escape_buffer_timer = player.wall_jump_escape_buffer_time
 		player.exit_wallgrip()
 		return
 	else:
@@ -429,9 +433,7 @@ static func handle_walljump_state(player: Node, fixed_delta: float, move_input: 
 	player.wall_jump_timer += fixed_delta
 
 	if player.wall_jump_timer < 0.1:
-		var wall_jump_direction: int = -player.wall_direction
-		if player.wall_jump_from_buffer and player.wall_jump_buffer_direction != 0:
-			wall_jump_direction = player.wall_jump_buffer_direction
+		var wall_jump_direction: int = -player.wall_grip_direction if player.wall_grip_direction != 0 else -player.wall_direction
 		player.velocity.x = player.wall_jump_h_speed * wall_jump_direction * player.effective_horizontal_multiplier
 		player.velocity.y = player.wall_jump_v_speed * player.effective_vertical_multiplier
 	else:
@@ -447,7 +449,8 @@ static func handle_walljump_state(player: Node, fixed_delta: float, move_input: 
 
 	if player.wall_jump_timer >= player.wall_jump_reattach_delay:
 		player.can_reattach_to_wall = true
-		if player.is_touching_wall and move_input != 0 and sign(move_input) == player.wall_direction:
+		var locked_wall_direction: int = player.wall_grip_direction if player.wall_grip_direction != 0 else player.wall_direction
+		if player.is_touching_wall and move_input != 0 and sign(move_input) == locked_wall_direction:
 			player.start_wallgrip()
 		elif player.velocity.y >= 0:
 			player.change_state(player.PlayerState.DOWN)
@@ -479,8 +482,6 @@ static func handle_wall_bump_stun(player: Node, fixed_delta: float) -> void:
 # 尝试从空中直接进入攀墙状态。
 static func try_enter_wallgrip_from_air(player: Node, move_input: float) -> bool:
 	if player.is_on_floor() or not player.wall_grip_unlocked or not player.is_touching_wall:
-		return false
-	if player.wall_grip_reverse_timer_node.time_left > 0:
 		return false
 
 	if player.current_state != player.PlayerState.JUMP and player.current_state != player.PlayerState.DOWN and player.current_state != player.PlayerState.GLIDE and player.current_state != player.PlayerState.WALLJUMP:

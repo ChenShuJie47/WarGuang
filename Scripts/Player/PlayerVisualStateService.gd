@@ -1,6 +1,21 @@
 extends RefCounted
 class_name PlayerVisualStateService
 
+static func _tween_point_light_to_ratio(player: Node, target_ratio: float, duration: float) -> void:
+	if not player.point_light:
+		return
+	var clamped_ratio: float = clampf(target_ratio, 0.0, 1.0)
+	var target_energy: float = player.point_light_base_energy * clamped_ratio
+	if player.point_light_tween and player.point_light_tween.is_valid():
+		player.point_light_tween.kill()
+	if duration <= 0.0:
+		player.point_light.energy = target_energy
+		return
+	player.point_light_tween = player.create_tween()
+	player.point_light_tween.set_trans(Tween.TRANS_SINE)
+	player.point_light_tween.set_ease(Tween.EASE_OUT)
+	player.point_light_tween.tween_property(player.point_light, "energy", target_energy, duration)
+
 static func find_vignette_effect(player: Node) -> void:
 	# 等待一帧确保所有节点都加载完成
 	await player.get_tree().process_frame
@@ -28,6 +43,7 @@ static func start_vignette_hurt(player: Node) -> void:
 		# 从VignetteEffect获取持续时间
 		var duration = player.vignette_effect.hurt_darkness_duration
 		player.vignette_effect.start_hurt_effect(duration)
+		_tween_point_light_to_ratio(player, 0.25, minf(duration, 0.2))
 		# 设置定时器，在受伤效果持续时间结束后处理
 		player.get_tree().create_timer(duration).timeout.connect(
 			func():
@@ -38,8 +54,10 @@ static func start_vignette_hurt(player: Node) -> void:
 
 static func start_vignette_shadow_hurt(player: Node) -> void:
 	if player.vignette_effect and player.vignette_effect.has_method("start_shadow_hurt_effect"):
+		player.is_hurt_visual_active = true
 		var duration = player.vignette_effect.hurt_shadow_darkness_duration
 		player.vignette_effect.start_shadow_hurt_effect(duration)
+		_tween_point_light_to_ratio(player, 0.25, minf(duration, 0.2))
 
 		player.get_tree().create_timer(duration).timeout.connect(
 			func():
@@ -55,6 +73,7 @@ static func on_hurt_duration_end(player: Node, _is_shadow_hurt: bool) -> void:
 			if player.vignette_effect.current_effect == "hurt":
 				player.vignette_effect.transition_hurt_to_low_health(transition_time)
 				player.is_low_health_effect_active = true
+				_tween_point_light_to_ratio(player, 0.5, transition_time)
 			else:
 				trigger_low_health_effect(player)
 		else:
@@ -62,10 +81,14 @@ static func on_hurt_duration_end(player: Node, _is_shadow_hurt: bool) -> void:
 				var fallback_transition_time = player.vignette_effect.hurt_to_low_health_transition
 				player.vignette_effect.transition_to_low_health(fallback_transition_time)
 				player.is_low_health_effect_active = true
+				_tween_point_light_to_ratio(player, 0.5, fallback_transition_time)
 	else:
 		if player.vignette_effect.has_method("transition_to_normal"):
 			var normal_transition_time = player.vignette_effect.hurt_to_normal_transition
 			player.vignette_effect.transition_to_normal(normal_transition_time)
+			_tween_point_light_to_ratio(player, 1.0, normal_transition_time)
+		else:
+			_tween_point_light_to_ratio(player, 1.0, 0.15)
 
 	player.is_hurt_visual_active = false
 
@@ -82,6 +105,10 @@ static func trigger_low_health_effect(player: Node) -> void:
 
 	if player.vignette_effect and player.vignette_effect.has_method("start_low_health_effect"):
 		player.vignette_effect.start_low_health_effect()
+	var low_health_transition_time: float = 0.5
+	if player.vignette_effect:
+		low_health_transition_time = player.vignette_effect.low_health_to_normal_transition
+	_tween_point_light_to_ratio(player, 0.5, low_health_transition_time)
 
 static func clear_low_health_effect(player: Node) -> void:
 	if not player.is_low_health_effect_active:
@@ -91,6 +118,9 @@ static func clear_low_health_effect(player: Node) -> void:
 	if player.vignette_effect and player.vignette_effect.has_method("transition_low_health_to_normal"):
 		var transition_time = player.vignette_effect.low_health_to_normal_transition
 		player.vignette_effect.transition_low_health_to_normal(transition_time)
+		_tween_point_light_to_ratio(player, 1.0, transition_time)
+	else:
+		_tween_point_light_to_ratio(player, 1.0, 0.15)
 
 static func update_low_health_effect(player: Node) -> void:
 	if not player.player_ui:
@@ -111,9 +141,17 @@ static func interrupt_hurt_visual_effect(player: Node) -> void:
 	player.hurt_visual_timer = 0
 	if player.vignette_effect and player.vignette_effect.has_method("clear_all_effects"):
 		player.vignette_effect.clear_all_effects()
+	if player.is_low_health_effect_active:
+		_tween_point_light_to_ratio(player, 0.5, 0.15)
+	else:
+		_tween_point_light_to_ratio(player, 1.0, 0.15)
 
 static func interrupt_hurt_visual_only(player: Node) -> void:
 	player.is_hurt_visual_active = false
 	player.hurt_visual_timer = 0
 	if player.vignette_effect and player.vignette_effect.has_method("clear_hurt_effect_only"):
 		player.vignette_effect.clear_hurt_effect_only()
+	if player.is_low_health_effect_active:
+		_tween_point_light_to_ratio(player, 0.5, 0.15)
+	else:
+		_tween_point_light_to_ratio(player, 1.0, 0.15)

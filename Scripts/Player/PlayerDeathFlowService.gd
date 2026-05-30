@@ -87,8 +87,10 @@ static func reset_player_for_respawn(player: Node) -> void:
 	player.is_respawn_invincible = true
 	player.is_invincible = true
 	player.animated_sprite.modulate.a = 1.0
+	if player.point_light_tween and player.point_light_tween.is_valid():
+		player.point_light_tween.kill()
 	if player.point_light:
-		player.point_light.energy = 1.0
+		player.point_light.energy = player.point_light_base_energy
 
 	if player.is_low_health_effect_active:
 		player._clear_low_health_effect()

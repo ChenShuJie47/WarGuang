@@ -76,6 +76,8 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var phantom_camera = $PhantomCamera2D
 @onready var point_light = $PointLight2D  
+var point_light_base_energy: float = 1.0      # 角色点光源的基准能量，用于受伤/死亡后恢复
+var point_light_tween: Tween = null           # 角色点光源过渡Tween，用于受伤、低血量与恢复切换
 @onready var timers = $Timers
 @onready var camera_controller = $PlayerCameraController
 ## 统一管理跑步、冲刺、受伤、落地等一次性与周期性特效。
@@ -127,6 +129,8 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 @export var jump_buffer_time: float = 0.15
 ## 触发落地抖动的最小DOWN状态持续时间
 @export var land_shake_min_down_time: float = 1.2
+## 触发落地抖动后的操控禁用时间（秒）
+@export var land_shake_control_lock_time: float = 0.9
 
 ## 滑翔设置
 @export_category("滑翔设置")
@@ -184,11 +188,11 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 冲刺设置
 @export_category("冲刺设置")
 ## 冲刺速度
-@export var dash_speed: float = 420.0
+@export var dash_speed: float = 480.0
 ## 冲刺持续时间（秒）
-@export var dash_duration: float = 0.2
+@export var dash_duration: float = 0.18
 ## 黑色冲刺持续时间（秒）
-@export var black_dash_duration: float = 0.23
+@export var black_dash_duration: float = 0.2
 ## 冲刺冷却时间（秒）
 @export var dash_cooldown: float = 0.6
 ## 冲刺后惯性初速度
@@ -198,11 +202,11 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 
 @export_category("后撤步设置")
 ## 后撤步持续时间（秒）
-@export var backstep_duration: float = 0.16
+@export var backstep_duration: float = 0.14
 ## 后撤步移动速度
 @export var backstep_move_speed: float = 360.0
 ## 后撤步防反有效窗口（秒）：<=0 时自动使用后撤步持续时间。
-@export var backstep_counter_window: float = 0.12
+@export var backstep_counter_window: float = 0.1
 ## 后撤步成功防反后仍保持无敌的持续时间（秒）。
 @export var backstep_counter_invincible_time: float = 0.3
 ## 防反成功后触发的慢动作预设
@@ -231,20 +235,20 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 快速按键时间窗口（秒）
 @export var quick_tap_time_window: float = 0.3
 ## 奔跑撞墙后的操控禁用时间（秒）
-@export var run_wall_bump_control_lock_time: float = 0.35
+@export var run_wall_bump_control_lock_time: float = 0.6
 ## 撞墙反弹的X轴速度
-@export var wall_bump_rebound_x: float = 220.0
+@export var wall_bump_rebound_x: float = 180.0
 ## 撞墙反弹的Y轴速度  
-@export var wall_bump_rebound_y: float = -280.0
+@export var wall_bump_rebound_y: float = -240.0
 
 ## 奔跑跳跃设置
 @export_category("奔跑跳跃设置")
 ## 奔跑跳跃水平速度加成
 @export var run_jump_boost_speed: float = 120.0
 ## 奔跑跳跃加成持续时间（秒）
-@export var run_jump_boost_duration: float = 0.6
+@export var run_jump_boost_duration: float = 0.3
 ## 奔跑跳跃衰减时间（秒）
-@export var run_jump_decay_time: float = 0.3
+@export var run_jump_decay_time: float = 0.6
 
 ## 二段跳旋转设置
 @export_category("二段跳旋转设置")
@@ -255,17 +259,17 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 水平速度加成（增加到基础移动速度上）
 @export var jump2_horizontal_boost: float = 240.0
 ## 水平速度加成持续时间（秒）
-@export var jump2_boost_duration: float = 0.6
+@export var jump2_boost_duration: float = 0.3
 ## 水平速度加成减少过渡时间（秒）
-@export var jump2_boost_decrease_time: float = 0.3
+@export var jump2_boost_decrease_time: float = 0.6
 ## 打断 JumpBox 持续二段跳后的垂直速度衰减时间（秒）
 @export var jump2_interrupt_decay_time: float = 0.1
 ## JumpBox 重新触发锁定时间（毫秒）
 @export var jumpbox_retrigger_lock_ms: int = 120
 ## JumpBox 单次触发的最大上抛力（像素/秒）
-@export var jumpbox_max_vertical_force: float = 600.0
+@export var jumpbox_max_vertical_force: float = 720.0
 ## JumpBox 水平速度上限（像素/秒）
-@export var jumpbox_max_horizontal_speed: float = 420.0
+@export var jumpbox_max_horizontal_speed: float = 480.0
 
 @export_category("调试")
 ## 记录受伤后相机跳位相关状态
@@ -280,12 +284,10 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 @export var hold_toward_wall_time: float = 0.3
 ## 不按方向键的过渡时间（秒）  
 @export var no_input_time: float = 0.8
-## 攀墙反方向跳跃缓冲时间（离墙短窗）
-@export var wall_grip_reverse_buffer_time: float = 0.1
-## 攀墙起跳后抑制地面判定的时间（秒）
-@export var wall_grip_floor_lock_time: float = 0.15
 
 @export_category("墙跳设置")
+## 离墙后触发墙跳的缓冲窗口（秒）
+@export var wall_jump_escape_buffer_time: float = 0.12  
 ## 墙跳水平初速度（离开墙体的水平速度）
 @export var wall_jump_h_speed: float = 120.0
 ## 墙跳垂直速度
@@ -456,8 +458,9 @@ var backstep_afterimage_timer: float = 0.0
 ## 攀墙相关
 var is_touching_wall: bool = false              # 标记是否接触到墙壁
 var wall_direction: int = 0                     # 墙壁方向（1=右，-1=左）
+var wall_grip_direction: int = 0                # 当前攀墙/墙跳锁定的墙面方向（1=右，-1=左）
 var current_wall_slide_speed: float = 0.0       # 当前墙壁下滑速度
-var wall_grip_reverse_timer_node: Timer         # 攀墙离墙短窗/反方向输入缓冲计时器
+##（已移除）延迟脱离计时器与挂起标志
 var hold_toward_wall_timer: float = 0.0         # 按住向墙方向键的计时器
 var no_input_timer: float = 0.0                 # 不按方向键的计时器
 
@@ -465,9 +468,9 @@ var no_input_timer: float = 0.0                 # 不按方向键的计时器
 var wall_jump_timer: float = 0.0                # 墙跳状态计时器
 var can_reattach_to_wall: bool = true           # 标记是否可以重新附着到墙壁
 var wall_jump_hold_timer: float = 0.0           # 墙跳按住计时器
-var wall_jump_from_buffer: bool = false         # 标记是否为离墙短窗内触发的镜像墙跳
-var wall_jump_buffer_direction: int = 0         # 短窗墙跳触发时锁定的方向
-var wall_grip_floor_lock_timer: float = 0.0     # 攀墙起跳后的地面抑制计时器
+var wall_jump_escape_buffer_timer: float = 0.0  # 离墙后可触发墙跳的短缓冲计时器
+var wall_jump_fx_flip_h: bool = false           # 墙跳纹理特效使用的镜像方向锁
+var wall_jump_fx_flip_h_locked: bool = false     # 墙跳纹理特效镜像方向是否已锁定
 
 ## 特殊状态变量相关
 var sleep_timer: float = 0.0                    # 进入睡眠状态的计时器
@@ -624,6 +627,9 @@ func _physics_process(delta):
 		else:
 			var time_scale_factor: float = maxf(Engine.time_scale, 0.01)
 			fixed_delta = min(delta / time_scale_factor, MAX_FRAME_TIME)
+	elif TimerControlManager and TimerControlManager.has_method("is_slow_motion_active") and TimerControlManager.is_slow_motion_active():
+		var time_scale_factor: float = maxf(Engine.time_scale, 0.01)
+		fixed_delta = min(delta / time_scale_factor, MAX_FRAME_TIME)
 	if counter_slow_invincible_active and current_real_time >= counter_slow_invincible_end_time:
 		counter_slow_invincible_active = false
 	_update_counter_slow_visuals(counter_slow_compensation_active)
@@ -649,8 +655,8 @@ func _physics_process(delta):
 	update_wall_detection()
 	## 更新无敌状态计时
 	PlayerRuntimeTickServiceScript.tick_invincible(self, fixed_delta)
-	## 更新攀墙起跳后的地面抑制计时
-	PlayerRuntimeTickServiceScript.tick_wall_grip_floor_lock(self, fixed_delta)
+	## 更新离墙后的墙跳意图缓冲
+	PlayerRuntimeTickServiceScript.tick_wall_jump_escape_buffer(self, fixed_delta)
 	## 更新水中效果和乘数（新增）
 	update_effective_multipliers()
 	## ========== 阶段8：状态处理前的逻辑 ==========
@@ -853,10 +859,6 @@ func start_normal_jump_from_wall():
 func start_wall_jump():
 	PlayerAirAbilityServiceScript.start_wall_jump(self)
 
-## 使用墙跳初速度进行普通一段跳（用于离墙短窗）。
-func start_wall_jump_from_buffer(move_input: float):
-	PlayerAirAbilityServiceScript.start_wall_jump_from_buffer(self, move_input)
-
 func update_wall_detection():
 	PlayerAirAbilityServiceScript.update_wall_detection(self)
 
@@ -945,8 +947,9 @@ func _on_dash_duration_timeout():
 func _on_dash_cooldown_timeout():
 	can_dash = true
 
-func _on_wall_grip_reverse_timeout():
-	can_reattach_to_wall = true
+func _on_wall_grip_detach_timeout():
+	# 已移除：延迟脱离行为，超时回调保留为空占位（不执行逻辑）
+	return
 
 #endregion
 

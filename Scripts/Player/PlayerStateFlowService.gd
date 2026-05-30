@@ -2,6 +2,7 @@ extends RefCounted
 class_name PlayerStateFlowService
 
 const PlayerMovementServiceScript = preload("res://Scripts/Player/PlayerMovementService.gd")
+const PlayerAirAbilityServiceScript = preload("res://Scripts/Player/PlayerAirAbilityService.gd")
 const PlayerAirMotionServiceScript = preload("res://Scripts/Player/PlayerAirMotionService.gd")
 const PlayerGlideStateServiceScript = preload("res://Scripts/Player/PlayerGlideStateService.gd")
 const PlayerHurtStateServiceScript = preload("res://Scripts/Player/PlayerHurtStateService.gd")
@@ -12,10 +13,6 @@ const PlayerObserveStateServiceScript = preload("res://Scripts/Player/PlayerObse
 # 统一空中转墙附着入口，避免 JUMP/DOWN/GLIDE/WALLJUMP 判定分散。
 static func handle_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, jump_pressed: bool, jump_just_released: bool, dash_just_pressed: bool) -> void:
 	if _try_enter_wallgrip_from_air(player, move_input):
-		return
-
-	if player.wall_grip_reverse_timer_node.time_left > 0 and jump_just_pressed:
-		player.start_wall_jump_from_buffer(move_input)
 		return
 
 	match player.current_state:
@@ -69,7 +66,7 @@ static func handle_run_state(player: Node, _delta: float, move_input: float, jum
 	PlayerMovementServiceScript.handle_run_state(player, _delta, move_input, jump_just_pressed, dash_just_pressed)
 
 static func handle_jump_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, jump_pressed: bool, jump_just_released: bool, dash_just_pressed: bool) -> void:
-	if player.is_on_floor() and not (player.wall_grip_floor_lock_timer > 0.0 and player.is_touching_wall):
+	if player.is_on_floor():
 		player.handle_landing()
 		return
 
@@ -78,6 +75,9 @@ static func handle_jump_state(player: Node, fixed_delta: float, move_input: floa
 
 	if player.is_jumpbox_continuous_jump and player.jump2_interrupt_enabled and jump_just_pressed:
 		player.start_jump_interrupt()
+		return
+
+	if PlayerAirAbilityServiceScript.try_wall_jump_from_escape_buffer(player, jump_just_pressed):
 		return
 
 	if player.is_touching_wall and player.wall_grip_unlocked and move_input != 0 and sign(move_input) == player.wall_direction:
@@ -104,7 +104,7 @@ static func handle_jump_state(player: Node, fixed_delta: float, move_input: floa
 		player.change_state(player.PlayerState.DOWN)
 
 static func handle_down_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, jump_pressed: bool, jump_just_released: bool, dash_just_pressed: bool) -> void:
-	if player.is_on_floor() and not (player.wall_grip_floor_lock_timer > 0.0 and player.is_touching_wall):
+	if player.is_on_floor():
 		player.handle_landing()
 		return
 
@@ -113,6 +113,9 @@ static func handle_down_state(player: Node, fixed_delta: float, move_input: floa
 
 	if player.is_jumpbox_continuous_jump and player.jump2_interrupt_enabled and jump_just_pressed:
 		player.start_jump_interrupt()
+		return
+
+	if PlayerAirAbilityServiceScript.try_wall_jump_from_escape_buffer(player, jump_just_pressed):
 		return
 
 	if player.is_touching_wall and player.wall_grip_unlocked and move_input != 0 and sign(move_input) == player.wall_direction:

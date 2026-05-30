@@ -26,7 +26,7 @@ size = Vector2(643, 363)
 [node name="Room1" type="Node2D" node_paths=PackedStringArray("room_bounds")]
 script = ExtResource("1_am8bf")
 room_bgm = "BGM1"
-room_color = Color(0.09385047, 0.11063736, 0.10015421, 1)
+room_color = Color(0.39118537, 0.39118534, 0.39118534, 1)
 room_bounds = NodePath("RoomBounds1")
 
 [node name="Background" type="Sprite2D" parent="."]
@@ -70,10 +70,10 @@ damage_type = 3
 [node name="JumpBoxs" type="Node2D" parent="."]
 
 [node name="JumpBox" parent="JumpBoxs" instance=ExtResource("8_t3bp4")]
-position = Vector2(1888, -824)
+position = Vector2(1196, -84)
 
 [node name="JumpBox2" parent="JumpBoxs" instance=ExtResource("8_t3bp4")]
-position = Vector2(2232, -1304)
+position = Vector2(1239, -200)
 
 [node name="NPCs" type="Node2D" parent="."]
 

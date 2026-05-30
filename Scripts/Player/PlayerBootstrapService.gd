@@ -4,6 +4,8 @@ class_name PlayerBootstrapService
 static func initialize_on_ready(player: Node) -> void:
 	if not player.is_in_group("player"):
 		player.add_to_group("player")
+	if player.point_light:
+		player.point_light_base_energy = player.point_light.energy
 
 	player.dash_unlocked = Global.unlocked_abilities.get("dash", false)
 	player.double_jump_unlocked = Global.unlocked_abilities.get("double_jump", false)
@@ -36,32 +38,32 @@ static func initialize_timers(player: Node) -> void:
 	player.coyote_timer = Timer.new()
 	player.coyote_timer.name = "CoyoteTimer"
 	player.coyote_timer.one_shot = true
+	player.coyote_timer.ignore_time_scale = true
 	player.timers.add_child(player.coyote_timer)
 	player.coyote_timer.timeout.connect(player._on_coyote_timeout)
 
 	player.jump_buffer_timer = Timer.new()
 	player.jump_buffer_timer.name = "JumpBufferTimer"
 	player.jump_buffer_timer.one_shot = true
+	player.jump_buffer_timer.ignore_time_scale = true
 	player.timers.add_child(player.jump_buffer_timer)
 	player.jump_buffer_timer.timeout.connect(player._on_jump_buffer_timeout)
 
 	player.dash_duration_timer_node = Timer.new()
 	player.dash_duration_timer_node.name = "DashDurationTimer"
 	player.dash_duration_timer_node.one_shot = true
+	player.dash_duration_timer_node.ignore_time_scale = true
 	player.timers.add_child(player.dash_duration_timer_node)
 	player.dash_duration_timer_node.timeout.connect(player._on_dash_duration_timeout)
 
 	player.dash_cooldown_timer_node = Timer.new()
 	player.dash_cooldown_timer_node.name = "DashCooldownTimer"
 	player.dash_cooldown_timer_node.one_shot = true
+	player.dash_cooldown_timer_node.ignore_time_scale = true
 	player.timers.add_child(player.dash_cooldown_timer_node)
 	player.dash_cooldown_timer_node.timeout.connect(player._on_dash_cooldown_timeout)
 
-	player.wall_grip_reverse_timer_node = Timer.new()
-	player.wall_grip_reverse_timer_node.name = "WallGripReverseTimer"
-	player.wall_grip_reverse_timer_node.one_shot = true
-	player.timers.add_child(player.wall_grip_reverse_timer_node)
-	player.wall_grip_reverse_timer_node.timeout.connect(player._on_wall_grip_reverse_timeout)
+	# 已移除：不再创建 WallGripReverseTimer（按离墙延迟脱离逻辑已取消）
 
 static func initialize_player_ui(player: Node) -> void:
 	var ui_nodes = player.get_tree().get_nodes_in_group("player_ui")

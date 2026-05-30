@@ -18,8 +18,15 @@ static func tick_invincible(player: Node, fixed_delta: float) -> void:
 		player.is_invincible = false
 		player.animated_sprite.modulate.a = 1.0
 
-# 更新攀墙起跳后的地面抑制计时器。
-static func tick_wall_grip_floor_lock(player: Node, fixed_delta: float) -> void:
-	if player.wall_grip_floor_lock_timer <= 0.0:
+## 更新离墙后的墙跳意图缓冲。
+static func tick_wall_jump_escape_buffer(player: Node, fixed_delta: float) -> void:
+	if player.wall_jump_escape_buffer_timer <= 0.0:
 		return
-	player.wall_grip_floor_lock_timer = maxf(player.wall_grip_floor_lock_timer - fixed_delta, 0.0)
+	if player.is_on_floor():
+		player.wall_jump_escape_buffer_timer = 0.0
+		player.wall_grip_direction = 0
+		return
+	player.wall_jump_escape_buffer_timer = maxf(player.wall_jump_escape_buffer_timer - fixed_delta, 0.0)
+
+# 更新攀墙起跳后的地面抑制计时器。
+## 已移除：攀墙起跳后贴地抑制计时器逻辑，不再需要计时器更新

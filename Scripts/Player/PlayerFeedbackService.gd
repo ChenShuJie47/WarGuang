@@ -22,6 +22,8 @@ static func handle_afterimages(player: Node, fixed_delta: float) -> void:
 					player.create_afterimage(player.PlayerState.DASH, false, "black")
 				else:
 					player.create_afterimage(player.PlayerState.DASH, false, "normal")
+		player.PlayerState.SUPERDASH:
+			pass
 		player.PlayerState.BACKSTEP:
 			player.backstep_afterimage_timer += fixed_delta
 			var backstep_interval = player._get_afterimage_interval("advanced") * player.afterimage_spawn_rate

@@ -10,8 +10,7 @@ static func try_jump(player: Node, jump_just_pressed: bool) -> bool:
 		if jump_just_pressed or player.jump_buffer_timer.time_left > 0:
 			player.velocity.y = player.jump_velocity
 			player.jump_hold_timer = 0.0
-			if player.is_touching_wall and player.wall_grip_unlocked:
-				player.wall_grip_floor_lock_timer = player.wall_grip_floor_lock_time
+			# 已移除：不再设置攀墙起跳后的贴地抑制计时器
 			PlayerAirStateServiceScript.apply_first_jump_state(player)
 
 			if player.current_state == player.PlayerState.RUN or (player.coyote_time_active and player.was_running_before_coyote):
@@ -51,15 +50,25 @@ static func try_double_jump(player: Node, jump_just_pressed: bool) -> bool:
 	return false
 
 static func handle_jump2_rotation(player: Node, fixed_delta: float) -> void:
-	if player.warp_flight_active:
-		return
-	if player.current_state != player.PlayerState.DASH and player.current_state != player.PlayerState.HURT and player.current_state != player.PlayerState.DIE and player.has_double_jumped and player.is_double_jump_holding:
+	if player.current_animation == "JUMP2" and player.has_double_jumped and player.is_double_jump_holding:
 		player.jump2_rotation += player.jump2_rotation_speed * fixed_delta
 		player.animated_sprite.rotation_degrees = fmod(player.jump2_rotation, 360)
 	else:
 		if player.animated_sprite.rotation_degrees != 0:
 			player.animated_sprite.rotation_degrees = 0
 			player.jump2_rotation = 0
+
+## 尝试把离墙后的短缓冲跳跃结算为墙跳。
+static func try_wall_jump_from_escape_buffer(player: Node, jump_just_pressed: bool) -> bool:
+	if not jump_just_pressed:
+		return false
+	if player.wall_jump_escape_buffer_timer <= 0.0 or player.wall_grip_direction == 0:
+		return false
+	if player.is_on_floor() or player.coyote_time_active:
+		return false
+	_start_wall_jump_from_direction(player, player.wall_grip_direction)
+	player.wall_jump_escape_buffer_timer = 0.0
+	return true
 
 static func can_accept_jumpbox_bounce(player: Node) -> bool:
 	if player.is_dying or player.current_state == player.PlayerState.DIE:
@@ -83,6 +92,7 @@ static func handle_landing(player: Node) -> void:
 	if player.current_state == player.PlayerState.DOWN:
 		if player.down_state_entry_time >= player.land_shake_min_down_time:
 			CameraShakeManager.shake("y_strong", player.phantom_camera)
+			player.lock_control(maxf(player.land_shake_control_lock_time, 0.0), "land_shake")
 	var move_input_ground = player.get_resolved_horizontal_input() if player.has_method("get_resolved_horizontal_input") else Input.get_axis("left", "right")
 	if move_input_ground == 0:
 		player.change_state(player.PlayerState.IDLE)
@@ -96,35 +106,27 @@ static func start_normal_jump_from_wall(player: Node) -> void:
 	player.velocity.y = player.jump_velocity
 	player.jump_hold_timer = 0.0
 	PlayerAirStateServiceScript.apply_wall_jump_ready_state(player)
+	player.wall_jump_escape_buffer_timer = 0.0
 	player.exit_wallgrip()
 	player.change_state(player.PlayerState.JUMP)
 
 static func start_wall_jump(player: Node) -> void:
-	player.velocity.y = player.wall_jump_v_speed
-	player.velocity.x = player.wall_jump_h_speed * -player.wall_direction
-	player.wall_jump_timer = 0.0
-	player.wall_jump_hold_timer = 0.0
-	player.wall_jump_from_buffer = false
-	player.wall_jump_buffer_direction = 0
-	player.can_reattach_to_wall = false
-	player.wall_grip_reverse_timer_node.stop()
-	PlayerAirStateServiceScript.apply_wall_jump_ready_state(player)
-	player.change_state(player.PlayerState.WALLJUMP)
+	_start_wall_jump_from_direction(player, player.wall_grip_direction if player.wall_grip_direction != 0 else player.wall_direction)
 
-## 离墙短窗内的缓冲墙跳处理，方向按触发瞬间的移动/朝向锁定。
-static func start_wall_jump_from_buffer(player: Node, move_input: float) -> void:
-	var buffer_direction: int = 1 if move_input > 0 else -1 if move_input < 0 else (1 if player.is_facing_right else -1)
+## 统一的墙跳起跳入口，避免墙面方向在不同入口中被重新计算。
+static func _start_wall_jump_from_direction(player: Node, wall_direction: int) -> void:
+	var locked_wall_direction: int = wall_direction
+	if locked_wall_direction == 0:
+		locked_wall_direction = player.wall_direction
+	if locked_wall_direction == 0:
+		locked_wall_direction = -1 if player.is_facing_right else 1
+	player.wall_grip_direction = locked_wall_direction
 	player.velocity.y = player.wall_jump_v_speed
-	player.velocity.x = player.wall_jump_h_speed * buffer_direction
-	player.jump_hold_timer = 0.0
+	player.velocity.x = player.wall_jump_h_speed * -locked_wall_direction
 	player.wall_jump_timer = 0.0
 	player.wall_jump_hold_timer = 0.0
-	player.wall_jump_from_buffer = true
-	player.wall_jump_buffer_direction = buffer_direction
-	player.is_facing_right = buffer_direction > 0
-	player.animated_sprite.flip_h = not player.is_facing_right
 	player.can_reattach_to_wall = false
-	player.wall_grip_reverse_timer_node.stop()
+	player.wall_jump_escape_buffer_timer = 0.0
 	PlayerAirStateServiceScript.apply_wall_jump_ready_state(player)
 	player.change_state(player.PlayerState.WALLJUMP)
 
@@ -133,21 +135,28 @@ static func update_wall_detection(player: Node) -> void:
 		player.is_touching_wall = false
 		return
 
-	player.is_touching_wall = false
-	player.wall_direction = 0
+	var detected_wall_direction: int = 0
 	if player.left_wall_ray.is_colliding():
-		player.is_touching_wall = true
-		player.wall_direction = -1
+		detected_wall_direction = -1
 	elif player.right_wall_ray.is_colliding():
-		player.is_touching_wall = true
-		player.wall_direction = 1
+		detected_wall_direction = 1
+
+	player.is_touching_wall = detected_wall_direction != 0
+	if detected_wall_direction != 0:
+		if player.current_state == player.PlayerState.WALLGRIP or player.current_state == player.PlayerState.WALLJUMP:
+			player.wall_direction = player.wall_grip_direction if player.wall_grip_direction != 0 else detected_wall_direction
+		else:
+			player.wall_direction = detected_wall_direction
+	elif player.current_state != player.PlayerState.WALLGRIP and player.current_state != player.PlayerState.WALLJUMP:
+		player.wall_direction = 0
 
 static func start_wallgrip(player: Node) -> void:
 	if player.wall_grip_unlocked and player.is_touching_wall and not player.is_on_floor() and player.can_reattach_to_wall:
-		player.wall_grip_reverse_timer_node.stop()
-		player.wall_grip_floor_lock_timer = player.wall_grip_floor_lock_time
+		# 延迟脱离与贴地抑制已移除
 		player.is_gliding = false
 		player.glide_timer = 0.0
+		player.wall_grip_direction = player.wall_direction
+		player.wall_jump_escape_buffer_timer = 0.0
 		player.change_state(player.PlayerState.WALLGRIP)
 		player.velocity.y = 0
 		player.velocity.x = 0
@@ -160,6 +169,11 @@ static func start_wallgrip(player: Node) -> void:
 
 static func exit_wallgrip(player: Node) -> void:
 	if player.current_state == player.PlayerState.WALLGRIP:
+		# 离开攀墙时锁定当前朝向用于墙跳纹理特效，避免后续朝向变化影响 FX
+		if is_instance_valid(player) and is_instance_valid(player.animated_sprite):
+			player.wall_jump_fx_flip_h = player.animated_sprite.flip_h
+			player.wall_jump_fx_flip_h_locked = true
+
 		if player.velocity.y >= 0:
 			player.change_state(player.PlayerState.DOWN)
 		else:

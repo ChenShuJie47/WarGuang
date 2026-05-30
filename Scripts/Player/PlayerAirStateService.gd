@@ -10,6 +10,8 @@ static func apply_first_jump_state(player: Node) -> void:
 	player.can_glide = false
 	player.is_double_jump_holding = false
 	player.was_gliding_before_dash = false
+	player.wall_jump_escape_buffer_timer = 0.0
+	player.wall_grip_direction = 0
 
 # 进入二段跳时启用滑翔能力并锁定二段跳标记。
 static func apply_double_jump_state(player: Node, compensation_used: bool) -> void:
@@ -18,6 +20,7 @@ static func apply_double_jump_state(player: Node, compensation_used: bool) -> vo
 	player.can_double_jump = false
 	player.can_glide = true
 	player.is_double_jump_holding = true
+	player.wall_jump_escape_buffer_timer = 0.0
 	if compensation_used:
 		player.compensation_jump_used = true
 
@@ -42,6 +45,9 @@ static func apply_landing_state(player: Node) -> void:
 	player.is_jump_interrupt_decaying = false
 	player.can_glide = false
 	player.was_gliding_before_dash = false
+	player.wall_jump_escape_buffer_timer = 0.0
+	player.wall_grip_direction = 0
+	player.wall_jump_fx_flip_h_locked = false
 
 # 传送重置时清空所有空气相关能力状态。
 static func apply_warp_reset_air_state(player: Node) -> void:
@@ -53,3 +59,6 @@ static func apply_warp_reset_air_state(player: Node) -> void:
 	player.can_glide = false
 	player.is_double_jump_holding = false
 	player.was_gliding_before_dash = false
+	player.wall_jump_escape_buffer_timer = 0.0
+	player.wall_grip_direction = 0
+	player.wall_jump_fx_flip_h_locked = false

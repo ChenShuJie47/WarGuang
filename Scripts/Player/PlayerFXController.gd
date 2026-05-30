@@ -78,9 +78,15 @@ func _on_state_changed(payload: Dictionary) -> void:
 		player.PlayerState.DASH:
 			_spawn_fx("DashAnchor", _get_fx_world_position("DashAnchor"), player.animated_sprite.flip_h)
 		player.PlayerState.JUMP:
+			if player.has_double_jumped:
+				return
 			_spawn_fx("JumpAnchor", _get_fx_world_position("JumpAnchor"), player.animated_sprite.flip_h)
 		player.PlayerState.WALLJUMP:
-			_spawn_fx("WallJumpAnchor", _get_fx_world_position("WallJumpAnchor"), player.animated_sprite.flip_h)
+			var wall_jump_flip_h: bool = player.animated_sprite.flip_h
+			if player.wall_jump_fx_flip_h_locked:
+				wall_jump_flip_h = player.wall_jump_fx_flip_h
+				player.wall_jump_fx_flip_h_locked = false
+			_spawn_fx("WallJumpAnchor", _get_fx_world_position("WallJumpAnchor"), wall_jump_flip_h)
 		player.PlayerState.HURT:
 			_spawn_fx("HurtAnchor", _get_fx_world_position("HurtAnchor"), player.animated_sprite.flip_h)
 

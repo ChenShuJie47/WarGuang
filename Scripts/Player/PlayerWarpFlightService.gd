@@ -38,9 +38,11 @@ static func begin_flight(player: Node) -> void:
 	player.is_double_jump_holding = true
 	player.has_double_jumped = true
 	player.animated_sprite.modulate.a = 0.5
+	if player.point_light_tween and player.point_light_tween.is_valid():
+		player.point_light_tween.kill()
 	if player.point_light:
 		player.point_light.visible = true
-		player.point_light.energy = 0.5
+		player.point_light.energy = player.point_light_base_energy * 0.5
 
 # 每帧更新飞行，返回 true 表示飞行结束。
 static func update_flight(player: Node, fixed_delta: float) -> bool:
@@ -53,7 +55,6 @@ static func update_flight(player: Node, fixed_delta: float) -> bool:
 		player.current_animation = "JUMP2"
 		player.animated_sprite.play("JUMP2")
 	player.animated_sprite.modulate.a = 0.5
-	player.animated_sprite.rotation_degrees = fmod(player.animated_sprite.rotation_degrees + player.jump2_rotation_speed * fixed_delta, 360.0)
 
 	if player.warp_flight_phase == PHASE_LIFT:
 		if _move_to_point(player, player.warp_flight_lift_target_position, player.warp_flight_lift_speed, safe_delta, player.warp_flight_arrive_epsilon):

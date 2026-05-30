@@ -23,12 +23,14 @@ static func handle_die_state(player: Node, fixed_delta: float) -> void:
 
 	if player.animated_sprite.animation != "DIE":
 		player.animated_sprite.play("DIE")
+	if player.point_light_tween and player.point_light_tween.is_valid():
+		player.point_light_tween.kill()
 
 	if player.die_timer > 0.0:
 		var progress: float = player.die_timer / player.die_animation_time
 		player.animated_sprite.modulate.a = 0.5 * progress
 		if player.point_light:
-			player.point_light.energy = 1.0 * progress
+			player.point_light.energy = player.point_light_base_energy * progress
 		return
 
 	player.animated_sprite.modulate.a = 0.0

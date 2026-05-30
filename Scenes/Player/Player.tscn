@@ -1,4 +1,4 @@
-[gd_scene load_steps=146 format=3 uid="uid://dwj2ydwabq3n0"]
+[gd_scene load_steps=144 format=3 uid="uid://dwj2ydwabq3n0"]
 
 [ext_resource type="Script" uid="uid://b641fcmvm5n4c" path="res://Scripts/Player/Player.gd" id="1_kyqiw"]
 [ext_resource type="PackedScene" uid="uid://dq4jgo8v4l7kq" path="res://Scenes/Instances/Afterimage.tscn" id="2_t26db"]
@@ -508,10 +508,6 @@ region = Rect2(64, 128, 32, 32)
 atlas = ExtResource("8_epg6k")
 region = Rect2(96, 128, 32, 32)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_nojrp"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(128, 128, 32, 32)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_xmomh"]
 atlas = ExtResource("8_i5acl")
 region = Rect2(160, 128, 32, 32)
@@ -519,10 +515,6 @@ region = Rect2(160, 128, 32, 32)
 [sub_resource type="AtlasTexture" id="AtlasTexture_s3fhb"]
 atlas = ExtResource("8_i5acl")
 region = Rect2(192, 128, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_o7dio"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(224, 128, 32, 32)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_jbabp"]
 animations = [{
@@ -1016,16 +1008,10 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_nojrp")
-}, {
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_xmomh")
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_s3fhb")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_o7dio")
 }],
 "loop": false,
 "name": &"WALLJUMP",
@@ -1054,7 +1040,6 @@ script = ExtResource("7_fx_controller")
 fx_frames = ExtResource("8_player_fx_frames")
 
 [node name="RunAnchor" type="Node2D" parent="PlayerFXController"]
-position = Vector2(2, -4)
 
 [node name="DashAnchor" type="Node2D" parent="PlayerFXController"]
 
@@ -1063,7 +1048,6 @@ position = Vector2(2, -4)
 [node name="LandAnchor" type="Node2D" parent="PlayerFXController"]
 
 [node name="WallJumpAnchor" type="Node2D" parent="PlayerFXController"]
-position = Vector2(7, 3)
 
 [node name="HurtAnchor" type="Node2D" parent="PlayerFXController"]
 
@@ -1091,7 +1075,7 @@ occluder_light_mask = 0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_jbabp")
-animation = &"LOOKDOWN"
+animation = &"WALLJUMP"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visibility_layer = 63

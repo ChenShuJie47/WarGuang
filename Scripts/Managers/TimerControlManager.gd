@@ -229,7 +229,8 @@ func stop_slow_motion() -> void:
 		restore_transition
 	).set_trans(Tween.TRANS_SINE)
 
-# ==================== 内部实现 ====================
+func is_slow_motion_active() -> bool:
+	return _is_slow_motion_active
 
 func _process_hit_stop(_delta):
 	if not _is_hit_stop_active:
