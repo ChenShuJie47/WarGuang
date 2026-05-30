@@ -169,6 +169,8 @@ static func start_wallgrip(player: Node) -> void:
 
 static func exit_wallgrip(player: Node) -> void:
 	if player.current_state == player.PlayerState.WALLGRIP:
+		if not player.is_on_floor() and player.wall_grip_direction != 0 and player.wall_jump_escape_buffer_time > 0.0:
+			player.wall_jump_escape_buffer_timer = player.wall_jump_escape_buffer_time
 		# 离开攀墙时锁定当前朝向用于墙跳纹理特效，避免后续朝向变化影响 FX
 		if is_instance_valid(player) and is_instance_valid(player.animated_sprite):
 			player.wall_jump_fx_flip_h = player.animated_sprite.flip_h

@@ -44,14 +44,13 @@ script = ExtResource("18_iaaki")
 position = Vector2(-810, -13)
 
 [node name="Room2" parent="RoomContainer" instance=ExtResource("4_mvl1i")]
-position = Vector2(7978, 1140)
+position = Vector2(6713, -174)
 
 [node name="Room3" parent="RoomContainer" instance=ExtResource("5_545fw")]
-position = Vector2(-1487, 1876)
+position = Vector2(-3071, -47)
 
 [node name="RoomDream10" parent="RoomContainer" instance=ExtResource("6_rbrij")]
-position = Vector2(-52, 2253)
-room_color = Color(0.9884812, 0.6002661, 0.71938556, 0.64705884)
+position = Vector2(-404, 1679)
 
 [node name="Player" parent="." instance=ExtResource("1_wdg0h")]
 position = Vector2(27, -2218)

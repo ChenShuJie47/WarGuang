@@ -483,6 +483,8 @@ static func handle_wall_bump_stun(player: Node, fixed_delta: float) -> void:
 static func try_enter_wallgrip_from_air(player: Node, move_input: float) -> bool:
 	if player.is_on_floor() or not player.wall_grip_unlocked or not player.is_touching_wall:
 		return false
+	if player.wall_jump_escape_buffer_timer > 0.0:
+		return false
 
 	if player.current_state != player.PlayerState.JUMP and player.current_state != player.PlayerState.DOWN and player.current_state != player.PlayerState.GLIDE and player.current_state != player.PlayerState.WALLJUMP:
 		return false

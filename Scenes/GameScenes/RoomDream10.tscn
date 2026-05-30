@@ -14,7 +14,6 @@
 [node name="RoomDream10" type="Node2D" node_paths=PackedStringArray("room_bounds")]
 script = ExtResource("1_83itb")
 room_id = "RoomDream10"
-room_color = Color(0.88235295, 0.60784316, 1, 1)
 room_bounds = NodePath("RoomBounds10")
 
 [node name="Background" type="Sprite2D" parent="."]

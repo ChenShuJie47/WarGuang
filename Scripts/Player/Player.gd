@@ -45,6 +45,7 @@ const PlayerAnimationServiceScript = preload("res://Scripts/Player/PlayerAnimati
 const PlayerGlideStateServiceScript = preload("res://Scripts/Player/PlayerGlideStateService.gd")
 const PlayerRuntimeTickServiceScript = preload("res://Scripts/Player/PlayerRuntimeTickService.gd")
 const PlayerRuntimeFlowServiceScript = preload("res://Scripts/Player/PlayerRuntimeFlowService.gd")
+const PlayerEdgeCorrectionServiceScript = preload("res://Scripts/Player/PlayerEdgeCorrectionService.gd")
 const PlayerBootstrapServiceScript = preload("res://Scripts/Player/PlayerBootstrapService.gd")
 const PlayerAbilityServiceScript = preload("res://Scripts/Player/PlayerAbilityService.gd")
 const PlayerWarpFlowServiceScript = preload("res://Scripts/Player/PlayerWarpFlowService.gd")
@@ -93,9 +94,9 @@ var point_light_tween: Tween = null           # 角色点光源过渡Tween，用
 ## 移动设置
 @export_category("移动设置")
 ## 基础移动速度（像素/秒）
-@export var base_move_speed: float = 120.0
+@export var base_move_speed: float = 90.0
 ## 奔跑移动速度（像素/秒）
-@export var run_move_speed: float = 240.0
+@export var run_move_speed: float = 180.0
 ## 地面加速度 (0-1，越大加速越快)
 @export var ground_acceleration: float = 0.7
 ## 地面减速度 (0-1，越大减速越快)
@@ -318,6 +319,20 @@ var point_light_tween: Tween = null           # 角色点光源过渡Tween，用
 @export_category("Hit Stop 设置")
 ## 是否启用Hit Stop
 @export var hit_stop_enabled: bool = true
+
+@export_category("边缘修正设置")
+## 跳跃边缘修正的单步偏移（像素）
+@export var jump_edge_correction_step: float = 0.5
+## 跳跃边缘修正的最大尝试次数
+@export var jump_edge_correction_steps: int = 6
+## 墙跳边缘修正的单步偏移（像素）
+@export var wall_jump_edge_correction_step: float = 0.3
+## 墙跳边缘修正的最大尝试次数
+@export var wall_jump_edge_correction_steps: int = 5
+## 冲刺边缘修正的单步偏移（像素）
+@export var dash_edge_correction_step: float = 0.4
+## 冲刺边缘修正的最大尝试次数
+@export var dash_edge_correction_steps: int = 6
 
 #endregion
 
@@ -686,6 +701,8 @@ func _physics_process(delta):
 	## 应用重力（除了冲刺和受伤状态）
 	if current_state != PlayerState.DASH and current_state != PlayerState.HURT:
 		apply_gravity(fixed_delta)
+	## 应用跳跃和冲刺边缘校正
+	PlayerEdgeCorrectionServiceScript.apply_edge_correction(self, fixed_delta)
 	## 移动玩家
 	var counter_move_scale: float = 1.0
 	if counter_slow_compensation_active:

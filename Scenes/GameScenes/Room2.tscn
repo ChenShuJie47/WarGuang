@@ -1,7 +1,6 @@
-[gd_scene load_steps=14 format=4 uid="uid://dbiq0bp6upwiq"]
+[gd_scene load_steps=13 format=4 uid="uid://dbiq0bp6upwiq"]
 
 [ext_resource type="Script" uid="uid://driejj5w0waqn" path="res://Scripts/GameScenes/Room.gd" id="1_exdrf"]
-[ext_resource type="Texture2D" uid="uid://lv2f6kd1slvx" path="res://Assets/Textures/UIs/SceneUIs/3.png" id="2_3br1t"]
 [ext_resource type="TileSet" uid="uid://bk5rjrfis3j5e" path="res://Assets/Textures/Tiles/基础瓦片示范.tres" id="3_3br1t"]
 [ext_resource type="PackedScene" uid="uid://c7552ukdc1li7" path="res://Scenes/GameScenes/Door.tscn" id="4_h7qsl"]
 [ext_resource type="PackedScene" uid="uid://bjlvqrcplff4s" path="res://Scenes/NPCs/ManiacNPC.tscn" id="6_2hr80"]
@@ -28,7 +27,6 @@ room_bounds = NodePath("RoomBounds2")
 [node name="Background" type="Sprite2D" parent="."]
 position = Vector2(1100, -275)
 scale = Vector2(9, 6)
-texture = ExtResource("2_3br1t")
 region_enabled = true
 region_rect = Rect2(256, 144, 256, 144)
 
