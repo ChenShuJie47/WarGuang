@@ -1,4 +1,4 @@
-[gd_scene load_steps=132 format=3 uid="uid://dwj2ydwabq3n0"]
+[gd_scene load_steps=131 format=3 uid="uid://dwj2ydwabq3n0"]
 
 [ext_resource type="Script" uid="uid://b641fcmvm5n4c" path="res://Scripts/Player/Player.gd" id="1_kyqiw"]
 [ext_resource type="PackedScene" uid="uid://dq4jgo8v4l7kq" path="res://Scenes/Instances/Afterimage.tscn" id="2_t26db"]
@@ -163,10 +163,6 @@ region = Rect2(224, 192, 32, 32)
 [sub_resource type="AtlasTexture" id="AtlasTexture_1nex2"]
 atlas = ExtResource("8_i5acl")
 region = Rect2(0, 224, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_tgfvv"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(32, 224, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_yi34y"]
 atlas = ExtResource("8_i5acl")
@@ -610,12 +606,6 @@ animations = [{
 "texture": SubResource("AtlasTexture_1nex2")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_tgfvv")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_yi34y")
-}, {
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_yi34y")
 }],
 "loop": false,
@@ -1002,7 +992,7 @@ occluder_light_mask = 0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_jbabp")
-animation = &"SUPERDASHEND"
+animation = &"LOOKUP"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visibility_layer = 63

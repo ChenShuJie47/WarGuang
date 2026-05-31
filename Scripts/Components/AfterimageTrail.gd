@@ -40,7 +40,7 @@ class AfterimageConfig:
 @export var normal_fade_scale_effect: bool = true
 @export var normal_move_distance: float = 40.0
 
-## 高级残影配置：超级冲刺引用。
+## 高级残影配置：超级冲刺、后撤步引用。
 @export_group("高级残影配置")
 @export var advanced_color: Color = Color.from_rgba8(250, 250, 250, 255)
 @export var advanced_lifetime: float = 0.4

@@ -11,6 +11,8 @@ class_name PlayerFXController
 @export var super_dash_deceleration_interval: float = 0.3
 ## 超级冲刺特效的根节点层级偏移。
 @export var fx_z_index_offset: int = 1
+## 奔跑特效周期播放间隔，周期性单播，不循环。
+@export var run_interval: float = 0.2
 
 ## 当前绑定的玩家节点。
 var player: Player = null
@@ -20,6 +22,10 @@ var super_dash_timer: float = 0.0
 var super_dash_started: bool = false
 ## 标记当前是否处于超级冲刺减速期 FX 节奏。
 var super_dash_was_decelerating: bool = false
+## 跑步特效周期计时器
+var run_timer: float = 0.0
+## 标记跑步周期 FX 是否已经启动（用于避免重复首帧）
+var run_started: bool = false
 
 ## 跑步特效锚点节点。
 @onready var run_anchor: Node2D = get_node_or_null("RunAnchor")
@@ -58,6 +64,20 @@ func setup(player_ref: Player) -> void:
 func _process(delta: float) -> void:
 	if not is_instance_valid(player) or fx_frames == null:
 		return
+	# 跑步周期性特效：与超级冲刺相似的周期性单帧生成
+	if is_instance_valid(player) and player.current_state == player.PlayerState.RUN:
+		# 当进入跑步态时，_on_state_changed 会触发一次首帧；run_started 用于防止重复首帧
+		if not run_started:
+			run_started = true
+			run_timer = 0.0
+		else:
+			run_timer += delta
+			if run_timer >= run_interval:
+				run_timer = 0.0
+				_spawn_fx("RunAnchor", _get_fx_world_position("RunAnchor"), player.animated_sprite.flip_h)
+	else:
+		run_timer = 0.0
+		run_started = false
 	if player.current_state == player.PlayerState.SUPERDASH:
 		var is_decelerating: bool = player.super_dash_deceleration_timer > 0.0
 		if is_decelerating != super_dash_was_decelerating:
@@ -87,6 +107,9 @@ func _on_state_changed(payload: Dictionary) -> void:
 	match to_state:
 		player.PlayerState.RUN:
 			_spawn_fx("RunAnchor", _get_fx_world_position("RunAnchor"), player.animated_sprite.flip_h)
+			# 标记跑步周期已启动，避免 _process 中重复触发首帧
+			run_started = true
+			run_timer = 0.0
 		player.PlayerState.DASH:
 			_spawn_fx("DashAnchor", _get_fx_world_position("DashAnchor"), player.animated_sprite.flip_h)
 		player.PlayerState.JUMP:
