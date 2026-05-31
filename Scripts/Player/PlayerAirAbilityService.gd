@@ -3,6 +3,7 @@ class_name PlayerAirAbilityService
 
 # 复用空气状态工具，保证跳跃、二段跳与滑翔状态切换一致。
 const PlayerAirStateServiceScript = preload("res://Scripts/Player/PlayerAirStateService.gd")
+const PlayerRuntimeFlowServiceScript = preload("res://Scripts/Player/PlayerRuntimeFlowService.gd")
 
 # 尝试执行一段跳。
 static func try_jump(player: Node, jump_just_pressed: bool) -> bool:
@@ -89,18 +90,31 @@ static func _apply_jumpbox_horizontal_speed(player: Node, base_speed: float, dir
 
 static func handle_landing(player: Node) -> void:
 	PlayerAirStateServiceScript.apply_landing_state(player)
+	var land_shake_triggered: bool = false
 	if player.current_state == player.PlayerState.DOWN:
 		if player.down_state_entry_time >= player.land_shake_min_down_time:
 			CameraShakeManager.shake("y_strong", player.phantom_camera)
 			player.lock_control(maxf(player.land_shake_control_lock_time, 0.0), "land_shake")
+			land_shake_triggered = true
 	var move_input_ground = player.get_resolved_horizontal_input() if player.has_method("get_resolved_horizontal_input") else Input.get_axis("left", "right")
 	if move_input_ground == 0:
 		player.change_state(player.PlayerState.IDLE)
 	else:
-		if player.is_running:
+		# 奔跑保持条件：来自奔跑离地跟踪、全程条件有效、落地无抖动、落地输入方向与跟踪方向一致。
+		if player.airborne_run_keep_active and player.airborne_run_keep_valid and not land_shake_triggered and sign(move_input_ground) == player.airborne_run_keep_direction:
 			player.change_state(player.PlayerState.RUN)
+			# 续接原有奔跑触发链：不改触发规则，只在本次合法保持成功时续接 run_ready。
+			player.is_run_ready = true
+			player.run_direction = player.airborne_run_keep_direction
+			player.is_running = true
 		else:
-			player.change_state(player.PlayerState.MOVE)
+			if player.is_running:
+				player.change_state(player.PlayerState.RUN)
+			else:
+				player.change_state(player.PlayerState.MOVE)
+
+	# 落地后清空本次空中奔跑保持跟踪。
+	PlayerRuntimeFlowServiceScript.clear_airborne_run_keep_tracking(player)
 
 static func start_normal_jump_from_wall(player: Node) -> void:
 	player.velocity.y = player.jump_velocity
@@ -193,6 +207,8 @@ static func start_glide(player: Node) -> void:
 	player.glide_direction = 1 if player.is_facing_right else -1
 	player.velocity.x = 0.0
 	player.velocity.y = 0
+	# 滑翔会主动打断“奔跑离地保持”链路：否则它会把 RUN 一路带到落地。
+	PlayerRuntimeFlowServiceScript.clear_airborne_run_keep_tracking(player)
 	player.change_state(player.PlayerState.GLIDE)
 
 # 退出滑翔状态时回到跳跃或下落流程。

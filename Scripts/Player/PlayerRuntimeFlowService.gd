@@ -84,6 +84,32 @@ static func collect_input_snapshot(player: Node) -> Dictionary:
 		"dash_just_pressed": dash_just_pressed
 	}
 
+# 清空奔跑离地保持链路。
+static func clear_airborne_run_keep_tracking(player: Node) -> void:
+	player.airborne_run_keep_active = false
+	player.airborne_run_keep_valid = false
+	player.airborne_run_keep_direction = 0
+
+# 启动奔跑离地保持链路。
+static func start_airborne_run_keep_tracking(player: Node, direction: int) -> void:
+	if direction == 0:
+		clear_airborne_run_keep_tracking(player)
+		return
+	player.airborne_run_keep_active = true
+	player.airborne_run_keep_valid = true
+	player.airborne_run_keep_direction = direction
+
+# 更新奔跑离地保持链路。
+static func update_airborne_run_keep_tracking(player: Node, move_input: float) -> void:
+	if not player.airborne_run_keep_active or not player.airborne_run_keep_valid:
+		return
+	if move_input == 0 or sign(move_input) != player.airborne_run_keep_direction:
+		player.airborne_run_keep_valid = false
+		return
+	var keep_speed_threshold: float = maxf(player.run_jump_keep_min_horizontal_speed, 0.0)
+	if player.velocity.x * player.airborne_run_keep_direction <= keep_speed_threshold:
+		player.airborne_run_keep_valid = false
+
 # 处理物理后阶段（地面状态、土狼时间、视觉与朝向）。
 static func finalize_post_physics(player: Node, fixed_delta: float, move_input: float, previous_was_on_floor: bool) -> void:
 	player.was_on_floor = player.is_on_floor()
@@ -97,6 +123,18 @@ static func finalize_post_physics(player: Node, fixed_delta: float, move_input: 
 	if previous_was_on_floor and not player.was_on_floor and player.velocity.y >= 0 and not player.is_jumping:
 		player.coyote_time_active = true
 		player.coyote_timer.start(player.coyote_time)
+
+	# 奔跑离地连续性跟踪：仅在“奔跑离地”时启动；空中每帧验证“同向按住 + 同向非零速度”。
+	if previous_was_on_floor and not player.was_on_floor:
+		var leave_direction: int = sign(move_input)
+		var from_running_ground: bool = player.current_state == player.PlayerState.RUN or player.is_run_jumping or player.was_running_before_coyote
+		if from_running_ground and leave_direction != 0:
+			start_airborne_run_keep_tracking(player, leave_direction)
+		else:
+			clear_airborne_run_keep_tracking(player)
+
+	if not player.was_on_floor:
+		update_airborne_run_keep_tracking(player, move_input)
 
 	player.update_coyote_time()
 	player.update_animation()

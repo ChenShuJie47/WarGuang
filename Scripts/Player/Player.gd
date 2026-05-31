@@ -250,6 +250,8 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 @export var run_jump_boost_duration: float = 0.3
 ## 奔跑跳跃衰减时间（秒）
 @export var run_jump_decay_time: float = 0.6
+## 奔跑保持判定所需的最小正向水平速度（像素/秒），必须大于该值才算有效
+@export var run_jump_keep_min_horizontal_speed: float = 10.0
 
 ## 二段跳旋转设置
 @export_category("二段跳旋转设置")
@@ -451,6 +453,10 @@ var is_run_jumping: bool = false                # 标记是否正在进行奔跑
 var run_jump_timer: float = 0.0                 # 奔跑跳跃速度加成计时器
 var run_jump_original_direction: int = 0        # 奔跑跳跃原始方向
 var is_wall_bump_stun: bool = false             # 标记是否处于撞墙僵直状态
+## 奔跑落地保持相关：仅用于“奔跑离地后空中连续性满足条件”时落地恢复 RUN。
+var airborne_run_keep_active: bool = false      # 当前是否处于奔跑离地后的连续性跟踪阶段
+var airborne_run_keep_valid: bool = false       # 离地到落地期间是否持续满足“同向按住 + 同向非零速度”
+var airborne_run_keep_direction: int = 0        # 跟踪方向（1=右，-1=左）
 
 ## 冲刺相关
 var can_dash: bool = true                       # 标记当前是否可以冲刺
