@@ -1,10 +1,15 @@
 extends RefCounted
 class_name PlayerGlideStateService
 
+const PlayerMovementServiceScript = preload("res://Scripts/Player/PlayerMovementService.gd")
+
 # 处理滑翔状态：直接水平加速 + 起始滞空 + 线性下落倍率过渡。
 static func handle_state(player: Node, fixed_delta: float, move_input: float, jump_pressed: bool, dash_just_pressed: bool) -> void:
 	# 冲刺检测（最高优先级，可打断滑翔）
 	if player.try_dash(dash_just_pressed):
+		return
+
+	if PlayerMovementServiceScript.try_start_wallgrip_from_air(player, move_input):
 		return
 
 	# 松开跳跃键时退出滑翔

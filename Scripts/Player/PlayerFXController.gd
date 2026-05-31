@@ -3,8 +3,12 @@ class_name PlayerFXController
 
 ## 单次特效使用的 SpriteFrames（Inspector 拖拽设置）。
 @export var fx_frames: SpriteFrames
+
+@export_category("周期性特效设置")
 ## 超级冲刺特效的播放间隔，周期性单播，不循环。
 @export var super_dash_interval: float = 0.15
+## 超级冲刺减速期间特效的播放间隔，周期性单播，不循环。
+@export var super_dash_deceleration_interval: float = 0.3
 ## 超级冲刺特效的根节点层级偏移。
 @export var fx_z_index_offset: int = 1
 
@@ -14,6 +18,8 @@ var player: Player = null
 var super_dash_timer: float = 0.0
 ## 标记超级冲刺周期 FX 是否已经发出第一帧。
 var super_dash_started: bool = false
+## 标记当前是否处于超级冲刺减速期 FX 节奏。
+var super_dash_was_decelerating: bool = false
 
 ## 跑步特效锚点节点。
 @onready var run_anchor: Node2D = get_node_or_null("RunAnchor")
@@ -53,16 +59,22 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(player) or fx_frames == null:
 		return
 	if player.current_state == player.PlayerState.SUPERDASH:
+		var is_decelerating: bool = player.super_dash_deceleration_timer > 0.0
+		if is_decelerating != super_dash_was_decelerating:
+			super_dash_timer = 0.0
+		super_dash_was_decelerating = is_decelerating
 		super_dash_timer += delta
+		var current_interval: float = super_dash_deceleration_interval if is_decelerating else super_dash_interval
 		if not super_dash_started:
 			super_dash_started = true
 			_spawn_fx("SuperDashAnchor", _get_fx_world_position("SuperDashAnchor"), player.animated_sprite.flip_h)
-		elif super_dash_timer >= super_dash_interval:
+		elif super_dash_timer >= current_interval:
 			super_dash_timer = 0.0
 			_spawn_fx("SuperDashAnchor", _get_fx_world_position("SuperDashAnchor"), player.animated_sprite.flip_h)
 	else:
 		super_dash_timer = 0.0
 		super_dash_started = false
+		super_dash_was_decelerating = false
 
 ## 处理状态切换触发的单播特效。
 func _on_state_changed(payload: Dictionary) -> void:

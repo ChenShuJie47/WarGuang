@@ -22,12 +22,20 @@ static func clear_counter_slow_for_damage(player: Node) -> void:
 
 # 冲刺中受伤时先强制落地到 HURT，避免状态冲突。
 static func break_dash_for_damage(player: Node) -> void:
-	if player.current_state != player.PlayerState.DASH:
+	if player.current_state != player.PlayerState.DASH and player.current_state != player.PlayerState.SUPERDASH and player.current_state != player.PlayerState.SUPERDASHSTART:
 		return
 	player.dash_duration_timer = 0
 	player.dash_duration_timer_node.stop()
 	player.can_dash = true
 	player.was_gliding_before_dash = false
+	if player.current_state == player.PlayerState.SUPERDASH or player.current_state == player.PlayerState.SUPERDASHSTART:
+		player.super_dash_accel_timer = 0.0
+		player.super_dash_deceleration_timer = 0.0
+		player.super_dash_deceleration_afterimage_timer = 0.0
+		player.super_dash_input_lock_timer = 0.0
+		player.super_dash_afterimage_timer = 0.0
+		player.super_dash_duration_timer = 0.0
+		player.is_in_special_state = false
 	player.change_state(player.PlayerState.HURT)
 
 # 特殊状态受伤前先回到 IDLE，并把相机偏移复位。

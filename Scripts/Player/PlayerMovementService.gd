@@ -65,9 +65,18 @@ static func start_super_dash(player: Node) -> void:
 	player.is_super_dash_charging = false
 	player.super_dash_charge_timer = 0.0
 	player.super_dash_accel_timer = 0.0
+	player.super_dash_deceleration_timer = 0.0
 	player.super_dash_input_lock_timer = player.super_dash_input_lock_time
 	player.super_dash_afterimage_timer = 0.0
 	player.super_dash_duration_timer = 0.0
+	player.is_jumping = true
+	player.jump_count = 1
+	player.has_double_jumped = false
+	player.can_double_jump = true
+	player.can_glide = false
+	player.is_double_jump_holding = false
+	player.coyote_time_active = false
+	player.can_compensation_jump = false
 	player.is_in_special_state = true
 	player.change_state(player.PlayerState.SUPERDASH)
 
@@ -129,6 +138,9 @@ static func update_coyote_time(player: Node) -> void:
 			player.can_compensation_jump = true
 			player.compensation_jump_used = false
 	if player.is_on_floor():
+		if player.current_state == player.PlayerState.SUPERDASH:
+			player.was_on_floor = player.is_on_floor()
+			return
 		player.coyote_time_active = false
 		player.has_double_jumped = false
 		player.can_double_jump = false
@@ -356,6 +368,13 @@ static func handle_backstep_state(player: Node, fixed_delta: float, move_input: 
 
 # 处理基础冲刺状态的速度锁定。
 static func handle_dash_state(player: Node) -> void:
+	if Input.is_action_just_pressed("jump"):
+		if player.is_on_floor() or player.coyote_time_active:
+			if player.try_jump(true):
+				return
+		elif player.try_double_jump(true):
+			return
+
 	var dash_direction: int = player.dash_locked_direction
 	if dash_direction == 0:
 		dash_direction = 1 if player.is_facing_right else -1
@@ -363,7 +382,7 @@ static func handle_dash_state(player: Node) -> void:
 	player.velocity.x = dash_direction * player.dash_speed
 	player.velocity.y = 0
 
-	if Input.is_action_pressed("jump"):
+	if Input.is_action_just_pressed("jump") or Input.is_action_pressed("jump"):
 		if player.can_double_jump and not player.has_double_jumped:
 			player.jump_buffer_after_dash = true
 			player.jump_buffer_type = 2
@@ -449,9 +468,8 @@ static func handle_walljump_state(player: Node, fixed_delta: float, move_input: 
 
 	if player.wall_jump_timer >= player.wall_jump_reattach_delay:
 		player.can_reattach_to_wall = true
-		var locked_wall_direction: int = player.wall_grip_direction if player.wall_grip_direction != 0 else player.wall_direction
-		if player.is_touching_wall and move_input != 0 and sign(move_input) == locked_wall_direction:
-			player.start_wallgrip()
+		if try_start_wallgrip_from_air(player, move_input):
+			return
 		elif player.velocity.y >= 0:
 			player.change_state(player.PlayerState.DOWN)
 
@@ -480,21 +498,21 @@ static func handle_wall_bump_stun(player: Node, fixed_delta: float) -> void:
 			player.change_state(player.PlayerState.DOWN)
 
 # 尝试从空中直接进入攀墙状态。
-static func try_enter_wallgrip_from_air(player: Node, move_input: float) -> bool:
-	if player.is_on_floor() or not player.wall_grip_unlocked or not player.is_touching_wall:
-		return false
-	if player.wall_jump_escape_buffer_timer > 0.0:
-		return false
+static func try_enter_wallgrip_from_air(player: Node, move_input: float, jump_just_pressed: bool = false) -> bool:
+	return try_start_wallgrip_from_air(player, move_input, jump_just_pressed)
 
-	if player.current_state != player.PlayerState.JUMP and player.current_state != player.PlayerState.DOWN and player.current_state != player.PlayerState.GLIDE and player.current_state != player.PlayerState.WALLJUMP:
+# 统一空中挂墙判定：缓冲期内只允许回到原墙，避免双墙互抢。
+static func try_start_wallgrip_from_air(player: Node, move_input: float, jump_just_pressed: bool = false) -> bool:
+	if not player.wall_grip_unlocked or not player.is_touching_wall or player.is_on_floor():
 		return false
-
-	if player.current_state == player.PlayerState.WALLJUMP and not player.can_reattach_to_wall:
+	if jump_just_pressed:
 		return false
-
-	var toward_wall = (move_input > 0 and player.wall_direction == 1) or (move_input < 0 and player.wall_direction == -1)
-	if not toward_wall:
+	var detected_wall_direction: int = player.wall_direction
+	if detected_wall_direction == 0:
 		return false
-
-	player.start_wallgrip()
+	if move_input == 0 or sign(move_input) != detected_wall_direction:
+		return false
+	if player.wall_jump_escape_buffer_timer > 0.0 and player.wall_grip_direction != 0 and detected_wall_direction == player.wall_grip_direction:
+		return false
+	player.start_wallgrip_with_direction(detected_wall_direction)
 	return player.current_state == player.PlayerState.WALLGRIP

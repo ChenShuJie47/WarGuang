@@ -12,9 +12,6 @@ const PlayerObserveStateServiceScript = preload("res://Scripts/Player/PlayerObse
 
 # 统一空中转墙附着入口，避免 JUMP/DOWN/GLIDE/WALLJUMP 判定分散。
 static func handle_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, jump_pressed: bool, jump_just_released: bool, dash_just_pressed: bool) -> void:
-	if _try_enter_wallgrip_from_air(player, move_input):
-		return
-
 	match player.current_state:
 		player.PlayerState.IDLE:
 			handle_idle_state(player, fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
@@ -33,7 +30,7 @@ static func handle_state(player: Node, fixed_delta: float, move_input: float, ju
 		player.PlayerState.SUPERDASHSTART:
 			handle_super_dash_start_state(player, fixed_delta)
 		player.PlayerState.SUPERDASH:
-			handle_super_dash_state(player, fixed_delta, jump_just_pressed, dash_just_pressed)
+			handle_super_dash_state(player, fixed_delta, move_input, jump_just_pressed, dash_just_pressed)
 		player.PlayerState.BACKSTEP:
 			handle_backstep_state(player, fixed_delta, move_input)
 		player.PlayerState.HURT:
@@ -52,9 +49,6 @@ static func handle_state(player: Node, fixed_delta: float, move_input: float, ju
 			handle_wallgrip_state(player, fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
 		player.PlayerState.WALLJUMP:
 			handle_walljump_state(player, fixed_delta, move_input, jump_just_pressed, jump_pressed, jump_just_released, dash_just_pressed)
-
-static func _try_enter_wallgrip_from_air(player: Node, move_input: float) -> bool:
-	return PlayerMovementServiceScript.try_enter_wallgrip_from_air(player, move_input)
 
 static func handle_idle_state(player: Node, _delta: float, move_input: float, jump_just_pressed: bool, dash_just_pressed: bool) -> void:
 	PlayerMovementServiceScript.handle_idle_state(player, _delta, move_input, jump_just_pressed, dash_just_pressed)
@@ -80,8 +74,7 @@ static func handle_jump_state(player: Node, fixed_delta: float, move_input: floa
 	if PlayerAirAbilityServiceScript.try_wall_jump_from_escape_buffer(player, jump_just_pressed):
 		return
 
-	if player.is_touching_wall and player.wall_grip_unlocked and move_input != 0 and sign(move_input) == player.wall_direction:
-		player.start_wallgrip()
+	if PlayerMovementServiceScript.try_start_wallgrip_from_air(player, move_input, jump_just_pressed):
 		return
 
 	if player.try_dash(dash_just_pressed):
@@ -118,8 +111,7 @@ static func handle_down_state(player: Node, fixed_delta: float, move_input: floa
 	if PlayerAirAbilityServiceScript.try_wall_jump_from_escape_buffer(player, jump_just_pressed):
 		return
 
-	if player.is_touching_wall and player.wall_grip_unlocked and move_input != 0 and sign(move_input) == player.wall_direction:
-		player.start_wallgrip()
+	if PlayerMovementServiceScript.try_start_wallgrip_from_air(player, move_input, jump_just_pressed):
 		return
 
 	if player.try_dash(dash_just_pressed):
@@ -167,17 +159,63 @@ static func handle_super_dash_start_state(player: Node, fixed_delta: float) -> v
 	player.velocity.x = move_toward(player.velocity.x, 0, player.ground_deceleration * player.base_move_speed * player.effective_acceleration_multiplier)
 	player.apply_gravity(fixed_delta)
 
-static func handle_super_dash_state(player: Node, fixed_delta: float, jump_just_pressed: bool, dash_just_pressed: bool) -> void:
-	player.super_dash_duration_timer += fixed_delta
-	if player.super_dash_duration_timer >= player.super_dash_max_duration:
-		player.is_in_special_state = false
-		player.is_jumping = false
-		player.jump_count = 0
-		player.has_double_jumped = false
-		player.can_double_jump = true
-		player.can_glide = false
-		player.change_state(player.PlayerState.DOWN)
+static func handle_super_dash_state(player: Node, fixed_delta: float, move_input: float, jump_just_pressed: bool, dash_just_pressed: bool) -> void:
+	if player.super_dash_deceleration_timer > 0.0:
+		if PlayerMovementServiceScript.try_start_wallgrip_from_air(player, move_input):
+			player.super_dash_deceleration_timer = 0.0
+			player.is_in_special_state = false
+			player.super_dash_input_lock_timer = 0.0
+			player.super_dash_afterimage_timer = player.super_dash_afterimage_start_delay
+			return
+
+		if jump_just_pressed:
+			if player.try_double_jump(true):
+				player.super_dash_deceleration_timer = 0.0
+				player.super_dash_deceleration_afterimage_timer = 0.0
+				return
+			if player.try_jump(true):
+				player.super_dash_deceleration_timer = 0.0
+				player.super_dash_deceleration_afterimage_timer = 0.0
+				return
+
+		if dash_just_pressed:
+			if move_input != 0:
+				player.is_facing_right = move_input > 0
+				player.animated_sprite.flip_h = not player.is_facing_right
+			if player.try_dash(true):
+				player.super_dash_deceleration_timer = 0.0
+				player.is_in_special_state = false
+				player.super_dash_input_lock_timer = 0.0
+				player.super_dash_afterimage_timer = player.super_dash_afterimage_start_delay
+			return
+
+		var deceleration_time: float = maxf(player.super_dash_deceleration_time, 0.01)
+		player.super_dash_deceleration_timer += fixed_delta
+		var deceleration_ratio: float = clampf(player.super_dash_deceleration_timer / deceleration_time, 0.0, 1.0)
+		var deceleration_speed: float = player.super_dash_speed * (1.0 - pow(deceleration_ratio, 1.8))
+		var deceleration_direction: Vector2 = Vector2(1 if player.is_facing_right else -1, -1).normalized()
+		player.velocity = deceleration_direction * deceleration_speed * player.effective_horizontal_multiplier
+		if player.super_dash_deceleration_timer >= deceleration_time or deceleration_speed <= 1.0:
+			player.super_dash_deceleration_timer = 0.0
+			player.super_dash_deceleration_afterimage_timer = 0.0
+			if player.is_on_floor():
+				var resolved_input: float = player.get_resolved_horizontal_input() if player.has_method("get_resolved_horizontal_input") else Input.get_axis("left", "right")
+				if resolved_input == 0:
+					player.change_state(player.PlayerState.IDLE)
+				else:
+					player.change_state(player.PlayerState.MOVE)
+				return
+			player.change_state(player.PlayerState.DOWN)
 		return
+
+	if jump_just_pressed or player.super_dash_duration_timer >= player.super_dash_max_duration:
+		player.super_dash_deceleration_timer = 0.0001
+		player.is_in_special_state = false
+		player.super_dash_input_lock_timer = 0.0
+		player.super_dash_afterimage_timer = player.super_dash_afterimage_start_delay
+		return
+
+	player.super_dash_duration_timer += fixed_delta
 
 	if player.super_dash_input_lock_timer > 0:
 		player.super_dash_input_lock_timer -= fixed_delta
@@ -208,26 +246,13 @@ static func handle_super_dash_state(player: Node, fixed_delta: float, jump_just_
 		return
 
 	if player.super_dash_input_lock_timer <= 0:
-		if jump_just_pressed:
-			player.is_in_special_state = false
-			player.is_jumping = false
-			player.jump_count = 0
-			player.has_double_jumped = false
-			player.can_double_jump = true
-			player.can_glide = false
-			player.change_state(player.PlayerState.JUMP)
-			return
 		if dash_just_pressed:
-			player.is_in_special_state = false
-			player.is_jumping = false
-			player.jump_count = 0
-			player.has_double_jumped = false
-			player.can_double_jump = true
-			player.can_glide = false
-			if not player.is_on_floor() and not player.coyote_time_active:
-				player.has_dashed_in_air = true
-			player.change_state(player.PlayerState.DASH)
-			return
+			if move_input != 0:
+				player.is_facing_right = move_input > 0
+				player.animated_sprite.flip_h = not player.is_facing_right
+			if player.try_dash(true):
+				player.is_in_special_state = false
+				return
 
 static func handle_backstep_state(player: Node, fixed_delta: float, move_input: float) -> void:
 	PlayerMovementServiceScript.handle_backstep_state(player, fixed_delta, move_input)

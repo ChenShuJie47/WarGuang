@@ -65,7 +65,10 @@ static func update_animation(player: Node) -> void:
 		player.PlayerState.SUPERDASHSTART:
 			target_animation_val = "SUPERDASHSTART"
 		player.PlayerState.SUPERDASH:
-			target_animation_val = "SUPERDASH"
+			if player.super_dash_deceleration_timer > 0.0:
+				target_animation_val = "SUPERDASHEND"
+			else:
+				target_animation_val = "SUPERDASH"
 		player.PlayerState.BACKSTEP:
 			target_animation_val = "BACKSTEP"
 

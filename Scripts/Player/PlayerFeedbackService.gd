@@ -23,7 +23,14 @@ static func handle_afterimages(player: Node, fixed_delta: float) -> void:
 				else:
 					player.create_afterimage(player.PlayerState.DASH, false, "normal")
 		player.PlayerState.SUPERDASH:
-			pass
+			if player.super_dash_deceleration_timer > 0.0:
+				player.super_dash_deceleration_afterimage_timer += fixed_delta
+				var super_dash_deceleration_interval = player._get_afterimage_interval("low") * player.afterimage_spawn_rate
+				if player.super_dash_deceleration_afterimage_timer >= super_dash_deceleration_interval:
+					player.super_dash_deceleration_afterimage_timer = 0.0
+					player.create_afterimage(player.PlayerState.SUPERDASH, false, "low")
+			else:
+				player.super_dash_deceleration_afterimage_timer = 0.0
 		player.PlayerState.BACKSTEP:
 			player.backstep_afterimage_timer += fixed_delta
 			var backstep_interval = player._get_afterimage_interval("advanced") * player.afterimage_spawn_rate
@@ -33,6 +40,7 @@ static func handle_afterimages(player: Node, fixed_delta: float) -> void:
 		_:
 			player.afterimage_timer = 0.0
 			player.super_dash_afterimage_timer = 0.0
+			player.super_dash_deceleration_afterimage_timer = 0.0
 			player.backstep_afterimage_timer = 0.0
 
 	if player.has_jumpbox_afterimage and player.current_animation == "JUMP2":

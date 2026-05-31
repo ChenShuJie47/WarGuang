@@ -18,6 +18,7 @@ script = ExtResource("1_vf3dq")
 settings_scene_resource = ExtResource("2_aemly")
 
 [node name="Background" type="Sprite2D" parent="."]
+visible = false
 position = Vector2(557, 299)
 scale = Vector2(3, 3)
 texture = ExtResource("3_urdrt")

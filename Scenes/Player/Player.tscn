@@ -1,4 +1,4 @@
-[gd_scene load_steps=144 format=3 uid="uid://dwj2ydwabq3n0"]
+[gd_scene load_steps=132 format=3 uid="uid://dwj2ydwabq3n0"]
 
 [ext_resource type="Script" uid="uid://b641fcmvm5n4c" path="res://Scripts/Player/Player.gd" id="1_kyqiw"]
 [ext_resource type="PackedScene" uid="uid://dq4jgo8v4l7kq" path="res://Scenes/Instances/Afterimage.tscn" id="2_t26db"]
@@ -36,14 +36,6 @@ region = Rect2(64, 128, 32, 32)
 atlas = ExtResource("8_epg6k")
 region = Rect2(96, 128, 32, 32)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_esmjy"]
-atlas = ExtResource("8_epg6k")
-region = Rect2(0, 192, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_6tu5v"]
-atlas = ExtResource("8_epg6k")
-region = Rect2(32, 192, 32, 32)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_n1hvv"]
 atlas = ExtResource("8_epg6k")
 region = Rect2(64, 192, 32, 32)
@@ -51,14 +43,6 @@ region = Rect2(64, 192, 32, 32)
 [sub_resource type="AtlasTexture" id="AtlasTexture_ywgti"]
 atlas = ExtResource("8_epg6k")
 region = Rect2(96, 192, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_spxdj"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(128, 160, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_0objx"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(160, 160, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_w71ue"]
 atlas = ExtResource("8_i5acl")
@@ -144,10 +128,6 @@ region = Rect2(160, 96, 32, 32)
 atlas = ExtResource("8_i5acl")
 region = Rect2(192, 96, 32, 32)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_fcbn2"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(224, 96, 32, 32)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_hjq2i"]
 atlas = ExtResource("8_i5acl")
 region = Rect2(0, 160, 32, 32)
@@ -208,22 +188,6 @@ region = Rect2(64, 0, 32, 32)
 atlas = ExtResource("10_esmjy")
 region = Rect2(96, 0, 32, 32)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_g84yj"]
-atlas = ExtResource("10_0u84n")
-region = Rect2(192, 96, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_s3bpb"]
-atlas = ExtResource("10_0u84n")
-region = Rect2(160, 96, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ktaf6"]
-atlas = ExtResource("10_0u84n")
-region = Rect2(128, 96, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_6xdt5"]
-atlas = ExtResource("10_0u84n")
-region = Rect2(96, 96, 32, 32)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_q7t4i"]
 atlas = ExtResource("10_0u84n")
 region = Rect2(224, 96, 32, 32)
@@ -279,14 +243,6 @@ region = Rect2(96, 160, 32, 32)
 [sub_resource type="AtlasTexture" id="AtlasTexture_by3qs"]
 atlas = ExtResource("10_0u84n")
 region = Rect2(128, 160, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_mhihw"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(128, 64, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_r6bkq"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(160, 64, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_yygk0"]
 atlas = ExtResource("8_i5acl")
@@ -428,10 +384,6 @@ region = Rect2(192, 352, 32, 32)
 atlas = ExtResource("8_i5acl")
 region = Rect2(224, 352, 32, 32)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_xfeuu"]
-atlas = ExtResource("8_i5acl")
-region = Rect2(0, 384, 32, 32)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_s5jdm"]
 atlas = ExtResource("4_4wape")
 region = Rect2(576, 0, 32, 32)
@@ -537,37 +489,25 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_esmjy")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_6tu5v")
-}, {
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_n1hvv")
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_ywgti")
 }],
-"loop": false,
+"loop": true,
 "name": &"BLACKDASH",
-"speed": 12.0
+"speed": 6.0
 }, {
 "frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_spxdj")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_0objx")
-}, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_w71ue")
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_1e6p3")
 }],
-"loop": false,
+"loop": true,
 "name": &"DASH",
-"speed": 12.0
+"speed": 6.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -631,9 +571,6 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_vrod0")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_fcbn2")
 }],
 "loop": false,
 "name": &"DOWN",
@@ -704,18 +641,6 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_g84yj")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_s3bpb")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ktaf6")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_6xdt5")
-}, {
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_q7t4i")
 }, {
 "duration": 1.0,
@@ -763,18 +688,12 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_mhihw")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_r6bkq")
-}, {
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_yygk0")
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_m2cil")
 }],
-"loop": false,
+"loop": true,
 "name": &"JUMP1",
 "speed": 12.0
 }, {
@@ -902,9 +821,6 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_7xuqx")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_xfeuu")
 }],
 "loop": false,
 "name": &"SLEEP",
@@ -926,6 +842,17 @@ animations = [{
 "loop": true,
 "name": &"SUPERDASH",
 "speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xx8n1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s5jdm")
+}],
+"loop": true,
+"name": &"SUPERDASHEND",
+"speed": 6.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1075,7 +1002,7 @@ occluder_light_mask = 0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_jbabp")
-animation = &"WALLJUMP"
+animation = &"SUPERDASHEND"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visibility_layer = 63

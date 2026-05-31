@@ -24,7 +24,7 @@ class AfterimageConfig:
 @export_group("低级残影配置")
 @export var low_color: Color = Color.from_rgba8(250, 250, 250, 255)
 @export var low_lifetime: float = 0.4
-@export var low_interval: float = 0.3
+@export var low_interval: float = 0.2
 @export var low_pool_size: int = 20
 @export var low_solid_color: bool = true
 @export var low_fade_scale_effect: bool = true
@@ -43,12 +43,12 @@ class AfterimageConfig:
 ## 高级残影配置：超级冲刺引用。
 @export_group("高级残影配置")
 @export var advanced_color: Color = Color.from_rgba8(250, 250, 250, 255)
-@export var advanced_lifetime: float = 0.6
+@export var advanced_lifetime: float = 0.4
 @export var advanced_interval: float = 0.1
 @export var advanced_pool_size: int = 30
 @export var advanced_solid_color: bool = true
 @export var advanced_fade_scale_effect: bool = true
-@export var advanced_move_distance: float = 20.0
+@export var advanced_move_distance: float = 30.0
 
 ## 黑色残影配置：黑暗冲刺引用。
 @export_group("黑色残影配置")

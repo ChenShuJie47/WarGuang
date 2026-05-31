@@ -16,13 +16,13 @@ const DEFAULT_WARP_CAMERA_HOLD_TIMEOUT: float = 6.0
 @export var focus_capture_enabled: bool = true
 ## 焦点抢夺全局倍率。
 ## >1.0 会增强 Beacon 影响；<1.0 会减弱。
-@export var focus_capture_global_blend: float = 0.9
+@export var focus_capture_global_blend: float = 0.8
 ## 焦点抢夺单帧目标偏移上限（像素）。
 ## 防止目标过远导致镜头跳变。
-@export var focus_capture_max_offset: float = 260.0
+@export var focus_capture_max_offset: float = 240.0
 ## 抢夺偏移平滑收敛速度系数。
 ## 值越大越“跟手”，值越小越平滑。
-@export var focus_capture_smooth: float = 12.0
+@export var focus_capture_smooth: float = 8.0
 
 # 当前绑定的 Player 节点引用。
 var player: Player = null

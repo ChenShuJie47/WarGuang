@@ -5,12 +5,19 @@ class_name PlayerRoomTransitionService
 const PlayerCameraBridgeServiceScript = preload("res://Scripts/Player/PlayerCameraBridgeService.gd")
 const PlayerDoorTraversalServiceScript = preload("res://Scripts/Player/PlayerDoorTraversalService.gd")
 
+static func cancel_counter_slow_motion(player: Node) -> void:
+	if TimerControlManager and TimerControlManager.has_method("stop_slow_motion"):
+		TimerControlManager.stop_slow_motion()
+	if is_instance_valid(player) and player.has_method("disable_counter_slow_effects"):
+		player.disable_counter_slow_effects()
+
 # Warp 到达后的相机桥接通知（保持行为不变，仅做职责收敛）。
 static func notify_warp_arrival(player: Node) -> void:
 	if player.camera_controller and player.camera_controller.has_method("notify_warp_player_teleported"):
 		player.camera_controller.notify_warp_player_teleported()
 
 static func sync_camera_after_room_teleport(player: Node) -> void:
+	cancel_counter_slow_motion(player)
 	PlayerCameraBridgeServiceScript.sync_camera_after_room_teleport(player)
 
 static func sync_camera_to_player_center(player: Node, immediate: bool = false) -> void:
@@ -19,6 +26,7 @@ static func sync_camera_to_player_center(player: Node, immediate: bool = false) 
 	PlayerCameraBridgeServiceScript.sync_camera_to_player_center(player, immediate)
 
 static func sync_room_and_camera_for_respawn(player: Node, preferred_room_id: String = "", immediate: bool = false) -> void:
+	cancel_counter_slow_motion(player)
 	if RoomManager and RoomManager.has_method("get_room_id_by_position") and RoomManager.has_method("load_room"):
 		var target_room_id: String = preferred_room_id
 		if target_room_id == "":

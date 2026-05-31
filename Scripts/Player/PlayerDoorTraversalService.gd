@@ -2,6 +2,10 @@
 class_name PlayerDoorTraversalService
 # 鍒濆鍖?Door 鑷姩璧颁綅鐘舵€併€?
 static func begin_autowalk(player: Node, room_id: String, door_position: Vector2, facing_right: bool, allow_jump: bool = true, timeout: float = 1.4) -> bool:
+	if TimerControlManager and TimerControlManager.has_method("stop_slow_motion"):
+		TimerControlManager.stop_slow_motion()
+	if is_instance_valid(player) and player.has_method("disable_counter_slow_effects"):
+		player.disable_counter_slow_effects()
 	if not DynamicCheckpointManager:
 		return false
 	if not DynamicCheckpointManager.has_method("get_best_checkpoint_for_room"):
