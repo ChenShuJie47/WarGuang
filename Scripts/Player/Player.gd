@@ -136,13 +136,13 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 进入滑翔的初始水平速度
 @export var glide_init_h_speed: float = 0.0
 ## 滑翔目标水平速度
-@export var glide_target_h_speed: float = 120.0
+@export var glide_target_h_speed: float = 180.0
 ## 滑翔水平加速度（按住方向键时每秒逼近目标水平速度的最大变化率）
 @export var glide_horizontal_acceleration: float = 600.0
 ## 滑翔松开方向键时的水平减速
 @export var glide_release_deceleration: float = 90.0
 ## 滑翔最大下落速度乘数
-@export var glide_max_fall_multiplier: float = 0.2
+@export var glide_max_fall_multiplier: float = 0.3
 ## 进入滑翔后的滞空时间（秒）
 @export var glide_hover_time: float = 0.25
 ## 滑翔下落倍率过渡时间（秒）
@@ -234,7 +234,7 @@ const PlayerFXControllerScript = preload("res://Scripts/Player/PlayerFXControlle
 ## 奔跑设置
 @export_category("奔跑设置")
 ## 快速按键时间窗口（秒）
-@export var quick_tap_time_window: float = 0.2
+@export var quick_tap_time_window: float = 0.3
 ## 奔跑撞墙后的操控禁用时间（秒）
 @export var run_wall_bump_control_lock_time: float = 0.5
 ## 撞墙反弹的X轴速度
@@ -910,9 +910,6 @@ func update_wall_detection():
 
 func start_wallgrip():
 	PlayerAirAbilityServiceScript.start_wallgrip(self)
-
-func start_wallgrip_with_direction(preferred_wall_direction: int):
-	PlayerAirAbilityServiceScript.start_wallgrip(self, preferred_wall_direction)
 
 func exit_wallgrip():
 	PlayerAirAbilityServiceScript.exit_wallgrip(self)

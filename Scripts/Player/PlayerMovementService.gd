@@ -514,5 +514,5 @@ static func try_start_wallgrip_from_air(player: Node, move_input: float, jump_ju
 		return false
 	if player.wall_jump_escape_buffer_timer > 0.0 and player.wall_grip_direction != 0 and detected_wall_direction == player.wall_grip_direction:
 		return false
-	player.start_wallgrip_with_direction(detected_wall_direction)
+	player.start_wallgrip()
 	return player.current_state == player.PlayerState.WALLGRIP

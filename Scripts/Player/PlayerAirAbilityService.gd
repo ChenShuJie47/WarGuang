@@ -156,25 +156,14 @@ static func update_wall_detection(player: Node) -> void:
 		detected_wall_direction = 1
 
 	player.is_touching_wall = detected_wall_direction != 0
-	if detected_wall_direction != 0:
-		if player.current_state == player.PlayerState.WALLGRIP or player.current_state == player.PlayerState.WALLJUMP:
-			player.wall_direction = player.wall_grip_direction if player.wall_grip_direction != 0 else detected_wall_direction
-		else:
-			player.wall_direction = detected_wall_direction
-	elif player.current_state != player.PlayerState.WALLGRIP and player.current_state != player.PlayerState.WALLJUMP:
-		player.wall_direction = 0
+	player.wall_direction = detected_wall_direction
 
-static func start_wallgrip(player: Node, preferred_wall_direction: int = 0) -> void:
+static func start_wallgrip(player: Node) -> void:
 	if player.wall_grip_unlocked and player.is_touching_wall and not player.is_on_floor() and player.can_reattach_to_wall:
 		# 延迟脱离与贴地抑制已移除
 		player.is_gliding = false
 		player.glide_timer = 0.0
-		if preferred_wall_direction != 0:
-			if player.wall_direction != 0 and player.wall_direction != preferred_wall_direction:
-				return
-			player.wall_grip_direction = preferred_wall_direction
-		else:
-			player.wall_grip_direction = player.wall_direction
+		player.wall_grip_direction = player.wall_direction
 		player.wall_jump_escape_buffer_timer = 0.0
 		player.change_state(player.PlayerState.WALLGRIP)
 		player.velocity.y = 0

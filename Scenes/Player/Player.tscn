@@ -479,9 +479,9 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_tdw3u")
 }],
-"loop": false,
+"loop": true,
 "name": &"BACKSTEP",
-"speed": 12.0
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -492,7 +492,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"BLACKDASH",
-"speed": 6.0
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -503,7 +503,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"DASH",
-"speed": 6.0
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -587,7 +587,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"GLIDE",
-"speed": 12.0
+"speed": 18.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -992,7 +992,7 @@ occluder_light_mask = 0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_jbabp")
-animation = &"LOOKUP"
+animation = &"JUMP2"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visibility_layer = 63
